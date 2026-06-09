@@ -1,0 +1,113 @@
+{
+  "common": {
+    "shop": "Cửa hàng",
+    "orderRequest": "Gửi mẫu order",
+    "about": "Về chúng tôi",
+    "contact": "Liên hệ",
+    "viewShop": "Khám phá bộ sưu tập",
+    "viewDetails": "Xem chi tiết",
+    "sendZalo": "Gửi Zalo tư vấn",
+    "orderNow": "Đặt hàng",
+    "orderTime": "Order 7-10 ngày",
+    "language": "Ngôn ngữ",
+    "loading": "Đang xử lý...",
+    "submit": "Gửi yêu cầu",
+    "close": "Đóng"
+  },
+  "home": {
+    "eyebrow": "Premium streetwear order service",
+    "title": "Streetwear không dành cho số đông.",
+    "subtitle": "Tuyển chọn Sukajan, bomber, hoodie và jacket theo tinh thần Nhật - Hàn. Shop xác nhận từng đơn trước khi đặt.",
+    "introTitle": "Tìm món đồ đúng chất của bạn",
+    "introBody": "random.phitruong kết nối bạn với những thiết kế streetwear khó tìm, hỗ trợ chọn size, màu và đặt hàng minh bạch.",
+    "featured": "Sản phẩm nổi bật",
+    "processTitle": "Đặt hàng → Cọc → Nhận hàng 7-10 ngày",
+    "processBody": "Chốt sản phẩm, size và màu với shop. Cọc 50%, thanh toán 50% còn lại khi nhận hàng tại Việt Nam.",
+    "socialTitle": "Theo dõi những drop mới nhất",
+    "socialBody": "Lookbook, hàng về và các mẫu seasonal order được cập nhật trên Instagram và TikTok."
+  },
+  "shop": {
+    "title": "Streetwear order",
+    "subtitle": "Những form áo có cá tính rõ ràng, được tuyển chọn theo từng mùa.",
+    "all": "Tất cả",
+    "category": "Danh mục",
+    "size": "Kích thước",
+    "color": "Màu sắc",
+    "price": "Khoảng giá",
+    "noResults": "Không có sản phẩm phù hợp bộ lọc.",
+    "filters": "Bộ lọc"
+  },
+  "product": {
+    "material": "Chất liệu",
+    "size": "Chọn size",
+    "color": "Chọn màu",
+    "shipping": "Khu vực nhận hàng",
+    "orderNotice": "Hàng order - thời gian 7-10 ngày",
+    "changeWarning": "Sau khi chốt size/màu, không thể thay đổi.",
+    "selectOptions": "Vui lòng chọn size và màu.",
+    "internationalTitle": "Đơn hàng quốc tế",
+    "internationalBody": "Đơn đi Hàn Quốc, Đài Loan hoặc Nhật Bản sẽ được tư vấn trực tiếp qua Zalo để xác nhận phí vận chuyển và thông tin hải quan."
+  },
+  "checkout": {
+    "title": "Xác nhận đơn hàng",
+    "customerInfo": "Thông tin nhận hàng",
+    "fullName": "Họ và tên",
+    "phone": "Số điện thoại",
+    "address": "Địa chỉ",
+    "province": "Tỉnh / thành phố",
+    "district": "Quận / huyện",
+    "ward": "Phường / xã",
+    "note": "Ghi chú",
+    "region": "Khu vực giao hàng",
+    "payment": "Phương thức thanh toán",
+    "deposit": "Cọc 50% qua BIDV / Zalo, COD 50% còn lại",
+    "vnpay": "Thanh toán 100% qua VNPay (bản thử nghiệm)",
+    "momo": "Thanh toán 100% qua MoMo (bản thử nghiệm)",
+    "summary": "Tóm tắt đơn hàng",
+    "total": "Tổng cộng",
+    "depositAmount": "Số tiền cọc 50%",
+    "placeOrder": "Tạo đơn hàng",
+    "success": "Đơn hàng đã được tạo",
+    "successBody": "Shop sẽ kiểm tra và liên hệ xác nhận. Mã đơn của bạn:",
+    "bankTitle": "Thông tin chuyển khoản",
+    "bankInstruction": "Ghi nội dung chuyển khoản theo mã đơn. Chụp bill và gửi qua Zalo hoặc Instagram để shop xác nhận.",
+    "internationalCustoms": "Đơn quốc tế cần thông tin hải quan hợp lệ (ID, hộ chiếu hoặc thẻ cư trú tùy quốc gia). Phí vận chuyển được báo sau.",
+    "warning": "Vui lòng kiểm tra kỹ size. Sản phẩm quốc tế không thể đổi size/màu sau khi shop xác nhận.",
+    "missingProduct": "Chưa có sản phẩm trong đơn hàng.",
+    "backToShop": "Quay lại cửa hàng"
+  },
+  "request": {
+    "title": "Gửi mẫu bạn đang tìm",
+    "subtitle": "Tải ảnh cảm hứng, shop sẽ tìm nguồn và báo giá trực tiếp.",
+    "fullName": "Họ và tên",
+    "phone": "Số điện thoại",
+    "social": "Instagram / Zalo",
+    "image": "Ảnh sản phẩm tham khảo",
+    "size": "Size mong muốn",
+    "color": "Màu mong muốn",
+    "note": "Ghi chú",
+    "success": "Đã nhận yêu cầu của bạn.",
+    "successBody": "Shop sẽ kiểm tra mẫu và liên hệ báo giá. Bạn có thể nhắn Zalo để được xử lý nhanh hơn."
+  },
+  "about": {
+    "title": "Ngẫu nhiên trong lựa chọn. Có chủ đích trong phong cách.",
+    "body": "random.phitruong là dịch vụ streetwear order dành cho khách hàng muốn tìm những thiết kế khác biệt nhưng vẫn cần quy trình tư vấn rõ ràng.",
+    "promiseTitle": "Cam kết của shop",
+    "promiseBody": "Xác nhận sản phẩm, size, màu và giá trước khi đặt. Cập nhật tiến độ từ lúc cọc đến khi giao hàng."
+  },
+  "contact": {
+    "title": "Liên hệ & hỗ trợ",
+    "subtitle": "Nhắn shop để kiểm tra sản phẩm, chọn size hoặc tư vấn đơn quốc tế.",
+    "faq": "Câu hỏi thường gặp",
+    "name": "Tên của bạn",
+    "message": "Nội dung cần hỗ trợ",
+    "send": "Mở Zalo để gửi",
+    "community": "Cộng đồng Zalo",
+    "communityPlaceholder": "Link cộng đồng sẽ được cập nhật sớm."
+  },
+  "footer": {
+    "description": "Premium streetwear order tại Việt Nam. Hỗ trợ giao Hàn Quốc, Đài Loan và Nhật Bản qua tư vấn trực tiếp.",
+    "contact": "Liên hệ",
+    "follow": "Theo dõi"
+  }
+}

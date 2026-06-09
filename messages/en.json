@@ -1,0 +1,113 @@
+{
+  "common": {
+    "shop": "Shop",
+    "orderRequest": "Send inspiration",
+    "about": "About",
+    "contact": "Contact",
+    "viewShop": "Explore the collection",
+    "viewDetails": "View details",
+    "sendZalo": "Consult via Zalo",
+    "orderNow": "Order now",
+    "orderTime": "7-10 day order",
+    "language": "Language",
+    "loading": "Processing...",
+    "submit": "Submit request",
+    "close": "Close"
+  },
+  "home": {
+    "eyebrow": "Premium streetwear order service",
+    "title": "Streetwear that is not made for everyone.",
+    "subtitle": "Curated Sukajan, bomber, hoodie and jacket pieces with Japanese and Korean influence. Every order is personally confirmed.",
+    "introTitle": "Find the piece that feels like you",
+    "introBody": "random.phitruong connects you with hard-to-find streetwear and supports sizing, color selection and a transparent order process.",
+    "featured": "Featured products",
+    "processTitle": "Order → Deposit → Receive in 7-10 days",
+    "processBody": "Confirm product, size and color with the shop. Pay a 50% deposit, then the remaining 50% by COD in Vietnam.",
+    "socialTitle": "Follow the latest drops",
+    "socialBody": "Lookbooks, arrivals and seasonal orders are updated on Instagram and TikTok."
+  },
+  "shop": {
+    "title": "Streetwear order",
+    "subtitle": "Distinct silhouettes curated for each season.",
+    "all": "All",
+    "category": "Category",
+    "size": "Size",
+    "color": "Color",
+    "price": "Price range",
+    "noResults": "No products match these filters.",
+    "filters": "Filters"
+  },
+  "product": {
+    "material": "Material",
+    "size": "Select size",
+    "color": "Select color",
+    "shipping": "Shipping region",
+    "orderNotice": "Made to order - delivery in 7-10 days",
+    "changeWarning": "Size and color cannot be changed after confirmation.",
+    "selectOptions": "Please select a size and color.",
+    "internationalTitle": "International orders",
+    "internationalBody": "Orders to Korea, Taiwan or Japan are handled through Zalo so shipping fees and customs details can be confirmed directly."
+  },
+  "checkout": {
+    "title": "Confirm your order",
+    "customerInfo": "Delivery information",
+    "fullName": "Full name",
+    "phone": "Phone number",
+    "address": "Address",
+    "province": "Province / city",
+    "district": "District",
+    "ward": "Ward",
+    "note": "Note",
+    "region": "Shipping region",
+    "payment": "Payment method",
+    "deposit": "50% deposit via BIDV / Zalo, remaining 50% COD",
+    "vnpay": "Pay 100% with VNPay (placeholder)",
+    "momo": "Pay 100% with MoMo (placeholder)",
+    "summary": "Order summary",
+    "total": "Total",
+    "depositAmount": "50% deposit",
+    "placeOrder": "Create order",
+    "success": "Your order has been created",
+    "successBody": "The shop will review and confirm your order. Your order number is:",
+    "bankTitle": "Bank transfer details",
+    "bankInstruction": "Use the order number as the transfer reference. Send a screenshot through Zalo or Instagram for confirmation.",
+    "internationalCustoms": "International orders require valid customs information (ID, passport or residence card depending on country). Shipping is quoted separately.",
+    "warning": "Check your size carefully. International items cannot change size or color after shop confirmation.",
+    "missingProduct": "Your order has no product.",
+    "backToShop": "Return to shop"
+  },
+  "request": {
+    "title": "Send the piece you are looking for",
+    "subtitle": "Upload an inspiration image and the shop will source it and provide a quote.",
+    "fullName": "Full name",
+    "phone": "Phone number",
+    "social": "Instagram / Zalo",
+    "image": "Product inspiration image",
+    "size": "Desired size",
+    "color": "Desired color",
+    "note": "Note",
+    "success": "We received your request.",
+    "successBody": "The shop will review the item and contact you with a quote. Message Zalo for faster handling."
+  },
+  "about": {
+    "title": "Random in discovery. Intentional in style.",
+    "body": "random.phitruong is a streetwear order service for customers who want distinctive pieces with a clear, personal consultation process.",
+    "promiseTitle": "Our promise",
+    "promiseBody": "Product, size, color and price are confirmed before ordering. Progress is updated from deposit through delivery."
+  },
+  "contact": {
+    "title": "Contact & support",
+    "subtitle": "Message the shop for availability, sizing or international order consultation.",
+    "faq": "Frequently asked questions",
+    "name": "Your name",
+    "message": "How can we help?",
+    "send": "Open Zalo to send",
+    "community": "Zalo community",
+    "communityPlaceholder": "Community links will be available soon."
+  },
+  "footer": {
+    "description": "Premium streetwear order service in Vietnam. Korea, Taiwan and Japan shipping is available through direct consultation.",
+    "contact": "Contact",
+    "follow": "Follow"
+  }
+}
