@@ -134,6 +134,23 @@ const categoryIdByProductCategory = Object.fromEntries(
   categories.map((category) => [category.legacyCategory, category.id])
 ) as Record<ProductCategory, string>;
 
+function buildProductVariants(sizes: string[], colors: string[]) {
+  const uniqueSizes = [...new Set(sizes.map((size) => size.trim()).filter(Boolean))];
+  const uniqueColors = [
+    ...new Set(colors.map((color) => color.trim()).filter(Boolean))
+  ];
+
+  return uniqueSizes.flatMap((size) =>
+    uniqueColors.map((color) => ({
+      size,
+      colorVi: color,
+      colorEn: color,
+      priceAdjustment: 0,
+      isAvailable: true
+    }))
+  );
+}
+
 const products = [
   {
     nameVi: "Sukajan Hạc Sóng",
@@ -408,6 +425,10 @@ async function main() {
             altEn: productData.nameEn,
             sortOrder: index
           }))
+        },
+        variants: {
+          deleteMany: {},
+          create: buildProductVariants(productData.sizes, productData.colors)
         }
       },
       create: {
@@ -419,6 +440,9 @@ async function main() {
             altEn: productData.nameEn,
             sortOrder: index
           }))
+        },
+        variants: {
+          create: buildProductVariants(productData.sizes, productData.colors)
         }
       }
     });

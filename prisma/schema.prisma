@@ -228,30 +228,31 @@ model Category {
 }
 
 model Product {
-  id                   String          @id @default(uuid()) @db.Uuid
+  id                   String           @id @default(uuid()) @db.Uuid
   nameVi               String
   nameEn               String
-  slug                 String          @unique
-  descriptionVi        String          @db.Text
-  descriptionEn        String          @db.Text
+  slug                 String           @unique
+  descriptionVi        String           @db.Text
+  descriptionEn        String           @db.Text
   category             ProductCategory
-  categoryId           String?         @db.Uuid
-  categoryRecord       Category?       @relation(fields: [categoryId], references: [id], onDelete: SetNull)
-  createdByAdminId     String?         @db.Uuid
-  createdByAdmin       AdminUser?      @relation("ProductCreatedByAdmin", fields: [createdByAdminId], references: [id], onDelete: SetNull)
+  categoryId           String?          @db.Uuid
+  categoryRecord       Category?        @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  createdByAdminId     String?          @db.Uuid
+  createdByAdmin       AdminUser?       @relation("ProductCreatedByAdmin", fields: [createdByAdminId], references: [id], onDelete: SetNull)
   price                Int
   basePrice            Int?
-  orderLeadTimeMinDays Int             @default(7)
-  orderLeadTimeMaxDays Int             @default(10)
+  orderLeadTimeMinDays Int              @default(7)
+  orderLeadTimeMaxDays Int              @default(10)
   sizes                String[]
   colors               String[]
   materialVi           String
   materialEn           String
-  isFeatured           Boolean         @default(false)
-  isActive             Boolean         @default(true)
-  createdAt            DateTime        @default(now())
-  updatedAt            DateTime        @updatedAt
+  isFeatured           Boolean          @default(false)
+  isActive             Boolean          @default(true)
+  createdAt            DateTime         @default(now())
+  updatedAt            DateTime         @updatedAt
   images               ProductImage[]
+  variants             ProductVariant[]
   orderItems           OrderItem[]
 
   @@index([category, isActive])
@@ -269,6 +270,21 @@ model ProductImage {
   product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@index([productId, sortOrder])
+}
+
+model ProductVariant {
+  id              String   @id @default(uuid()) @db.Uuid
+  productId       String   @db.Uuid
+  product         Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  size            String
+  colorVi         String
+  colorEn         String
+  priceAdjustment Int      @default(0)
+  isAvailable     Boolean  @default(true)
+  createdAt       DateTime @default(now())
+
+  @@unique([productId, size, colorVi])
+  @@index([productId])
 }
 
 model Customer {
