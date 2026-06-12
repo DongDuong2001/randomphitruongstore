@@ -14,6 +14,62 @@ npm install
 Tạo `.env` từ `.env.example`. Không commit `.env`, token, mật khẩu, private
 key, dữ liệu khách hàng hoặc file upload cục bộ.
 
+### PostgreSQL/Prisma local setup
+
+Tạo file môi trường local và khởi động PostgreSQL bằng Docker Compose:
+
+```bash
+cp .env.example .env
+docker compose up -d postgres
+```
+
+`.env.example` phải dùng cùng thông tin database với `compose.yaml`:
+
+```env
+DATABASE_URL="postgresql://postgres:postgres@localhost:5432/random_phitruong?schema=public"
+```
+
+Sau khi PostgreSQL chạy, chuẩn bị Prisma và seed dữ liệu mẫu:
+
+```bash
+npm run prisma:generate
+npm run prisma:migrate
+npm run prisma:seed
+```
+
+Seed phải idempotent: chạy `npm run prisma:seed` nhiều lần không được tạo trùng
+dữ liệu. Dữ liệu seed hiện tại cần có sản phẩm thuộc đủ các giá trị
+`ProductCategory`: `SUKAJAN`, `BOMBER`, `HOODIE`, `JACKET`, `SEASONAL`.
+
+Mở Prisma Studio để kiểm tra dữ liệu:
+
+```bash
+npm run db:studio
+```
+
+Chỉ reset database khi đang trỏ tới database local/dev. Luôn kiểm tra
+`DATABASE_URL` trước khi reset, và không chạy reset với production hoặc database
+shared của team.
+
+Reset local database bằng Prisma:
+
+```bash
+npx prisma migrate reset
+```
+
+Nếu Docker volume local bị lỗi hoặc cần dựng lại hoàn toàn, có thể xóa volume và
+chạy lại migration/seed:
+
+```bash
+docker compose down -v
+docker compose up -d postgres
+npm run prisma:migrate
+npm run prisma:seed
+```
+
+`docker compose down -v` sẽ xóa toàn bộ dữ liệu PostgreSQL local trong Docker
+volume. Không dùng lệnh này nếu còn dữ liệu local cần giữ lại.
+
 ## 2. Branch naming
 
 Chỉ dùng một trong ba prefix:
