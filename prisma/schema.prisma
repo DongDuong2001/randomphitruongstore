@@ -305,16 +305,20 @@ model SizeChart {
 }
 
 model Customer {
-  id        String   @id @default(uuid()) @db.Uuid
-  fullName  String
-  phone     String
-  address   String
-  province  String
-  district  String
-  ward      String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  orders    Order[]
+  id                String   @id @default(uuid()) @db.Uuid
+  fullName          String
+  phone             String
+  email             String?
+  zaloPhone         String?
+  instagramHandle   String?
+  preferredLanguage String   @default("vi")
+  address           String
+  province          String
+  district          String
+  ward              String
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  orders            Order[]
 
   @@index([phone])
 }
