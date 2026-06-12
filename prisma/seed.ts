@@ -72,6 +72,36 @@ const zaloCommunities = [
   }
 ];
 
+const internationalCountries = [
+  {
+    countryCode: "KR",
+    countryNameVi: "Hàn Quốc",
+    countryNameEn: "Korea",
+    requiredCustomsInfo:
+      "Tên, địa chỉ, số điện thoại, số thẻ cư trú hoặc hộ chiếu. Nếu không có, đơn dùng ID ảo sẽ không có bảo hiểm.",
+    supportsVirtualId: true,
+    isActive: true
+  },
+  {
+    countryCode: "TW",
+    countryNameVi: "Đài Loan",
+    countryNameEn: "Taiwan",
+    requiredCustomsInfo:
+      "Tên, địa chỉ, số điện thoại, số thẻ cư trú hoặc hộ chiếu. Nếu không có, đơn dùng ID ảo sẽ không có bảo hiểm.",
+    supportsVirtualId: true,
+    isActive: true
+  },
+  {
+    countryCode: "JP",
+    countryNameVi: "Nhật Bản",
+    countryNameEn: "Japan",
+    requiredCustomsInfo:
+      "Tên, địa chỉ, số điện thoại, số thẻ cư trú hoặc hộ chiếu. Nếu không có, đơn dùng ID ảo sẽ không có bảo hiểm.",
+    supportsVirtualId: true,
+    isActive: true
+  }
+];
+
 const categories = [
   {
     id: "5b2d9f8a-9b6e-4f4c-8c0d-0f0f0f0f0a01",
@@ -370,6 +400,20 @@ async function main() {
         ...zaloCommunity,
         shopSettingId: SHOP_SETTING_ID
       }
+    });
+  }
+
+  for (const country of internationalCountries) {
+    await prisma.internationalCountry.upsert({
+      where: { countryCode: country.countryCode },
+      update: {
+        countryNameVi: country.countryNameVi,
+        countryNameEn: country.countryNameEn,
+        requiredCustomsInfo: country.requiredCustomsInfo,
+        supportsVirtualId: country.supportsVirtualId,
+        isActive: country.isActive
+      },
+      create: country
     });
   }
 

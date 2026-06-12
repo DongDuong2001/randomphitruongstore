@@ -387,39 +387,40 @@ model InquiryImage {
 }
 
 model Order {
-  id                  String               @id @default(uuid()) @db.Uuid
-  orderNumber         String               @unique
-  customerId          String               @db.Uuid
-  customer            Customer             @relation(fields: [customerId], references: [id])
-  inquiryId           String?              @unique @db.Uuid
-  inquiry             ProductInquiry?      @relation(fields: [inquiryId], references: [id], onDelete: SetNull)
-  updatedByAdminId    String?              @db.Uuid
-  updatedByAdmin      AdminUser?           @relation("OrderUpdatedByAdmin", fields: [updatedByAdminId], references: [id], onDelete: SetNull)
-  trackingToken       String?              @unique
-  orderType           OrderType            @default(CATALOG_PRODUCT)
-  paymentOption       PaymentOption?
-  shippingRegion      ShippingRegion       @default(VIETNAM)
-  paymentMethod       PaymentMethod
-  status              OrderStatus
-  note                String?              @db.Text
-  subtotal            Int
-  depositAmount       Int?
-  subtotalAmount      Int?
-  remainingAmount     Int?
-  shippingFee         Int                  @default(0)
-  totalAmount         Int?
-  sizeColorLocked     Boolean              @default(false)
-  noChangePolicyAck   Boolean              @default(false)
-  noChangePolicyAckAt DateTime?
-  expectedArrivalDate DateTime?
-  adminNotes          String?              @db.Text
-  createdAt           DateTime             @default(now())
-  updatedAt           DateTime             @updatedAt
-  items               OrderItem[]
-  payments            Payment[]
-  statusHistory       OrderStatusHistory[]
-  shipments           Shipment[]
-  shippingAddress     ShippingAddress?
+  id                          String                       @id @default(uuid()) @db.Uuid
+  orderNumber                 String                       @unique
+  customerId                  String                       @db.Uuid
+  customer                    Customer                     @relation(fields: [customerId], references: [id])
+  inquiryId                   String?                      @unique @db.Uuid
+  inquiry                     ProductInquiry?              @relation(fields: [inquiryId], references: [id], onDelete: SetNull)
+  updatedByAdminId            String?                      @db.Uuid
+  updatedByAdmin              AdminUser?                   @relation("OrderUpdatedByAdmin", fields: [updatedByAdminId], references: [id], onDelete: SetNull)
+  trackingToken               String?                      @unique
+  orderType                   OrderType                    @default(CATALOG_PRODUCT)
+  paymentOption               PaymentOption?
+  shippingRegion              ShippingRegion               @default(VIETNAM)
+  paymentMethod               PaymentMethod
+  status                      OrderStatus
+  note                        String?                      @db.Text
+  subtotal                    Int
+  depositAmount               Int?
+  subtotalAmount              Int?
+  remainingAmount             Int?
+  shippingFee                 Int                          @default(0)
+  totalAmount                 Int?
+  sizeColorLocked             Boolean                      @default(false)
+  noChangePolicyAck           Boolean                      @default(false)
+  noChangePolicyAckAt         DateTime?
+  expectedArrivalDate         DateTime?
+  adminNotes                  String?                      @db.Text
+  createdAt                   DateTime                     @default(now())
+  updatedAt                   DateTime                     @updatedAt
+  items                       OrderItem[]
+  payments                    Payment[]
+  statusHistory               OrderStatusHistory[]
+  shipments                   Shipment[]
+  shippingAddress             ShippingAddress?
+  internationalShippingDetail InternationalShippingDetail?
 
   @@index([status, createdAt])
   @@index([updatedByAdminId])
@@ -531,6 +532,34 @@ model Shipment {
 
   @@index([orderId])
   @@index([shipmentStatus])
+}
+
+model InternationalCountry {
+  countryCode         String                        @id
+  countryNameVi       String
+  countryNameEn       String
+  requiredCustomsInfo String                        @db.Text
+  supportsVirtualId   Boolean                       @default(true)
+  isActive            Boolean                       @default(true)
+  shippingDetails     InternationalShippingDetail[]
+}
+
+model InternationalShippingDetail {
+  id                   String               @id @default(uuid()) @db.Uuid
+  orderId              String               @unique @db.Uuid
+  order                Order                @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  countryCode          String
+  country              InternationalCountry @relation(fields: [countryCode], references: [countryCode])
+  customsIdType        CustomsIdType?
+  customsIdNumber      String?
+  usesVirtualId        Boolean              @default(false)
+  noInsuranceAck       Boolean              @default(false)
+  warehouseShippingFee Int?
+  consultationChannel  SourceChannel?
+  customsNotes         String?              @db.Text
+  createdAt            DateTime             @default(now())
+
+  @@index([countryCode])
 }
 
 model OrderRequest {
