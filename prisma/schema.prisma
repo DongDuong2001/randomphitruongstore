@@ -253,6 +253,7 @@ model Product {
   updatedAt            DateTime         @updatedAt
   images               ProductImage[]
   variants             ProductVariant[]
+  sizeCharts           SizeChart[]
   orderItems           OrderItem[]
 
   @@index([category, isActive])
@@ -284,6 +285,22 @@ model ProductVariant {
   createdAt       DateTime @default(now())
 
   @@unique([productId, size, colorVi])
+  @@index([productId])
+}
+
+model SizeChart {
+  id        String   @id @default(uuid()) @db.Uuid
+  productId String   @db.Uuid
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  size      String
+  shoulder  Decimal? @db.Decimal(6, 2)
+  chest     Decimal? @db.Decimal(6, 2)
+  length    Decimal? @db.Decimal(6, 2)
+  sleeve    Decimal? @db.Decimal(6, 2)
+  unit      String   @default("cm")
+  createdAt DateTime @default(now())
+
+  @@unique([productId, size])
   @@index([productId])
 }
 
