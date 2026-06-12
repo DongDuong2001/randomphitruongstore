@@ -1,0 +1,15 @@
+# Temporary owner until the other project members are added to the repository.
+/.github/CODEOWNERS @DongDuong2001
+
+# Database schema, migrations, and seed data.
+/prisma/ @DongDuong2001
+/prisma.config.ts @DongDuong2001
+
+# Environment contract and shared application contracts.
+/.env.example @DongDuong2001
+/src/lib/validations.ts @DongDuong2001
+/src/types/ @DongDuong2001
+
+# Dependency and script changes can affect every contributor.
+/package.json @DongDuong2001
+/package-lock.json @DongDuong2001

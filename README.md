@@ -109,3 +109,9 @@ npm run prisma:migrate
 npm run prisma:seed
 npm run db:studio
 ```
+
+## Contributing
+
+Before starting an issue, read [CONTRIBUTING.md](./CONTRIBUTING.md) for branch
+naming, Conventional Commits, Pull Request requirements, protected ownership,
+and the required lint/build/secret-scan checklist.
