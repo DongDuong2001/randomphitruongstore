@@ -137,14 +137,15 @@ enum CustomsIdType {
 }
 
 model AdminUser {
-  id           String    @id @default(uuid()) @db.Uuid
-  fullName     String
-  email        String    @unique
-  passwordHash String
-  role         AdminRole @default(STAFF)
-  isActive     Boolean   @default(true)
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @default(now()) @updatedAt
+  id              String    @id @default(uuid()) @db.Uuid
+  fullName        String
+  email           String    @unique
+  passwordHash    String
+  role            AdminRole @default(STAFF)
+  isActive        Boolean   @default(true)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @default(now()) @updatedAt
+  createdProducts Product[] @relation("ProductCreatedByAdmin")
 
   @@index([role, isActive])
 }
@@ -227,29 +228,35 @@ model Category {
 }
 
 model Product {
-  id             String          @id @default(uuid()) @db.Uuid
-  nameVi         String
-  nameEn         String
-  slug           String          @unique
-  descriptionVi  String          @db.Text
-  descriptionEn  String          @db.Text
-  category       ProductCategory
-  categoryId     String?         @db.Uuid
-  categoryRecord Category?       @relation(fields: [categoryId], references: [id], onDelete: SetNull)
-  price          Int
-  sizes          String[]
-  colors         String[]
-  materialVi     String
-  materialEn     String
-  isFeatured     Boolean         @default(false)
-  isActive       Boolean         @default(true)
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
-  images         ProductImage[]
-  orderItems     OrderItem[]
+  id                   String          @id @default(uuid()) @db.Uuid
+  nameVi               String
+  nameEn               String
+  slug                 String          @unique
+  descriptionVi        String          @db.Text
+  descriptionEn        String          @db.Text
+  category             ProductCategory
+  categoryId           String?         @db.Uuid
+  categoryRecord       Category?       @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  createdByAdminId     String?         @db.Uuid
+  createdByAdmin       AdminUser?      @relation("ProductCreatedByAdmin", fields: [createdByAdminId], references: [id], onDelete: SetNull)
+  price                Int
+  basePrice            Int?
+  orderLeadTimeMinDays Int             @default(7)
+  orderLeadTimeMaxDays Int             @default(10)
+  sizes                String[]
+  colors               String[]
+  materialVi           String
+  materialEn           String
+  isFeatured           Boolean         @default(false)
+  isActive             Boolean         @default(true)
+  createdAt            DateTime        @default(now())
+  updatedAt            DateTime        @updatedAt
+  images               ProductImage[]
+  orderItems           OrderItem[]
 
   @@index([category, isActive])
   @@index([categoryId])
+  @@index([createdByAdminId])
 }
 
 model ProductImage {

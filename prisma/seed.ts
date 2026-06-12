@@ -390,7 +390,10 @@ async function main() {
     const { images, ...data } = product;
     const productData = {
       ...data,
-      categoryId: categoryIdByProductCategory[data.category]
+      categoryId: categoryIdByProductCategory[data.category],
+      basePrice: data.price,
+      orderLeadTimeMinDays: 7,
+      orderLeadTimeMaxDays: 10
     };
 
     await prisma.product.upsert({
