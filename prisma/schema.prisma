@@ -135,6 +135,19 @@ enum CustomsIdType {
   NONE
 }
 
+model AdminUser {
+  id           String    @id @default(uuid()) @db.Uuid
+  fullName     String
+  email        String    @unique
+  passwordHash String
+  role         AdminRole @default(STAFF)
+  isActive     Boolean   @default(true)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @default(now()) @updatedAt
+
+  @@index([role, isActive])
+}
+
 model Product {
   id            String          @id @default(uuid()) @db.Uuid
   nameVi        String
