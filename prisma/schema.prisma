@@ -190,6 +190,7 @@ model BankAccount {
   isDefault      Boolean     @default(false)
   isActive       Boolean     @default(true)
   createdAt      DateTime    @default(now())
+  payments       Payment[]
 
   @@unique([shopSettingId, accountNumber])
   @@index([shopSettingId, isDefault])
@@ -414,6 +415,7 @@ model Order {
   createdAt           DateTime         @default(now())
   updatedAt           DateTime         @updatedAt
   items               OrderItem[]
+  payments            Payment[]
   shippingAddress     ShippingAddress?
 
   @@index([status, createdAt])
@@ -459,6 +461,44 @@ model OrderItem {
 
   @@index([orderId])
   @@index([productVariantId])
+}
+
+model Payment {
+  id                   String         @id @default(uuid()) @db.Uuid
+  orderId              String         @db.Uuid
+  order                Order          @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  bankAccountId        String?        @db.Uuid
+  bankAccount          BankAccount?   @relation(fields: [bankAccountId], references: [id], onDelete: SetNull)
+  paymentType          PaymentType
+  paymentMethod        String
+  paymentStatus        PaymentStatus  @default(PENDING)
+  amount               Int
+  transactionReference String?
+  gatewayProvider      String?
+  gatewayTransactionId String?
+  gatewayOrderId       String?
+  gatewayResponse      Json?
+  paidAt               DateTime?
+  createdAt            DateTime       @default(now())
+  proofs               PaymentProof[]
+
+  @@index([orderId])
+  @@index([bankAccountId])
+  @@index([paymentStatus, createdAt])
+}
+
+model PaymentProof {
+  id                 String      @id @default(uuid()) @db.Uuid
+  paymentId          String      @db.Uuid
+  payment            Payment     @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  proofImageUrl      String
+  submittedVia       String?
+  verificationStatus ProofStatus @default(PENDING_REVIEW)
+  submittedAt        DateTime    @default(now())
+  verifiedAt         DateTime?
+
+  @@index([paymentId])
+  @@index([verificationStatus, submittedAt])
 }
 
 model OrderRequest {
