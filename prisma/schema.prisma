@@ -3,8 +3,9 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 enum ProductCategory {
@@ -47,8 +48,167 @@ enum OrderRequestStatus {
   CLOSED
 }
 
+enum AdminRole {
+  OWNER
+  ADMIN
+  STAFF
+}
+
+enum InquiryStatus {
+  NEW
+  CONTACTED
+  QUOTED
+  CONVERTED_TO_ORDER
+  CLOSED
+}
+
+enum OrderType {
+  CATALOG_PRODUCT
+  CUSTOM_INQUIRY
+}
+
+enum PaymentOption {
+  DEPOSIT_50
+  ONLINE_100
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  CANCELLED
+  REFUNDED
+}
+
+enum PaymentType {
+  DEPOSIT
+  REMAINING_BALANCE
+  FULL_PAYMENT
+  SHIPPING_FEE
+}
+
+enum ProofStatus {
+  PENDING_REVIEW
+  VERIFIED
+  REJECTED
+}
+
+enum ShipmentStatus {
+  PENDING
+  READY_TO_SHIP
+  SHIPPED
+  IN_TRANSIT
+  DELIVERED
+  RETURNED
+  CANCELLED
+}
+
+enum ContactStatus {
+  NEW
+  IN_PROGRESS
+  RESOLVED
+  SPAM
+  ARCHIVED
+}
+
+enum PageType {
+  ABOUT
+  CONTACT
+  FAQ
+  ORDER_GUIDE
+  PAYMENT_GUIDE
+  SHIPPING_GUIDE
+  CUSTOM_PAGE
+}
+
+enum SourceChannel {
+  WEBSITE
+  ZALO
+  INSTAGRAM
+  TIKTOK
+  OTHER
+}
+
+enum CustomsIdType {
+  RESIDENCE_CARD
+  PASSPORT
+  VIRTUAL_ID
+  NONE
+}
+
+model AdminUser {
+  id           String    @id @default(uuid()) @db.Uuid
+  fullName     String
+  email        String    @unique
+  passwordHash String
+  role         AdminRole @default(STAFF)
+  isActive     Boolean   @default(true)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @default(now()) @updatedAt
+
+  @@index([role, isActive])
+}
+
+model ShopSetting {
+  id                String          @id @default(uuid()) @db.Uuid
+  brandName         String
+  defaultLanguage   String          @default("vi")
+  zaloPhone         String
+  zaloQrCodeUrl     String?
+  orderLeadTimeText String          @default("7-10 ngày")
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @default(now()) @updatedAt
+  socialLinks       SocialLink[]
+  bankAccounts      BankAccount[]
+  zaloCommunities   ZaloCommunity[]
+}
+
+model SocialLink {
+  id            String      @id @default(uuid()) @db.Uuid
+  shopSettingId String      @db.Uuid
+  shopSetting   ShopSetting @relation(fields: [shopSettingId], references: [id], onDelete: Cascade)
+  platform      String
+  url           String
+  isActive      Boolean     @default(true)
+  createdAt     DateTime    @default(now())
+
+  @@unique([shopSettingId, platform])
+  @@index([shopSettingId])
+}
+
+model BankAccount {
+  id             String      @id @default(uuid()) @db.Uuid
+  shopSettingId  String      @db.Uuid
+  shopSetting    ShopSetting @relation(fields: [shopSettingId], references: [id], onDelete: Cascade)
+  bankName       String
+  branchName     String?
+  accountNumber  String
+  accountHolder  String
+  vietqrImageUrl String?
+  isDefault      Boolean     @default(false)
+  isActive       Boolean     @default(true)
+  createdAt      DateTime    @default(now())
+
+  @@unique([shopSettingId, accountNumber])
+  @@index([shopSettingId, isDefault])
+}
+
+model ZaloCommunity {
+  id            String      @id @default(uuid()) @db.Uuid
+  shopSettingId String      @db.Uuid
+  shopSetting   ShopSetting @relation(fields: [shopSettingId], references: [id], onDelete: Cascade)
+  groupName     String
+  groupUrl      String?
+  qrCodeUrl     String?
+  isActive      Boolean     @default(false)
+  createdAt     DateTime    @default(now())
+
+  @@unique([shopSettingId, groupName])
+  @@index([shopSettingId])
+}
+
 model Product {
-  id            String          @id @default(cuid())
+  id            String          @id @default(uuid()) @db.Uuid
   nameVi        String
   nameEn        String
   slug          String          @unique
@@ -71,19 +231,19 @@ model Product {
 }
 
 model ProductImage {
-  id        String  @id @default(cuid())
+  id        String  @id @default(uuid()) @db.Uuid
   url       String
   altVi     String
   altEn     String
   sortOrder Int     @default(0)
-  productId String
+  productId String  @db.Uuid
   product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@index([productId, sortOrder])
 }
 
 model Customer {
-  id        String   @id @default(cuid())
+  id        String   @id @default(uuid()) @db.Uuid
   fullName  String
   phone     String
   address   String
@@ -98,9 +258,9 @@ model Customer {
 }
 
 model Order {
-  id             String         @id @default(cuid())
+  id             String         @id @default(uuid()) @db.Uuid
   orderNumber    String         @unique
-  customerId     String
+  customerId     String         @db.Uuid
   customer       Customer       @relation(fields: [customerId], references: [id])
   shippingRegion ShippingRegion @default(VIETNAM)
   paymentMethod  PaymentMethod
@@ -116,10 +276,10 @@ model Order {
 }
 
 model OrderItem {
-  id          String  @id @default(cuid())
-  orderId     String
+  id          String  @id @default(uuid()) @db.Uuid
+  orderId     String  @db.Uuid
   order       Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  productId   String
+  productId   String  @db.Uuid
   product     Product @relation(fields: [productId], references: [id])
   productName String
   unitPrice   Int
@@ -131,7 +291,7 @@ model OrderItem {
 }
 
 model OrderRequest {
-  id             String             @id @default(cuid())
+  id             String             @id @default(uuid()) @db.Uuid
   fullName       String
   phone          String
   socialContact  String

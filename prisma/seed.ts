@@ -2,6 +2,76 @@ import { PrismaClient, ProductCategory } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
+const SHOP_SETTING_ID = "2a1a0c8e-7f4e-4c7d-9e0c-6b1d0d572a11";
+
+const shopSetting = {
+  id: SHOP_SETTING_ID,
+  brandName: "random.phitruong",
+  defaultLanguage: "vi",
+  zaloPhone: "0388390482",
+  zaloQrCodeUrl: null,
+  orderLeadTimeText: "7-10 ngày"
+};
+
+const socialLinks = [
+  {
+    id: "4f2a1d6c-89d6-4f28-9e3d-7d33467f1a01",
+    platform: "INSTAGRAM",
+    url: "https://www.instagram.com/random.phitruong4",
+    isActive: true
+  },
+  {
+    id: "4f2a1d6c-89d6-4f28-9e3d-7d33467f1a02",
+    platform: "TIKTOK",
+    url: "https://www.tiktok.com/@random.phitruong",
+    isActive: true
+  }
+];
+
+const bankAccounts = [
+  {
+    id: "4f2a1d6c-89d6-4f28-9e3d-7d33467f1b01",
+    bankName: "BIDV",
+    branchName: "PGD Thanh Xuân Bắc",
+    accountNumber: "2153102265",
+    accountHolder: "DO PHI TRUONG",
+    vietqrImageUrl: null,
+    isDefault: true,
+    isActive: true
+  }
+];
+
+const zaloCommunities = [
+  {
+    id: "4f2a1d6c-89d6-4f28-9e3d-7d33467f1c01",
+    groupName: "NHÓM 1 random.phitruong",
+    groupUrl: null,
+    qrCodeUrl: null,
+    isActive: false
+  },
+  {
+    id: "4f2a1d6c-89d6-4f28-9e3d-7d33467f1c02",
+    groupName: "NHÓM 2 random.phitruong",
+    groupUrl: null,
+    qrCodeUrl: null,
+    isActive: false
+  },
+  {
+    id: "4f2a1d6c-89d6-4f28-9e3d-7d33467f1c03",
+    groupName: "NHÓM 3 random.phitruong",
+    groupUrl: null,
+    qrCodeUrl: null,
+    isActive: false
+  },
+  {
+    id: "4f2a1d6c-89d6-4f28-9e3d-7d33467f1c04",
+    groupName: "NHÓM 4 random.phitruong",
+    groupUrl: null,
+    qrCodeUrl: null,
+    isActive: false
+  }
+];
+
 const products = [
   {
     nameVi: "Sukajan Hạc Sóng",
@@ -159,6 +229,71 @@ const products = [
 ];
 
 async function main() {
+  await prisma.shopSetting.upsert({
+    where: { id: shopSetting.id },
+    update: {
+      brandName: shopSetting.brandName,
+      defaultLanguage: shopSetting.defaultLanguage,
+      zaloPhone: shopSetting.zaloPhone,
+      zaloQrCodeUrl: shopSetting.zaloQrCodeUrl,
+      orderLeadTimeText: shopSetting.orderLeadTimeText
+    },
+    create: shopSetting
+  });
+
+  for (const socialLink of socialLinks) {
+    await prisma.socialLink.upsert({
+      where: { id: socialLink.id },
+      update: {
+        platform: socialLink.platform,
+        url: socialLink.url,
+        isActive: socialLink.isActive,
+        shopSettingId: SHOP_SETTING_ID
+      },
+      create: {
+        ...socialLink,
+        shopSettingId: SHOP_SETTING_ID
+      }
+    });
+  }
+
+  for (const bankAccount of bankAccounts) {
+    await prisma.bankAccount.upsert({
+      where: { id: bankAccount.id },
+      update: {
+        bankName: bankAccount.bankName,
+        branchName: bankAccount.branchName,
+        accountNumber: bankAccount.accountNumber,
+        accountHolder: bankAccount.accountHolder,
+        vietqrImageUrl: bankAccount.vietqrImageUrl,
+        isDefault: bankAccount.isDefault,
+        isActive: bankAccount.isActive,
+        shopSettingId: SHOP_SETTING_ID
+      },
+      create: {
+        ...bankAccount,
+        shopSettingId: SHOP_SETTING_ID
+      }
+    });
+  }
+
+  for (const zaloCommunity of zaloCommunities) {
+    await prisma.zaloCommunity.upsert({
+      where: { id: zaloCommunity.id },
+      update: {
+        groupName: zaloCommunity.groupName,
+        groupUrl: zaloCommunity.groupUrl,
+        qrCodeUrl: zaloCommunity.qrCodeUrl,
+        isActive: zaloCommunity.isActive,
+        shopSettingId: SHOP_SETTING_ID
+      },
+      create: {
+        ...zaloCommunity,
+        shopSettingId: SHOP_SETTING_ID
+      }
+    });
+  }
+
   for (const product of products) {
     const { images, ...data } = product;
     await prisma.product.upsert({

@@ -44,7 +44,7 @@ export const orderInputSchema = z.object({
   items: z
     .array(
       z.object({
-        productId: z.string().min(1),
+        productId: z.string().uuid(),
         quantity: z.coerce.number().int().min(1).max(10),
         size: z.string().min(1),
         color: z.string().min(1)
