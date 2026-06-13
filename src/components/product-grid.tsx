@@ -14,7 +14,7 @@ export function ProductGrid({
   detailsLabel: string;
 }) {
   return (
-    <div className="grid gap-x-5 gap-y-12 sm:grid-cols-2 lg:grid-cols-3">
+    <div className="grid grid-cols-2 gap-x-3 gap-y-9 sm:gap-x-6 sm:gap-y-14 lg:grid-cols-3">
       {products.map((product) => (
         <ProductCard
           detailsLabel={detailsLabel}
