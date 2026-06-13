@@ -18,9 +18,9 @@ export default async function AdminPanelLayout({
   }
 
   return (
-    <div className="min-h-screen bg-zinc-100 lg:flex">
+    <div className="admin-shell min-h-screen bg-[#f3f2ef] text-zinc-950 lg:flex">
       <AdminSidebar />
-      <main className="min-w-0 flex-1 p-5 sm:p-8 lg:p-10">{children}</main>
+      <main className="min-w-0 flex-1 p-4 sm:p-7 lg:p-10">{children}</main>
     </div>
   );
 }

@@ -30,7 +30,7 @@ export function AdminStatusSelect({
 
   return (
     <select
-      className="min-h-9 border border-zinc-300 bg-white px-2 text-xs font-bold disabled:opacity-50"
+      className="min-h-10 min-w-44 border border-zinc-300 bg-white px-3 text-xs font-bold text-zinc-900 outline-none transition-colors hover:border-zinc-500 focus:border-[#a72b1f] focus:ring-2 focus:ring-[#a72b1f]/15 disabled:cursor-wait disabled:bg-zinc-100 disabled:text-zinc-400"
       disabled={pending}
       onChange={(event) => update(event.target.value)}
       value={value}

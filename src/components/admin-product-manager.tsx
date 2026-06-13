@@ -1,9 +1,17 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Pencil, Plus, Trash2, X } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Pencil,
+  Plus,
+  Search,
+  Trash2,
+  X
+} from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import type { ProductWithImages } from "@/types";
@@ -45,6 +53,9 @@ const defaults: FormValues = {
   isActive: true
 };
 
+const categories = ["ALL", "SUKAJAN", "BOMBER", "HOODIE", "JACKET", "SEASONAL"];
+const pageSize = 10;
+
 export function AdminProductManager({
   products
 }: {
@@ -54,6 +65,10 @@ export function AdminProductManager({
   const [open, setOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [serverError, setServerError] = useState("");
+  const [query, setQuery] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("ALL");
+  const [visibilityFilter, setVisibilityFilter] = useState("ALL");
+  const [page, setPage] = useState(1);
   const {
     register,
     handleSubmit,
@@ -63,6 +78,45 @@ export function AdminProductManager({
     resolver: zodResolver(formSchema),
     defaultValues: defaults
   });
+  const filteredProducts = useMemo(() => {
+    const normalizedQuery = query.trim().toLowerCase();
+    return products.filter((product) => {
+      const matchesQuery =
+        !normalizedQuery ||
+        product.nameVi.toLowerCase().includes(normalizedQuery) ||
+        product.nameEn.toLowerCase().includes(normalizedQuery) ||
+        product.slug.toLowerCase().includes(normalizedQuery);
+      const matchesCategory =
+        categoryFilter === "ALL" || product.category === categoryFilter;
+      const matchesVisibility =
+        visibilityFilter === "ALL" ||
+        (visibilityFilter === "ACTIVE" && product.isActive) ||
+        (visibilityFilter === "INACTIVE" && !product.isActive) ||
+        (visibilityFilter === "FEATURED" && product.isFeatured);
+      return matchesQuery && matchesCategory && matchesVisibility;
+    });
+  }, [categoryFilter, products, query, visibilityFilter]);
+  const pageCount = Math.max(1, Math.ceil(filteredProducts.length / pageSize));
+  const currentPage = Math.min(page, pageCount);
+  const paginatedProducts = filteredProducts.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize
+  );
+
+  function updateQuery(value: string) {
+    setQuery(value);
+    setPage(1);
+  }
+
+  function updateCategory(value: string) {
+    setCategoryFilter(value);
+    setPage(1);
+  }
+
+  function updateVisibility(value: string) {
+    setVisibilityFilter(value);
+    setPage(1);
+  }
 
   function createProduct() {
     setEditingId(null);
@@ -138,8 +192,49 @@ export function AdminProductManager({
 
   return (
     <>
-      <div className="mb-5 flex justify-end">
-        <button className="button-primary" onClick={createProduct} type="button">
+      <div className="mb-5 grid gap-3 xl:grid-cols-[minmax(260px,1fr)_200px_180px_auto]">
+        <label className="relative min-w-0">
+          <span className="sr-only">Search products</span>
+          <Search
+            className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400"
+            size={17}
+          />
+          <input
+            className="min-h-11 w-full border border-zinc-300 bg-white py-2 pl-10 pr-3 text-sm text-zinc-900 outline-none transition-colors placeholder:text-zinc-400 focus:border-[#a72b1f] focus:ring-2 focus:ring-[#a72b1f]/15"
+            onChange={(event) => updateQuery(event.target.value)}
+            placeholder="Search name or slug..."
+            type="search"
+            value={query}
+          />
+        </label>
+        <select
+          aria-label="Filter by category"
+          className="min-h-11 border border-zinc-300 bg-white px-3 text-sm font-bold text-zinc-900 outline-none focus:border-[#a72b1f]"
+          onChange={(event) => updateCategory(event.target.value)}
+          value={categoryFilter}
+        >
+          {categories.map((category) => (
+            <option key={category} value={category}>
+              {category === "ALL" ? "All categories" : category}
+            </option>
+          ))}
+        </select>
+        <select
+          aria-label="Filter by visibility"
+          className="min-h-11 border border-zinc-300 bg-white px-3 text-sm font-bold text-zinc-900 outline-none focus:border-[#a72b1f]"
+          onChange={(event) => updateVisibility(event.target.value)}
+          value={visibilityFilter}
+        >
+          <option value="ALL">All status</option>
+          <option value="ACTIVE">Active</option>
+          <option value="INACTIVE">Inactive</option>
+          <option value="FEATURED">Featured</option>
+        </select>
+        <button
+          className="inline-flex min-h-11 items-center justify-center gap-2 bg-[#171715] px-5 text-xs font-bold uppercase tracking-[0.1em] text-white transition-colors hover:bg-[#a72b1f] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#a72b1f]"
+          onClick={createProduct}
+          type="button"
+        >
           <Plus size={16} />
           New product
         </button>
@@ -147,23 +242,32 @@ export function AdminProductManager({
       <AdminTable
         headers={["Product", "Category", "Price", "Featured", "Active", "Actions"]}
       >
-        {products.map((product) => (
+        {paginatedProducts.map((product) => (
           <tr key={product.id}>
             <td className="px-4 py-4">
               <p className="font-bold">{product.nameEn}</p>
               <p className="mt-1 text-xs text-zinc-500">{product.slug}</p>
             </td>
-            <td className="px-4 py-4">{product.category}</td>
+            <td className="px-4 py-4">
+              <CategoryBadge category={product.category} />
+            </td>
             <td className="px-4 py-4">
               {new Intl.NumberFormat("vi-VN").format(product.price)} VND
             </td>
-            <td className="px-4 py-4">{product.isFeatured ? "Yes" : "No"}</td>
-            <td className="px-4 py-4">{product.isActive ? "Yes" : "No"}</td>
+            <td className="px-4 py-4">
+              <BooleanBadge enabled={product.isFeatured} label="Featured" />
+            </td>
+            <td className="px-4 py-4">
+              <BooleanBadge
+                enabled={product.isActive}
+                label={product.isActive ? "Active" : "Inactive"}
+              />
+            </td>
             <td className="px-4 py-4">
               <div className="flex gap-2">
                 <button
                   aria-label="Edit product"
-                  className="border border-zinc-300 p-2 hover:bg-zinc-100"
+                  className="grid size-10 place-items-center border border-zinc-300 bg-white text-zinc-800 transition-colors hover:border-zinc-900 hover:bg-zinc-900 hover:text-white"
                   onClick={() => editProduct(product)}
                   type="button"
                 >
@@ -171,7 +275,7 @@ export function AdminProductManager({
                 </button>
                 <button
                   aria-label="Delete product"
-                  className="border border-zinc-300 p-2 text-red-700 hover:bg-red-50"
+                  className="grid size-10 place-items-center border border-red-200 bg-white text-red-700 transition-colors hover:border-red-700 hover:bg-red-700 hover:text-white"
                   onClick={() => remove(product)}
                   type="button"
                 >
@@ -182,17 +286,53 @@ export function AdminProductManager({
           </tr>
         ))}
       </AdminTable>
+      {filteredProducts.length === 0 ? (
+        <div className="border-x border-b border-zinc-200 bg-white px-5 py-12 text-center text-sm text-zinc-500">
+          No products match the selected filters.
+        </div>
+      ) : (
+        <div className="mt-4 flex flex-col gap-3 border border-zinc-200 bg-white px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-xs font-medium text-zinc-500">
+            Showing {(currentPage - 1) * pageSize + 1}–
+            {Math.min(currentPage * pageSize, filteredProducts.length)} of{" "}
+            {filteredProducts.length} products
+          </p>
+          <div className="flex items-center gap-2">
+            <button
+              aria-label="Previous page"
+              className="grid size-9 place-items-center border border-zinc-300 bg-white text-zinc-800 transition-colors hover:bg-zinc-900 hover:text-white disabled:cursor-not-allowed disabled:bg-zinc-100 disabled:text-zinc-300"
+              disabled={currentPage === 1}
+              onClick={() => setPage((value) => Math.max(1, value - 1))}
+              type="button"
+            >
+              <ChevronLeft size={16} />
+            </button>
+            <span className="min-w-24 text-center text-xs font-bold text-zinc-700">
+              Page {currentPage} / {pageCount}
+            </span>
+            <button
+              aria-label="Next page"
+              className="grid size-9 place-items-center border border-zinc-300 bg-white text-zinc-800 transition-colors hover:bg-zinc-900 hover:text-white disabled:cursor-not-allowed disabled:bg-zinc-100 disabled:text-zinc-300"
+              disabled={currentPage === pageCount}
+              onClick={() => setPage((value) => Math.min(pageCount, value + 1))}
+              type="button"
+            >
+              <ChevronRight size={16} />
+            </button>
+          </div>
+        </div>
+      )}
 
       {open ? (
         <div className="fixed inset-0 z-50 overflow-y-auto bg-black/70 p-4">
-          <div className="mx-auto my-6 max-w-4xl bg-white p-5 sm:p-8">
+          <div className="mx-auto my-6 max-w-4xl border border-zinc-200 bg-white p-5 text-zinc-950 shadow-2xl sm:p-8">
             <div className="flex items-center justify-between">
               <h2 className="text-2xl font-black">
                 {editingId ? "Edit product" : "New product"}
               </h2>
               <button
                 aria-label="Close"
-                className="p-2"
+                className="grid size-10 place-items-center bg-zinc-100 text-zinc-800 transition-colors hover:bg-zinc-900 hover:text-white"
                 onClick={() => setOpen(false)}
                 type="button"
               >
@@ -282,7 +422,7 @@ export function AdminProductManager({
                 <p className="error-text sm:col-span-2">{serverError}</p>
               ) : null}
               <button
-                className="button-primary sm:col-span-2 sm:justify-self-start"
+                className="inline-flex min-h-12 items-center justify-center bg-[#171715] px-6 text-xs font-bold uppercase tracking-[0.1em] text-white transition-colors hover:bg-[#a72b1f] disabled:cursor-wait disabled:bg-zinc-300 disabled:text-zinc-600 sm:col-span-2 sm:justify-self-start"
                 disabled={isSubmitting}
                 type="submit"
               >
@@ -293,6 +433,46 @@ export function AdminProductManager({
         </div>
       ) : null}
     </>
+  );
+}
+
+function CategoryBadge({ category }: { category: string }) {
+  const styles: Record<string, string> = {
+    SUKAJAN: "border-red-200 bg-red-50 text-red-800",
+    BOMBER: "border-blue-200 bg-blue-50 text-blue-800",
+    HOODIE: "border-violet-200 bg-violet-50 text-violet-800",
+    JACKET: "border-amber-200 bg-amber-50 text-amber-800",
+    SEASONAL: "border-emerald-200 bg-emerald-50 text-emerald-800"
+  };
+
+  return (
+    <span
+      className={`inline-flex border px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.08em] ${
+        styles[category] ?? "border-zinc-200 bg-zinc-50 text-zinc-700"
+      }`}
+    >
+      {category}
+    </span>
+  );
+}
+
+function BooleanBadge({
+  enabled,
+  label
+}: {
+  enabled: boolean;
+  label: string;
+}) {
+  return (
+    <span
+      className={`inline-flex border px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.08em] ${
+        enabled
+          ? "border-emerald-200 bg-emerald-50 text-emerald-800"
+          : "border-zinc-200 bg-zinc-100 text-zinc-500"
+      }`}
+    >
+      {enabled ? label : label === "Inactive" ? label : "No"}
+    </span>
   );
 }
 

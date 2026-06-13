@@ -39,14 +39,14 @@ export function AdminLoginForm() {
         <span className="label text-white/60">Admin password</span>
         <input
           autoComplete="current-password"
-          className="field"
+          className="field border-white/20 bg-white/5 text-white placeholder:text-white/30 focus:border-[#d64b3d] focus:shadow-[0_0_0_1px_#d64b3d]"
           type="password"
           {...register("password")}
         />
       </label>
       {error ? <p className="text-sm text-red-300">{error}</p> : null}
       <button
-        className="button-primary w-full border-white bg-white text-black hover:bg-zinc-200"
+        className="inline-flex min-h-12 w-full items-center justify-center bg-white px-5 text-xs font-black uppercase tracking-[0.12em] text-black transition-colors hover:bg-[#d64b3d] hover:text-white disabled:cursor-wait disabled:bg-zinc-700 disabled:text-zinc-400"
         disabled={isSubmitting}
         type="submit"
       >
