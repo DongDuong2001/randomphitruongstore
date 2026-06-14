@@ -1,4 +1,4 @@
-import { PrismaClient, ProductCategory } from "@prisma/client";
+import { PrismaClient, ProductCategory, StockStatus } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
@@ -85,9 +85,10 @@ const products = [
     price: 2490000,
     sizes: ["M", "L", "XL"],
     colors: ["Black", "Navy"],
-    materialVi: "Satin cao cấp, lót poly",
-    materialEn: "Premium satin, polyester lining",
-    isFeatured: true,
+      materialVi: "Satin cao cấp, lót poly",
+      materialEn: "Premium satin, polyester lining",
+      stockStatus: StockStatus.IN_STOCK,
+      isFeatured: true,
     images: [
       "https://images.unsplash.com/photo-1591047139829-d91aecb6caea?auto=format&fit=crop&w=1200&q=85",
       "https://images.unsplash.com/photo-1548883354-7622d03aca27?auto=format&fit=crop&w=1200&q=85"
@@ -105,9 +106,10 @@ const products = [
     price: 2690000,
     sizes: ["M", "L", "XL", "XXL"],
     colors: ["Black", "Burgundy"],
-    materialVi: "Satin dày, bo dệt",
-    materialEn: "Heavy satin, knitted ribbing",
-    isFeatured: true,
+      materialVi: "Satin dày, bo dệt",
+      materialEn: "Heavy satin, knitted ribbing",
+      stockStatus: StockStatus.IN_STOCK,
+      isFeatured: true,
     images: [
       "https://images.unsplash.com/photo-1551028719-00167b16eac5?auto=format&fit=crop&w=1200&q=85"
     ]
@@ -124,9 +126,10 @@ const products = [
     price: 2190000,
     sizes: ["S", "M", "L", "XL"],
     colors: ["Black", "Olive"],
-    materialVi: "Nylon chống gió, lót lưới",
-    materialEn: "Wind-resistant nylon, mesh lining",
-    isFeatured: true,
+      materialVi: "Nylon chống gió, lót lưới",
+      materialEn: "Wind-resistant nylon, mesh lining",
+      stockStatus: StockStatus.IN_STOCK,
+      isFeatured: true,
     images: [
       "https://images.unsplash.com/photo-1551488831-00ddcb6c6bd3?auto=format&fit=crop&w=1200&q=85"
     ]
@@ -143,9 +146,10 @@ const products = [
     price: 2390000,
     sizes: ["M", "L", "XL"],
     colors: ["Graphite"],
-    materialVi: "Cotton canvas xử lý washed",
-    materialEn: "Washed cotton canvas",
-    isFeatured: false,
+      materialVi: "Cotton canvas xử lý washed",
+      materialEn: "Washed cotton canvas",
+      stockStatus: StockStatus.OUT_OF_STOCK,
+      isFeatured: false,
     images: [
       "https://images.unsplash.com/photo-1592878904946-b3cd8ae243d0?auto=format&fit=crop&w=1200&q=85"
     ]
@@ -162,9 +166,10 @@ const products = [
     price: 1490000,
     sizes: ["S", "M", "L", "XL"],
     colors: ["Black", "Ash Gray", "Cream"],
-    materialVi: "Cotton nỉ 420gsm",
-    materialEn: "420gsm cotton fleece",
-    isFeatured: true,
+      materialVi: "Cotton nỉ 420gsm",
+      materialEn: "420gsm cotton fleece",
+      stockStatus: StockStatus.IN_STOCK,
+      isFeatured: true,
     images: [
       "https://images.unsplash.com/photo-1556821840-3a63f95609a7?auto=format&fit=crop&w=1200&q=85"
     ]
@@ -181,9 +186,10 @@ const products = [
     price: 2890000,
     sizes: ["M", "L", "XL"],
     colors: ["Black", "Stone"],
-    materialVi: "Nylon cản nước 3 lớp",
-    materialEn: "Three-layer water-resistant nylon",
-    isFeatured: true,
+      materialVi: "Nylon cản nước 3 lớp",
+      materialEn: "Three-layer water-resistant nylon",
+      stockStatus: StockStatus.IN_STOCK,
+      isFeatured: true,
     images: [
       "https://images.unsplash.com/photo-1611312449408-fcece27cdbb7?auto=format&fit=crop&w=1200&q=85"
     ]
@@ -200,9 +206,10 @@ const products = [
     price: 1990000,
     sizes: ["S", "M", "L"],
     colors: ["Washed Black"],
-    materialVi: "Denim cotton 13oz",
-    materialEn: "13oz cotton denim",
-    isFeatured: false,
+      materialVi: "Denim cotton 13oz",
+      materialEn: "13oz cotton denim",
+      stockStatus: StockStatus.OUT_OF_STOCK,
+      isFeatured: false,
     images: [
       "https://images.unsplash.com/photo-1523205771623-e0faa4d2813d?auto=format&fit=crop&w=1200&q=85"
     ]
@@ -219,9 +226,10 @@ const products = [
     price: 3290000,
     sizes: ["M", "L", "XL"],
     colors: ["Black", "Brown"],
-    materialVi: "Da PU cao cấp, lông nhân tạo",
-    materialEn: "Premium PU leather, faux fur",
-    isFeatured: true,
+      materialVi: "Da PU cao cấp, lông nhân tạo",
+      materialEn: "Premium PU leather, faux fur",
+      stockStatus: StockStatus.IN_STOCK,
+      isFeatured: true,
     images: [
       "https://images.unsplash.com/photo-1548126032-079a0fb0099d?auto=format&fit=crop&w=1200&q=85"
     ]
