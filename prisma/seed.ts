@@ -72,6 +72,85 @@ const zaloCommunities = [
   }
 ];
 
+const categories = [
+  {
+    id: "5b2d9f8a-9b6e-4f4c-8c0d-0f0f0f0f0a01",
+    legacyCategory: ProductCategory.SUKAJAN,
+    nameVi: "Sukajan",
+    nameEn: "Sukajan",
+    slug: "sukajan",
+    descriptionVi: "Sukajan và souvenir jacket order.",
+    descriptionEn: "Sukajan and souvenir jackets available by order.",
+    sortOrder: 10,
+    isActive: true
+  },
+  {
+    id: "5b2d9f8a-9b6e-4f4c-8c0d-0f0f0f0f0a02",
+    legacyCategory: ProductCategory.BOMBER,
+    nameVi: "Bomber",
+    nameEn: "Bomber",
+    slug: "bomber",
+    descriptionVi: "Bomber jacket streetwear order.",
+    descriptionEn: "Streetwear bomber jackets available by order.",
+    sortOrder: 20,
+    isActive: true
+  },
+  {
+    id: "5b2d9f8a-9b6e-4f4c-8c0d-0f0f0f0f0a03",
+    legacyCategory: ProductCategory.HOODIE,
+    nameVi: "Hoodie",
+    nameEn: "Hoodie",
+    slug: "hoodie",
+    descriptionVi: "Hoodie form rộng và chất liệu dày.",
+    descriptionEn: "Relaxed-fit hoodies with heavyweight materials.",
+    sortOrder: 30,
+    isActive: true
+  },
+  {
+    id: "5b2d9f8a-9b6e-4f4c-8c0d-0f0f0f0f0a04",
+    legacyCategory: ProductCategory.JACKET,
+    nameVi: "Áo khoác",
+    nameEn: "Jacket",
+    slug: "jacket",
+    descriptionVi: "Các dòng áo khoác streetwear order.",
+    descriptionEn: "Streetwear jacket styles available by order.",
+    sortOrder: 40,
+    isActive: true
+  },
+  {
+    id: "5b2d9f8a-9b6e-4f4c-8c0d-0f0f0f0f0a05",
+    legacyCategory: ProductCategory.SEASONAL,
+    nameVi: "Seasonal",
+    nameEn: "Seasonal",
+    slug: "seasonal",
+    descriptionVi: "Sản phẩm order theo mùa hoặc bộ sưu tập giới hạn.",
+    descriptionEn: "Seasonal and limited collection order items.",
+    sortOrder: 50,
+    isActive: true
+  }
+];
+
+const categoryIdByProductCategory = Object.fromEntries(
+  categories.map((category) => [category.legacyCategory, category.id])
+) as Record<ProductCategory, string>;
+
+function buildProductVariants(sizes: string[], colors: string[]) {
+  const uniqueSizes = [...new Set(sizes.map((size) => size.trim()).filter(Boolean))];
+  const uniqueColors = [
+    ...new Set(colors.map((color) => color.trim()).filter(Boolean))
+  ];
+
+  return uniqueSizes.flatMap((size) =>
+    uniqueColors.map((color) => ({
+      size,
+      colorVi: color,
+      colorEn: color,
+      priceAdjustment: 0,
+      isAvailable: true
+    }))
+  );
+}
+
 const products = [
   {
     nameVi: "Sukajan Hạc Sóng",
@@ -294,34 +373,89 @@ async function main() {
     });
   }
 
-  for (const product of products) {
-    const { images, ...data } = product;
-    await prisma.product.upsert({
+  for (const category of categories) {
+    const data = {
+      id: category.id,
+      nameVi: category.nameVi,
+      nameEn: category.nameEn,
+      slug: category.slug,
+      descriptionVi: category.descriptionVi,
+      descriptionEn: category.descriptionEn,
+      sortOrder: category.sortOrder,
+      isActive: category.isActive
+    };
+
+    await prisma.category.upsert({
       where: { slug: data.slug },
       update: {
+        parentCategoryId: null,
+        nameVi: data.nameVi,
+        nameEn: data.nameEn,
+        descriptionVi: data.descriptionVi,
+        descriptionEn: data.descriptionEn,
+        sortOrder: data.sortOrder,
+        isActive: data.isActive
+      },
+      create: {
         ...data,
+        parentCategoryId: null
+      }
+    });
+  }
+
+  for (const product of products) {
+    const { images, ...data } = product;
+    const productData = {
+      ...data,
+      categoryId: categoryIdByProductCategory[data.category],
+      basePrice: data.price,
+      orderLeadTimeMinDays: 7,
+      orderLeadTimeMaxDays: 10
+    };
+
+    const seededProduct = await prisma.product.upsert({
+      where: { slug: productData.slug },
+      update: {
+        ...productData,
         images: {
           deleteMany: {},
           create: images.map((url, index) => ({
             url,
-            altVi: data.nameVi,
-            altEn: data.nameEn,
+            altVi: productData.nameVi,
+            altEn: productData.nameEn,
             sortOrder: index
           }))
         }
       },
       create: {
-        ...data,
+        ...productData,
         images: {
           create: images.map((url, index) => ({
             url,
-            altVi: data.nameVi,
-            altEn: data.nameEn,
+            altVi: productData.nameVi,
+            altEn: productData.nameEn,
             sortOrder: index
           }))
         }
       }
     });
+
+    for (const variant of buildProductVariants(productData.sizes, productData.colors)) {
+      await prisma.productVariant.upsert({
+        where: {
+          productId_size_colorVi: {
+            productId: seededProduct.id,
+            size: variant.size,
+            colorVi: variant.colorVi
+          }
+        },
+        update: {},
+        create: {
+          ...variant,
+          productId: seededProduct.id
+        }
+      });
+    }
   }
 }
 
