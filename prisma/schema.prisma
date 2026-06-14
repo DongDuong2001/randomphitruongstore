@@ -265,6 +265,7 @@ model Product {
   @@index([category, isActive])
   @@index([categoryId])
   @@index([createdByAdminId])
+  @@index([stockStatus])
 }
 
 model ProductImage {
