@@ -258,6 +258,7 @@ model Product {
   createdAt            DateTime         @default(now())
   updatedAt            DateTime         @updatedAt
   images               ProductImage[]
+  productInquiries     ProductInquiry[]
   variants             ProductVariant[]
   sizeCharts           SizeChart[]
   orderItems           OrderItem[]
@@ -312,18 +313,79 @@ model SizeChart {
 }
 
 model Customer {
-  id        String   @id @default(uuid()) @db.Uuid
-  fullName  String
-  phone     String
-  address   String
-  province  String
-  district  String
-  ward      String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  orders    Order[]
+  id                 String              @id @default(uuid()) @db.Uuid
+  fullName           String
+  phone              String
+  email              String?
+  zaloPhone          String?
+  instagramHandle    String?
+  preferredLanguage  String              @default("vi")
+  address            String
+  province           String
+  district           String
+  ward               String
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  orders             Order[]
+  contactSubmissions ContactSubmission[]
+  productInquiries   ProductInquiry[]
 
   @@index([phone])
+}
+
+model ContactSubmission {
+  id         String        @id @default(uuid()) @db.Uuid
+  customerId String?       @db.Uuid
+  customer   Customer?     @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  fullName   String
+  phone      String
+  email      String?
+  channel    SourceChannel @default(WEBSITE)
+  message    String        @db.Text
+  status     ContactStatus @default(NEW)
+  createdAt  DateTime      @default(now())
+
+  @@index([customerId])
+  @@index([status, createdAt])
+}
+
+model ProductInquiry {
+  id                 String         @id @default(uuid()) @db.Uuid
+  customerId         String?        @db.Uuid
+  customer           Customer?      @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  productId          String?        @db.Uuid
+  product            Product?       @relation(fields: [productId], references: [id], onDelete: SetNull)
+  fullName           String
+  phone              String
+  email              String?
+  zaloPhone          String?
+  instagramHandle    String?
+  sourceChannel      SourceChannel  @default(WEBSITE)
+  externalProductUrl String?
+  customerMessage    String?        @db.Text
+  preferredSize      String?
+  preferredColor     String?
+  quotedPrice        Int?
+  status             InquiryStatus  @default(NEW)
+  quotedAt           DateTime?
+  createdAt          DateTime       @default(now())
+  images             InquiryImage[]
+
+  @@index([customerId])
+  @@index([productId])
+  @@index([status, createdAt])
+}
+
+model InquiryImage {
+  id               String         @id @default(uuid()) @db.Uuid
+  inquiryId        String         @db.Uuid
+  inquiry          ProductInquiry @relation(fields: [inquiryId], references: [id], onDelete: Cascade)
+  imageUrl         String
+  originalFilename String?
+  sortOrder        Int            @default(0)
+  createdAt        DateTime       @default(now())
+
+  @@index([inquiryId, sortOrder])
 }
 
 model Order {
