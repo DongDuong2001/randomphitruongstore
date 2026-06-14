@@ -1,21 +1,26 @@
-import { NextResponse } from "next/server";
+import { z } from "zod";
+import { err, ok } from "@/lib/api-response";
 import {
   createAdminSession,
   destroyAdminSession,
   verifyAdminPassword
 } from "@/lib/admin-auth";
 
+const loginSchema = z.object({
+  password: z.string().min(1)
+});
+
 export async function POST(request: Request) {
-  const body = (await request.json()) as { password?: string };
-  if (!body.password || !verifyAdminPassword(body.password)) {
-    return NextResponse.json({ error: "Invalid password" }, { status: 401 });
+  const parsed = loginSchema.safeParse(await request.json());
+  if (!parsed.success || !verifyAdminPassword(parsed.data.password)) {
+    return err("Invalid password", 401);
   }
 
   await createAdminSession();
-  return NextResponse.json({ ok: true });
+  return ok({ ok: true });
 }
 
 export async function DELETE() {
   await destroyAdminSession();
-  return NextResponse.json({ ok: true });
+  return ok({ ok: true });
 }
