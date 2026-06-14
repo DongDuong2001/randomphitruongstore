@@ -106,6 +106,13 @@ a {
   text-orientation: mixed;
 }
 
+@media (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  body,
+  body * {
+    cursor: none !important;
+  }
+}
+
 .button-primary {
   display: inline-flex;
   min-height: 3rem;
