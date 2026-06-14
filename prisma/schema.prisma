@@ -348,6 +348,11 @@ model ProductInquiry {
   customer           Customer?      @relation(fields: [customerId], references: [id], onDelete: SetNull)
   productId          String?        @db.Uuid
   product            Product?       @relation(fields: [productId], references: [id], onDelete: SetNull)
+  fullName           String
+  phone              String
+  email              String?
+  zaloPhone          String?
+  instagramHandle    String?
   sourceChannel      SourceChannel  @default(WEBSITE)
   externalProductUrl String?
   customerMessage    String?        @db.Text
