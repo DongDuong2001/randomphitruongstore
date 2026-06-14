@@ -4,6 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import {
   ChevronLeft,
   ChevronRight,
+  ImagePlus,
   Pencil,
   Plus,
   Search,
@@ -30,6 +31,7 @@ const formSchema = z.object({
   colors: z.string().trim().min(1),
   materialVi: z.string().trim().min(2),
   materialEn: z.string().trim().min(2),
+  stockStatus: z.enum(["IN_STOCK", "OUT_OF_STOCK"]),
   isFeatured: z.boolean(),
   isActive: z.boolean()
 });
@@ -49,6 +51,7 @@ const defaults: FormValues = {
   colors: "Black",
   materialVi: "",
   materialEn: "",
+  stockStatus: "IN_STOCK",
   isFeatured: false,
   isActive: true
 };
@@ -68,16 +71,20 @@ export function AdminProductManager({
   const [query, setQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("ALL");
   const [visibilityFilter, setVisibilityFilter] = useState("ALL");
+  const [stockFilter, setStockFilter] = useState("ALL");
   const [page, setPage] = useState(1);
   const {
     register,
     handleSubmit,
+    getValues,
     reset,
+    setValue,
     formState: { errors, isSubmitting }
   } = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: defaults
   });
+  const [isUploading, setIsUploading] = useState(false);
   const filteredProducts = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
     return products.filter((product) => {
@@ -93,9 +100,11 @@ export function AdminProductManager({
         (visibilityFilter === "ACTIVE" && product.isActive) ||
         (visibilityFilter === "INACTIVE" && !product.isActive) ||
         (visibilityFilter === "FEATURED" && product.isFeatured);
-      return matchesQuery && matchesCategory && matchesVisibility;
+      const matchesStock =
+        stockFilter === "ALL" || product.stockStatus === stockFilter;
+      return matchesQuery && matchesCategory && matchesVisibility && matchesStock;
     });
-  }, [categoryFilter, products, query, visibilityFilter]);
+  }, [categoryFilter, products, query, stockFilter, visibilityFilter]);
   const pageCount = Math.max(1, Math.ceil(filteredProducts.length / pageSize));
   const currentPage = Math.min(page, pageCount);
   const paginatedProducts = filteredProducts.slice(
@@ -115,6 +124,11 @@ export function AdminProductManager({
 
   function updateVisibility(value: string) {
     setVisibilityFilter(value);
+    setPage(1);
+  }
+
+  function updateStock(value: string) {
+    setStockFilter(value);
     setPage(1);
   }
 
@@ -141,6 +155,7 @@ export function AdminProductManager({
       colors: product.colors.join(", "),
       materialVi: product.materialVi,
       materialEn: product.materialEn,
+      stockStatus: product.stockStatus,
       isFeatured: product.isFeatured,
       isActive: product.isActive
     });
@@ -178,6 +193,46 @@ export function AdminProductManager({
     router.refresh();
   }
 
+  async function uploadProductImages(files: FileList | null) {
+    if (!files?.length) {
+      return;
+    }
+
+    setServerError("");
+    setIsUploading(true);
+    try {
+      const uploadedUrls: string[] = [];
+      for (const file of Array.from(files)) {
+        const formData = new FormData();
+        formData.append("file", file);
+        const response = await fetch("/api/upload", {
+          method: "POST",
+          body: formData
+        });
+        const result = (await response.json()) as { url?: string; error?: string };
+        if (!response.ok || !result.url) {
+          throw new Error(result.error ?? "Unable to upload image");
+        }
+        uploadedUrls.push(result.url);
+      }
+
+      const currentUrls = getValues("images")
+        .split(/\r?\n/)
+        .map((value) => value.trim())
+        .filter(Boolean);
+      setValue("images", [...currentUrls, ...uploadedUrls].join("\n"), {
+        shouldDirty: true,
+        shouldValidate: true
+      });
+    } catch (error) {
+      setServerError(
+        error instanceof Error ? error.message : "Unable to upload image"
+      );
+    } finally {
+      setIsUploading(false);
+    }
+  }
+
   async function remove(product: ProductWithImages) {
     if (!window.confirm(`Delete or archive "${product.nameEn}"?`)) {
       return;
@@ -192,7 +247,7 @@ export function AdminProductManager({
 
   return (
     <>
-      <div className="mb-5 grid gap-3 xl:grid-cols-[minmax(260px,1fr)_200px_180px_auto]">
+      <div className="mb-5 grid gap-3 xl:grid-cols-[minmax(260px,1fr)_190px_170px_170px_auto]">
         <label className="relative min-w-0">
           <span className="sr-only">Search products</span>
           <Search
@@ -230,6 +285,16 @@ export function AdminProductManager({
           <option value="INACTIVE">Inactive</option>
           <option value="FEATURED">Featured</option>
         </select>
+        <select
+          aria-label="Filter by stock"
+          className="min-h-11 border border-zinc-300 bg-white px-3 text-sm font-bold text-zinc-900 outline-none focus:border-[#a72b1f]"
+          onChange={(event) => updateStock(event.target.value)}
+          value={stockFilter}
+        >
+          <option value="ALL">All stock</option>
+          <option value="IN_STOCK">In stock</option>
+          <option value="OUT_OF_STOCK">Out of stock</option>
+        </select>
         <button
           className="inline-flex min-h-11 items-center justify-center gap-2 bg-[#171715] px-5 text-xs font-bold uppercase tracking-[0.1em] text-white transition-colors hover:bg-[#a72b1f] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#a72b1f]"
           onClick={createProduct}
@@ -240,7 +305,15 @@ export function AdminProductManager({
         </button>
       </div>
       <AdminTable
-        headers={["Product", "Category", "Price", "Featured", "Active", "Actions"]}
+        headers={[
+          "Product",
+          "Category",
+          "Price",
+          "Stock",
+          "Featured",
+          "Active",
+          "Actions"
+        ]}
       >
         {paginatedProducts.map((product) => (
           <tr key={product.id}>
@@ -253,6 +326,9 @@ export function AdminProductManager({
             </td>
             <td className="px-4 py-4">
               {new Intl.NumberFormat("vi-VN").format(product.price)} VND
+            </td>
+            <td className="px-4 py-4">
+              <StockBadge status={product.stockStatus} />
             </td>
             <td className="px-4 py-4">
               <BooleanBadge enabled={product.isFeatured} label="Featured" />
@@ -380,11 +456,37 @@ export function AdminProductManager({
               <AdminField label="Material (EN)" error={errors.materialEn?.message}>
                 <input className="field" {...register("materialEn")} />
               </AdminField>
+              <AdminField label="Stock status" error={errors.stockStatus?.message}>
+                <select className="field" {...register("stockStatus")}>
+                  <option value="IN_STOCK">In stock</option>
+                  <option value="OUT_OF_STOCK">Out of stock</option>
+                </select>
+              </AdminField>
               <div className="sm:col-span-2">
                 <AdminField
                   label="Image URLs (one per line)"
                   error={errors.images?.message}
                 >
+                  <label className="mb-3 flex min-h-32 cursor-pointer flex-col items-center justify-center border border-dashed border-zinc-300 bg-zinc-50 p-5 text-center transition-colors hover:border-[#a72b1f] hover:bg-red-50/40">
+                    <ImagePlus className="text-[#a72b1f]" size={28} />
+                    <span className="mt-3 text-sm font-bold">
+                      {isUploading ? "Uploading images..." : "Upload product images"}
+                    </span>
+                    <span className="mt-1 text-xs text-zinc-500">
+                      JPG, PNG or WebP. Max 5 MB per image.
+                    </span>
+                    <input
+                      accept="image/jpeg,image/png,image/webp"
+                      className="sr-only"
+                      disabled={isUploading}
+                      multiple
+                      onChange={(event) => {
+                        void uploadProductImages(event.target.files);
+                        event.target.value = "";
+                      }}
+                      type="file"
+                    />
+                  </label>
                   <textarea className="field min-h-24" {...register("images")} />
                 </AdminField>
               </div>
@@ -472,6 +574,21 @@ function BooleanBadge({
       }`}
     >
       {enabled ? label : label === "Inactive" ? label : "No"}
+    </span>
+  );
+}
+
+function StockBadge({ status }: { status: string }) {
+  const inStock = status === "IN_STOCK";
+  return (
+    <span
+      className={`inline-flex border px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.08em] ${
+        inStock
+          ? "border-emerald-200 bg-emerald-50 text-emerald-800"
+          : "border-red-200 bg-red-50 text-red-800"
+      }`}
+    >
+      {inStock ? "In stock" : "Out of stock"}
     </span>
   );
 }
