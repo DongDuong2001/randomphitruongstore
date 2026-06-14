@@ -1,6 +1,6 @@
 "use client";
 
-import { Instagram, Menu, X } from "lucide-react";
+import { Menu, User, X } from "lucide-react";
 import Image from "next/image";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
@@ -8,11 +8,9 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 import {
   BRAND_NAME,
-  INSTAGRAM_URL,
-  TIKTOK_URL
 } from "@/lib/constants";
 import { cn } from "@/lib/utils";
-import { TikTokIcon } from "./brand-icons";
+import { CartCount } from "./cart-count";
 import { LanguageToggle } from "./language-toggle";
 
 export function Header() {
@@ -70,25 +68,15 @@ export function Header() {
         </nav>
 
         <div className="flex shrink-0 items-center gap-1 sm:gap-2">
-          <a
-            aria-label="Instagram"
-            className="hidden p-2 text-white/70 hover:text-white sm:block"
-            href={INSTAGRAM_URL}
-            rel="noreferrer"
-            target="_blank"
-          >
-            <Instagram size={18} />
-          </a>
-          <a
-            aria-label="TikTok"
-            className="hidden p-2 text-white/70 hover:text-white sm:block"
-            href={TIKTOK_URL}
-            rel="noreferrer"
-            target="_blank"
-          >
-            <TikTokIcon size={18} />
-          </a>
           <LanguageToggle />
+          <CartCount />
+          <Link
+            aria-label="Customer login"
+            className="hidden p-2 text-white/70 hover:text-white sm:block"
+            href="/login"
+          >
+            <User size={18} />
+          </Link>
           <button
             aria-label={open ? "Close menu" : "Open menu"}
             className="p-2 lg:hidden"
