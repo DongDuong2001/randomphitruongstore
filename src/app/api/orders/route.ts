@@ -54,15 +54,29 @@ export async function POST(request: Request) {
     return total + product.price * item.quantity;
   }, 0);
   const isDeposit = input.paymentMethod === "DEPOSIT_50_BANK_ZALO";
+  // Legacy amount/payment fields remain canonical during the transition.
+  // Keep the new ERD fields in sync for every new order write.
+  // remainingAmount represents the balance collected after the selected
+  // initial payment flow, not the order's real-time unpaid balance.
+  const depositAmount = isDeposit ? Math.ceil(subtotal / 2) : null;
+  const shippingFee = 0;
+  const totalAmount = subtotal + shippingFee;
+  const remainingAmount = depositAmount === null ? 0 : totalAmount - depositAmount;
+  const paymentOption = isDeposit ? "DEPOSIT_50" : "ONLINE_100";
 
   const order = await getPrisma().order.create({
     data: {
       orderNumber: orderNumber(),
       shippingRegion: input.shippingRegion,
       paymentMethod: input.paymentMethod,
+      paymentOption,
       status: isDeposit ? "PENDING_DEPOSIT" : "PENDING_ONLINE_PAYMENT",
       subtotal,
-      depositAmount: isDeposit ? Math.ceil(subtotal / 2) : null,
+      depositAmount,
+      subtotalAmount: subtotal,
+      remainingAmount,
+      shippingFee,
+      totalAmount,
       note: input.note || null,
       customer: {
         create: {

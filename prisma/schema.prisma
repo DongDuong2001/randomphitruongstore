@@ -142,15 +142,17 @@ enum CustomsIdType {
 }
 
 model AdminUser {
-  id              String    @id @default(uuid()) @db.Uuid
-  fullName        String
-  email           String    @unique
-  passwordHash    String
-  role            AdminRole @default(STAFF)
-  isActive        Boolean   @default(true)
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @default(now()) @updatedAt
-  createdProducts Product[] @relation("ProductCreatedByAdmin")
+  id                 String               @id @default(uuid()) @db.Uuid
+  fullName           String
+  email              String               @unique
+  passwordHash       String
+  role               AdminRole            @default(STAFF)
+  isActive           Boolean              @default(true)
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @default(now()) @updatedAt
+  createdProducts    Product[]            @relation("ProductCreatedByAdmin")
+  updatedOrders      Order[]              @relation("OrderUpdatedByAdmin")
+  orderStatusHistory OrderStatusHistory[] @relation("OrderStatusHistoryCreatedByAdmin")
 
   @@index([role, isActive])
 }
@@ -194,6 +196,7 @@ model BankAccount {
   isDefault      Boolean     @default(false)
   isActive       Boolean     @default(true)
   createdAt      DateTime    @default(now())
+  payments       Payment[]
 
   @@unique([shopSettingId, accountNumber])
   @@index([shopSettingId, isDefault])
@@ -282,15 +285,16 @@ model ProductImage {
 }
 
 model ProductVariant {
-  id              String   @id @default(uuid()) @db.Uuid
-  productId       String   @db.Uuid
-  product         Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  id              String      @id @default(uuid()) @db.Uuid
+  productId       String      @db.Uuid
+  product         Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
   size            String
   colorVi         String
   colorEn         String
-  priceAdjustment Int      @default(0)
-  isAvailable     Boolean  @default(true)
-  createdAt       DateTime @default(now())
+  priceAdjustment Int         @default(0)
+  isAvailable     Boolean     @default(true)
+  createdAt       DateTime    @default(now())
+  orderItems      OrderItem[]
 
   @@unique([productId, size, colorVi])
   @@index([productId])
@@ -370,6 +374,7 @@ model ProductInquiry {
   quotedAt           DateTime?
   createdAt          DateTime       @default(now())
   images             InquiryImage[]
+  convertedOrder     Order?
 
   @@index([customerId])
   @@index([productId])
@@ -389,36 +394,180 @@ model InquiryImage {
 }
 
 model Order {
-  id             String         @id @default(uuid()) @db.Uuid
-  orderNumber    String         @unique
-  customerId     String         @db.Uuid
-  customer       Customer       @relation(fields: [customerId], references: [id])
-  shippingRegion ShippingRegion @default(VIETNAM)
-  paymentMethod  PaymentMethod
-  status         OrderStatus
-  note           String?        @db.Text
-  subtotal       Int
-  depositAmount  Int?
-  createdAt      DateTime       @default(now())
-  updatedAt      DateTime       @updatedAt
-  items          OrderItem[]
+  id                          String                       @id @default(uuid()) @db.Uuid
+  orderNumber                 String                       @unique
+  customerId                  String                       @db.Uuid
+  customer                    Customer                     @relation(fields: [customerId], references: [id])
+  inquiryId                   String?                      @unique @db.Uuid
+  inquiry                     ProductInquiry?              @relation(fields: [inquiryId], references: [id], onDelete: SetNull)
+  updatedByAdminId            String?                      @db.Uuid
+  updatedByAdmin              AdminUser?                   @relation("OrderUpdatedByAdmin", fields: [updatedByAdminId], references: [id], onDelete: SetNull)
+  trackingToken               String?                      @unique
+  orderType                   OrderType                    @default(CATALOG_PRODUCT)
+  paymentOption               PaymentOption?
+  shippingRegion              ShippingRegion               @default(VIETNAM)
+  paymentMethod               PaymentMethod
+  status                      OrderStatus
+  note                        String?                      @db.Text
+  subtotal                    Int
+  depositAmount               Int?
+  subtotalAmount              Int?
+  remainingAmount             Int?
+  shippingFee                 Int                          @default(0)
+  totalAmount                 Int?
+  sizeColorLocked             Boolean                      @default(false)
+  noChangePolicyAck           Boolean                      @default(false)
+  noChangePolicyAckAt         DateTime?
+  expectedArrivalDate         DateTime?
+  adminNotes                  String?                      @db.Text
+  createdAt                   DateTime                     @default(now())
+  updatedAt                   DateTime                     @updatedAt
+  items                       OrderItem[]
+  payments                    Payment[]
+  statusHistory               OrderStatusHistory[]
+  shipments                   Shipment[]
+  shippingAddress             ShippingAddress?
+  internationalShippingDetail InternationalShippingDetail?
 
   @@index([status, createdAt])
+  @@index([updatedByAdminId])
+}
+
+model ShippingAddress {
+  id              String   @id @default(uuid()) @db.Uuid
+  orderId         String   @unique @db.Uuid
+  order           Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  recipientName   String
+  phone           String
+  country         String   @default("Vietnam")
+  provinceCity    String
+  district        String
+  ward            String
+  streetAddress   String
+  fullAddress     String?  @db.Text
+  isInternational Boolean  @default(false)
+  createdAt       DateTime @default(now())
+
+  @@index([orderId])
 }
 
 model OrderItem {
-  id          String  @id @default(uuid()) @db.Uuid
-  orderId     String  @db.Uuid
-  order       Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  productId   String  @db.Uuid
-  product     Product @relation(fields: [productId], references: [id])
-  productName String
-  unitPrice   Int
-  quantity    Int     @default(1)
-  size        String
-  color       String
+  id               String          @id @default(uuid()) @db.Uuid
+  orderId          String          @db.Uuid
+  order            Order           @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId        String          @db.Uuid
+  product          Product         @relation(fields: [productId], references: [id])
+  productVariantId String?         @db.Uuid
+  productVariant   ProductVariant? @relation(fields: [productVariantId], references: [id], onDelete: SetNull)
+  productName      String
+  itemNameSnapshot String?
+  unitPrice        Int
+  lineTotal        Int?
+  quantity         Int             @default(1)
+  size             String
+  selectedSize     String?
+  color            String
+  selectedColor    String?
+  itemNotes        String?         @db.Text
 
   @@index([orderId])
+  @@index([productVariantId])
+}
+
+model Payment {
+  id                   String         @id @default(uuid()) @db.Uuid
+  orderId              String         @db.Uuid
+  order                Order          @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  bankAccountId        String?        @db.Uuid
+  bankAccount          BankAccount?   @relation(fields: [bankAccountId], references: [id], onDelete: SetNull)
+  paymentType          PaymentType
+  paymentMethod        String
+  paymentStatus        PaymentStatus  @default(PENDING)
+  amount               Int
+  transactionReference String?
+  gatewayProvider      String?
+  gatewayTransactionId String?
+  gatewayOrderId       String?
+  gatewayResponse      Json?
+  paidAt               DateTime?
+  createdAt            DateTime       @default(now())
+  proofs               PaymentProof[]
+
+  @@index([orderId])
+  @@index([bankAccountId])
+  @@index([paymentStatus, createdAt])
+}
+
+model PaymentProof {
+  id                 String      @id @default(uuid()) @db.Uuid
+  paymentId          String      @db.Uuid
+  payment            Payment     @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  proofImageUrl      String
+  submittedVia       String?
+  verificationStatus ProofStatus @default(PENDING_REVIEW)
+  submittedAt        DateTime    @default(now())
+  verifiedAt         DateTime?
+
+  @@index([paymentId])
+  @@index([verificationStatus, submittedAt])
+}
+
+model OrderStatusHistory {
+  id               String      @id @default(uuid()) @db.Uuid
+  orderId          String      @db.Uuid
+  order            Order       @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  createdByAdminId String?     @db.Uuid
+  createdByAdmin   AdminUser?  @relation("OrderStatusHistoryCreatedByAdmin", fields: [createdByAdminId], references: [id], onDelete: SetNull)
+  status           OrderStatus
+  note             String?     @db.Text
+  createdAt        DateTime    @default(now())
+
+  @@index([orderId, createdAt])
+  @@index([createdByAdminId])
+}
+
+model Shipment {
+  id             String         @id @default(uuid()) @db.Uuid
+  orderId        String         @db.Uuid
+  order          Order          @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  carrierName    String?
+  trackingCode   String?
+  shipmentStatus ShipmentStatus @default(PENDING)
+  shippedAt      DateTime?
+  deliveredAt    DateTime?
+  createdAt      DateTime       @default(now())
+
+  @@index([orderId])
+  @@index([shipmentStatus])
+}
+
+model InternationalCountry {
+  countryCode         String                        @id
+  countryNameVi       String
+  countryNameEn       String
+  requiredCustomsInfo String                        @db.Text
+  supportsVirtualId   Boolean                       @default(true)
+  isActive            Boolean                       @default(true)
+  shippingDetails     InternationalShippingDetail[]
+}
+
+model InternationalShippingDetail {
+  id                   String               @id @default(uuid()) @db.Uuid
+  orderId              String               @unique @db.Uuid
+  order                Order                @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  countryCode          String
+  country              InternationalCountry @relation(fields: [countryCode], references: [countryCode])
+  customsIdType        CustomsIdType?
+  usesVirtualId        Boolean              @default(false)
+  noInsuranceAck       Boolean              @default(false)
+  warehouseShippingFee Int?
+  consultationChannel  SourceChannel?
+  /// Operational customs notes only. Never store passport, residence-card,
+  /// national-ID, or other government-issued identifier values here.
+  customsNotes         String?              @db.Text
+  createdAt            DateTime             @default(now())
+
+  @@index([countryCode])
 }
 
 model OrderRequest {
