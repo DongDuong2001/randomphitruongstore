@@ -25,7 +25,7 @@ export default async function CheckoutPage({ searchParams }: PageProps) {
   const common = await getTranslations("common");
   const product = params.productId
     ? await getPrisma().product.findFirst({
-        where: { id: params.productId, isActive: true },
+        where: { id: params.productId, isActive: true, stockStatus: "IN_STOCK" },
         include: { images: { orderBy: { sortOrder: "asc" } } }
       })
     : null;
