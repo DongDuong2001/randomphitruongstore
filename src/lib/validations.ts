@@ -95,3 +95,19 @@ export const orderRequestStatusSchema = z.object({
 export type ProductInput = z.infer<typeof productInputSchema>;
 export type OrderInput = z.infer<typeof orderInputSchema>;
 export type OrderRequestInput = z.infer<typeof orderRequestInputSchema>;
+
+// ─── Customer auth schemas ────────────────────────────────────────────────────
+
+export const registerInputSchema = z.object({
+  email: z.string().trim().email("Invalid email address"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
+  fullName: z.string().trim().min(2, "Full name is required").optional()
+});
+
+export const loginInputSchema = z.object({
+  email: z.string().trim().email("Invalid email address"),
+  password: z.string().min(1, "Password is required")
+});
+
+export type RegisterInput = z.infer<typeof registerInputSchema>;
+export type LoginInput = z.infer<typeof loginInputSchema>;
