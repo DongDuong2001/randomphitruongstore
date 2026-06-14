@@ -19,7 +19,6 @@ import {
   TIKTOK_URL,
   ZALO_URL
 } from "@/lib/constants";
-import { getPrisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
 
@@ -32,20 +31,23 @@ export const metadata: Metadata = {
 export default async function HomePage() {
   const t = await getTranslations("home");
   const common = await getTranslations("common");
-  const featuredProducts = await getPrisma().product.findMany({
-    where: { isActive: true, isFeatured: true, stockStatus: "IN_STOCK" },
-    include: { images: { orderBy: { sortOrder: "asc" } } },
-    orderBy: { createdAt: "desc" },
-    take: 3
-  });
-
-  const showcasedProducts = featuredProducts.map((product) => ({
-    image: product.images[0]?.url ?? "/sukajan/SukajanNo1-cropped.jpg",
-    name: t("showcaseTigerBlack"),
-    alt: product.images[0]
-      ? (product.images[0].altVi ?? product.nameVi)
-      : t("showcaseTigerBlackAlt")
-  }));
+  const showcasedProducts = [
+    {
+      image: "/sukajan/SukajanNo1-cropped.jpg",
+      name: t("showcaseTigerBlack"),
+      alt: t("showcaseTigerBlackAlt")
+    },
+    {
+      image: "/sukajan/SukajanNo2-cropped.jpg",
+      name: t("showcaseDragonPurple"),
+      alt: t("showcaseDragonPurpleAlt")
+    },
+    {
+      image: "/sukajan/SukajanNo3-cropped.jpg",
+      name: t("showcaseTigerIvory"),
+      alt: t("showcaseTigerIvoryAlt")
+    }
+  ];
   const benefits = [
     {
       icon: ShieldCheck,
