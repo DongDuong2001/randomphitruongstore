@@ -47,6 +47,7 @@ export function ProductFilters({
     () =>
       products.filter(
         (product) =>
+          product.stockStatus === "IN_STOCK" &&
           (category === "ALL" || product.category === category) &&
           (size === "ALL" || product.sizes.includes(size)) &&
           (color === "ALL" || product.colors.includes(color)) &&
