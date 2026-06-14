@@ -1,10 +1,13 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f5f5f3;
-  --foreground: #0a0a0a;
-  --muted: #727272;
-  --line: #d7d7d2;
+  --background: #f1eee7;
+  --foreground: #11100e;
+  --muted: #6f6a61;
+  --line: #cbc5b9;
+  --ink: #11100e;
+  --paper: #f1eee7;
+  --vermilion: #a72b1f;
 }
 
 * {
@@ -20,7 +23,19 @@ body {
   margin: 0;
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family:
+    var(--font-sans), "Segoe UI", Arial, "Helvetica Neue", sans-serif;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+input,
+button,
+select,
+textarea {
+  font: inherit;
 }
 
 a,
@@ -42,20 +57,60 @@ a {
 }
 
 ::selection {
-  background: #111;
+  background: var(--vermilion);
   color: #fff;
 }
 
 .container-shell {
-  width: min(100% - 2rem, 1280px);
+  width: min(100% - 2rem, 1320px);
   margin-inline: auto;
 }
 
 .eyebrow {
   font-size: 0.7rem;
-  font-weight: 700;
-  letter-spacing: 0.18em;
+  font-weight: 800;
+  letter-spacing: 0.2em;
+  line-height: 1.55;
   text-transform: uppercase;
+}
+
+.font-jp {
+  font-family: var(--font-jp), "Yu Mincho", "Hiragino Mincho ProN", serif;
+}
+
+:lang(vi) .eyebrow {
+  letter-spacing: 0.11em;
+}
+
+:lang(vi) h1,
+:lang(vi) h2,
+:lang(vi) h3 {
+  text-wrap: balance;
+}
+
+:lang(vi) h1,
+:lang(vi) h2 {
+  line-height: 1.04;
+}
+
+.paper-texture {
+  background-color: var(--paper);
+  background-image:
+    linear-gradient(rgba(17, 16, 14, 0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(17, 16, 14, 0.025) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+.vertical-label {
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+}
+
+@media (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  body,
+  body * {
+    cursor: none !important;
+  }
 }
 
 .button-primary {
@@ -64,8 +119,8 @@ a {
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  border: 1px solid #0a0a0a;
-  background: #0a0a0a;
+  border: 1px solid var(--ink);
+  background: var(--ink);
   padding: 0.75rem 1.25rem;
   color: #fff;
   font-size: 0.8rem;
@@ -75,8 +130,9 @@ a {
 }
 
 .button-primary:hover {
-  background: #333;
-  border-color: #333;
+  background: var(--vermilion);
+  border-color: var(--vermilion);
+  transform: translateY(-2px);
 }
 
 .button-secondary {

@@ -1,5 +1,5 @@
-import { MessageCircle } from "lucide-react";
 import { ZALO_URL } from "@/lib/constants";
+import { ZaloIcon } from "./brand-icons";
 
 export function FloatingZalo() {
   return (
@@ -10,7 +10,7 @@ export function FloatingZalo() {
       rel="noreferrer"
       target="_blank"
     >
-      <MessageCircle size={20} />
+      <ZaloIcon size={20} />
       <span>Zalo</span>
     </a>
   );

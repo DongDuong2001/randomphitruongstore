@@ -26,15 +26,15 @@ export function LanguageToggle() {
     <div
       aria-label={t("language")}
       className={cn(
-        "flex items-center border border-white/30 text-[11px] font-bold",
+        "grid grid-cols-2 overflow-hidden rounded-full border border-white/20 bg-white/5 p-0.5 text-[10px] font-black leading-none",
         isPending && "opacity-60"
       )}
     >
       {(["vi", "en"] as const).map((item) => (
         <button
           className={cn(
-            "px-2 py-1.5 uppercase",
-            locale === item ? "bg-white text-black" : "text-white"
+            "grid h-6 w-7 place-items-center rounded-full uppercase transition-colors",
+            locale === item ? "bg-white text-black" : "text-white/55 hover:text-white"
           )}
           disabled={isPending}
           key={item}

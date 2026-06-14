@@ -18,11 +18,22 @@ export const productInputSchema = z.object({
   descriptionEn: z.string().trim().min(10),
   category: z.enum(["SUKAJAN", "BOMBER", "HOODIE", "JACKET", "SEASONAL"]),
   price: z.coerce.number().int().positive(),
-  images: z.array(z.string().url()).min(1),
+  images: z
+    .array(
+      z
+        .string()
+        .trim()
+        .refine(
+          (value) => value.startsWith("/") || z.string().url().safeParse(value).success,
+          "Image must be an absolute URL or a local path"
+        )
+    )
+    .min(1),
   sizes: z.array(z.string().trim().min(1)).min(1),
   colors: z.array(z.string().trim().min(1)).min(1),
   materialVi: z.string().trim().min(2),
   materialEn: z.string().trim().min(2),
+  stockStatus: z.enum(["IN_STOCK", "OUT_OF_STOCK"]).default("IN_STOCK"),
   isFeatured: z.boolean().default(false),
   isActive: z.boolean().default(true)
 });

@@ -1,11 +1,12 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ImageUp, MessageCircle } from "lucide-react";
+import { ImageUp } from "lucide-react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { ZALO_URL } from "@/lib/constants";
+import { ZaloIcon } from "./brand-icons";
 
 const requestFormSchema = z.object({
   fullName: z.string().trim().min(2, "Required"),
@@ -82,7 +83,7 @@ export function OrderRequestForm({
           rel="noreferrer"
           target="_blank"
         >
-          <MessageCircle size={17} />
+          <ZaloIcon size={17} />
           Zalo
         </a>
       </div>

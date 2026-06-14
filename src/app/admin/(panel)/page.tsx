@@ -1,4 +1,4 @@
-import { ClipboardList, Package, ReceiptText, Shirt } from "lucide-react";
+import { ClipboardList, HandCoins, Package, Shirt } from "lucide-react";
 import { getPrisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
@@ -13,7 +13,7 @@ export default async function AdminDashboardPage() {
   const stats = [
     { label: "Total products", value: products, icon: Shirt },
     { label: "Total orders", value: orders, icon: Package },
-    { label: "Pending deposit", value: pendingDeposit, icon: ReceiptText },
+    { label: "Pending deposit", value: pendingDeposit, icon: HandCoins },
     { label: "Order requests", value: requests, icon: ClipboardList }
   ];
 
@@ -27,7 +27,10 @@ export default async function AdminDashboardPage() {
         {stats.map((stat) => {
           const Icon = stat.icon;
           return (
-            <article className="border border-zinc-200 bg-white p-5" key={stat.label}>
+            <article
+              className="border border-zinc-200 bg-white p-5 shadow-[0_10px_30px_rgba(0,0,0,0.04)]"
+              key={stat.label}
+            >
               <div className="flex items-center justify-between text-zinc-400">
                 <span className="text-xs font-bold uppercase tracking-wider">
                   {stat.label}

@@ -40,7 +40,7 @@ export default async function ProductPage({ params }: PageProps) {
   const t = await getTranslations("product");
   const common = await getTranslations("common");
   const product = await getPrisma().product.findFirst({
-    where: { slug, isActive: true },
+    where: { slug, isActive: true, stockStatus: "IN_STOCK" },
     include: { images: { orderBy: { sortOrder: "asc" } } }
   });
   if (!product) {
@@ -95,7 +95,10 @@ export default async function ProductPage({ params }: PageProps) {
             internationalBody: t("internationalBody")
           }}
           productId={product.id}
+          productSlug={product.slug}
           productName={name}
+          productPrice={product.price}
+          imageUrl={product.images[0]?.url}
           sizes={product.sizes}
         />
       </section>

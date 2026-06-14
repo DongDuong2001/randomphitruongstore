@@ -4,7 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Send } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { ZALO_URL } from "@/lib/constants";
+import { CONTACT_EMAIL } from "@/lib/constants";
 
 const contactSchema = z.object({
   name: z.string().trim().min(2),
@@ -24,28 +24,47 @@ export function ContactForm({
   } = useForm<ContactValues>({ resolver: zodResolver(contactSchema) });
 
   function submit(values: ContactValues) {
-    const text = encodeURIComponent(
-      `Website contact from ${values.name}: ${values.message}`
+    const subject = encodeURIComponent(
+      `Website contact from ${values.name}`
     );
-    window.open(`${ZALO_URL}?text=${text}`, "_blank", "noopener,noreferrer");
+    const body = encodeURIComponent(
+      `Name: ${values.name}\n\nMessage:\n${values.message}`
+    );
+    window.open(
+      `mailto:${CONTACT_EMAIL}?subject=${subject}&body=${body}`,
+      "_self",
+      "noopener,noreferrer"
+    );
   }
 
   return (
-    <form className="space-y-5" onSubmit={handleSubmit(submit)}>
-      <label className="block">
+    <form
+      className="min-w-0 border border-black/20 bg-white p-5 shadow-[8px_8px_0_rgba(17,16,14,0.08)] sm:p-8 lg:p-10"
+      onSubmit={handleSubmit(submit)}
+    >
+      <div className="grid min-w-0 gap-6">
+      <label className="block min-w-0">
         <span className="label">{labels.name}</span>
-        <input className="field" {...register("name")} />
+        <input
+          autoComplete="name"
+          className="field min-w-0"
+          {...register("name")}
+        />
         {errors.name ? <span className="error-text">Required</span> : null}
       </label>
-      <label className="block">
+      <label className="block min-w-0">
         <span className="label">{labels.message}</span>
-        <textarea className="field min-h-32" {...register("message")} />
+        <textarea
+          className="field min-h-40 min-w-0 resize-y"
+          {...register("message")}
+        />
         {errors.message ? <span className="error-text">Required</span> : null}
       </label>
-      <button className="button-primary" type="submit">
-        <Send size={16} />
+      <button className="button-primary w-full sm:w-fit" type="submit">
+        <Send aria-hidden="true" size={16} />
         {labels.send}
       </button>
+      </div>
     </form>
   );
 }

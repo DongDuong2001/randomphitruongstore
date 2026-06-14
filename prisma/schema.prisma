@@ -16,6 +16,11 @@ enum ProductCategory {
   SEASONAL
 }
 
+enum StockStatus {
+  IN_STOCK
+  OUT_OF_STOCK
+}
+
 enum ShippingRegion {
   VIETNAM
   KOREA
@@ -250,6 +255,7 @@ model Product {
   colors               String[]
   materialVi           String
   materialEn           String
+  stockStatus          StockStatus      @default(IN_STOCK)
   isFeatured           Boolean          @default(false)
   isActive             Boolean          @default(true)
   createdAt            DateTime         @default(now())
@@ -263,6 +269,7 @@ model Product {
   @@index([category, isActive])
   @@index([categoryId])
   @@index([createdByAdminId])
+  @@index([stockStatus])
 }
 
 model ProductImage {

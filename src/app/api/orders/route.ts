@@ -28,7 +28,7 @@ export async function POST(request: Request) {
   const input = parsed.data;
   const productIds = [...new Set(input.items.map((item) => item.productId))];
   const products = await getPrisma().product.findMany({
-    where: { id: { in: productIds }, isActive: true }
+    where: { id: { in: productIds }, isActive: true, stockStatus: "IN_STOCK" }
   });
 
   if (products.length !== productIds.length) {
