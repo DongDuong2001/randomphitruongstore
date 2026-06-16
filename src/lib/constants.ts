@@ -5,7 +5,7 @@ export const INSTAGRAM_URL = "https://www.instagram.com/random.phitruong4";
 export const TIKTOK_URL = "https://www.tiktok.com/@random.phitruong";
 export const FACEBOOK_URL =
   "https://www.facebook.com/share/1BHqMuddbH/?mibextid=wwXIfr";
-export const CONTACT_EMAIL = "lienhadonganh47@gmail.com";
+export const CONTACT_EMAIL = "randomphitruong@gmail.com";
 
 export const BANK_DETAILS = {
   bank: "BIDV - PGD Thanh Xuân Bắc",

@@ -1,9 +1,10 @@
-import { ArrowUpRight, Check, Facebook, Instagram } from "lucide-react";
+import { ArrowUpRight, Check, Facebook, Instagram, Mail } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import Image from "next/image";
 import Link from "next/link";
 import {
   BRAND_NAME,
+  CONTACT_EMAIL,
   FACEBOOK_URL,
   INSTAGRAM_URL,
   TIKTOK_URL,
@@ -135,6 +136,13 @@ export async function Footer() {
               >
                 <ZaloIcon size={18} />
                 {ZALO_PHONE}
+              </a>
+              <a
+                className="mt-3 inline-flex items-center gap-2 text-sm font-bold text-white/70 hover:text-white"
+                href={`mailto:${CONTACT_EMAIL}`}
+              >
+                <Mail size={18} />
+                {CONTACT_EMAIL}
               </a>
             </div>
           </div>
