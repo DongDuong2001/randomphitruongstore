@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { MockAuthForm } from "@/components/mock-auth-form";
+import { AuthForm } from "@/components/mock-auth-form";
 
 export const metadata: Metadata = {
   title: "Customer login",
@@ -16,7 +16,7 @@ export default function LoginPage() {
       switchHref="/register"
       switchText="Chưa có tài khoản? Đăng ký"
     >
-      <MockAuthForm
+      <AuthForm
         mode="login"
         labels={{
           email: "Email",

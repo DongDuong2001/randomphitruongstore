@@ -11,22 +11,31 @@ git pull --ff-only origin main
 npm install
 ```
 
-Tạo `.env` từ `.env.example`. Không commit `.env`, token, mật khẩu, private
-key, dữ liệu khách hàng hoặc file upload cục bộ.
+Tạo file `.env.local` từ `.env.example` — **dùng `.env.local`, không phải `.env`**:
+
+```bash
+cp .env.example .env.local
+```
+
+Điền các giá trị thật vào `.env.local`. File này bị gitignore, không bao giờ được commit.
+
+### Biến môi trường bắt buộc
+
+| Biến | Lấy ở đâu |
+| --- | --- |
+| `DATABASE_URL` | Connection string PostgreSQL local (xem compose.yaml) |
+| `DIRECT_URL` | Giống `DATABASE_URL` khi chạy local |
+| `ADMIN_PASSWORD` | Tự đặt, dùng để đăng nhập `/admin` |
+| `ADMIN_SESSION_SECRET` | Chuỗi ngẫu nhiên dài ≥ 32 ký tự |
+| `NEXT_PUBLIC_SUPABASE_URL` | Supabase Dashboard → Project Settings → API → Project URL |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase Dashboard → Project Settings → API → anon/public key |
 
 ### PostgreSQL/Prisma local setup
 
-Tạo file môi trường local và khởi động PostgreSQL bằng Docker Compose:
+Khởi động PostgreSQL bằng Docker Compose (cần **Docker Desktop** đang chạy):
 
 ```bash
-cp .env.example .env
-docker compose up -d postgres
-```
-
-`.env.example` phải dùng cùng thông tin database với `compose.yaml`:
-
-```env
-DATABASE_URL="postgresql://postgres:postgres@localhost:5432/random_phitruong?schema=public"
+docker compose up -d
 ```
 
 Sau khi PostgreSQL chạy, chuẩn bị Prisma và seed dữ liệu mẫu:
@@ -69,6 +78,61 @@ npm run prisma:seed
 
 `docker compose down -v` sẽ xóa toàn bộ dữ liệu PostgreSQL local trong Docker
 volume. Không dùng lệnh này nếu còn dữ liệu local cần giữ lại.
+
+### Supabase setup
+
+Project dùng **Supabase Auth** cho customer authentication. Cần có Supabase project riêng.
+
+1. Tạo project tại [supabase.com](https://supabase.com)
+2. Vào **Project Settings → API**, copy **Project URL** và **anon/public key** vào `.env.local`
+3. Vào **Authentication → Sign In / Providers → Supabase Auth**, tắt **Confirm email** khi dev local để tránh rate limit
+
+### Chạy dev server
+
+```bash
+npm run dev
+```
+
+App chạy tại `http://localhost:3000`.
+
+### Test nhanh các API endpoints
+
+**Products (không cần auth):**
+```bash
+curl http://localhost:3000/api/products
+```
+
+**Customer register:**
+```bash
+curl -X POST http://localhost:3000/api/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"email":"test@example.com","password":"123456","fullName":"Test User"}'
+```
+
+**Customer login:**
+```bash
+curl -X POST http://localhost:3000/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"test@example.com","password":"123456"}'
+```
+
+**Admin login** — dùng `ADMIN_PASSWORD` trong `.env.local`:
+```bash
+curl -X POST http://localhost:3000/api/admin/session \
+  -H "Content-Type: application/json" \
+  -d '{"password":"your-admin-password"}'
+```
+
+### Các trang chính
+
+| URL | Mô tả |
+| --- | --- |
+| `http://localhost:3000` | Homepage |
+| `http://localhost:3000/shop` | Danh sách sản phẩm |
+| `http://localhost:3000/register` | Đăng ký customer |
+| `http://localhost:3000/login` | Đăng nhập customer |
+| `http://localhost:3000/admin` | Admin panel (cần login) |
+| `http://localhost:5555` | Prisma Studio — xem/sửa DB trực tiếp (`npm run db:studio`) |
 
 ## 2. Branch naming
 

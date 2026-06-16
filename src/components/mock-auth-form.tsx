@@ -3,6 +3,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ArrowRight } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
@@ -14,7 +15,7 @@ const schema = z.object({
 
 type Values = z.infer<typeof schema>;
 
-export function MockAuthForm({
+export function AuthForm({
   mode,
   labels
 }: {
@@ -22,6 +23,8 @@ export function MockAuthForm({
   labels: Record<string, string>;
 }) {
   const router = useRouter();
+  const [serverError, setServerError] = useState<string | null>(null);
+
   const {
     register,
     handleSubmit,
@@ -30,17 +33,30 @@ export function MockAuthForm({
     resolver: zodResolver(schema)
   });
 
-  function submit(values: Values) {
-    window.localStorage.setItem(
-      "random.phitruong.customer.preview",
-      JSON.stringify({
+  async function submit(values: Values) {
+    setServerError(null);
+
+    const endpoint = mode === "register" ? "/api/auth/register" : "/api/auth/login";
+    const res = await fetch(endpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
         email: values.email,
-        fullName: values.fullName,
-        mode,
-        signedInAt: new Date().toISOString()
+        password: values.password,
+        ...(mode === "register" && { fullName: values.fullName })
       })
-    );
-    router.push("/cart");
+    });
+
+    const json = await res.json();
+
+    if (!json.success) {
+      setServerError(json.error ?? "Something went wrong");
+      return;
+    }
+
+    // On success redirect to shop
+    router.push("/shop");
+    router.refresh(); // Force server components to re-read the new session cookie
   }
 
   return (
@@ -48,6 +64,9 @@ export function MockAuthForm({
       className="mt-8 grid gap-5 border border-black/15 bg-white p-5 shadow-[8px_8px_0_rgba(17,16,14,0.08)] sm:p-8"
       onSubmit={handleSubmit(submit)}
     >
+      {serverError ? (
+        <p className="error-text">{serverError}</p>
+      ) : null}
       {mode === "register" ? (
         <label>
           <span className="label">{labels.fullName}</span>
@@ -83,3 +102,7 @@ export function MockAuthForm({
     </form>
   );
 }
+
+/** @deprecated Use AuthForm instead */
+export const MockAuthForm = AuthForm;
+

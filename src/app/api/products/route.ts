@@ -1,45 +1,49 @@
-import { NextResponse } from "next/server";
+import { err, handlePrismaError, ok, zodDetails } from "@/lib/api-response";
 import { isAdminAuthenticated } from "@/lib/admin-auth";
 import { getPrisma } from "@/lib/prisma";
 import { productInputSchema } from "@/lib/validations";
 
 export async function GET() {
-  const products = await getPrisma().product.findMany({
-    where: { isActive: true },
-    include: { images: { orderBy: { sortOrder: "asc" } } },
-    orderBy: { createdAt: "desc" }
-  });
-  return NextResponse.json(products);
+  try {
+    const products = await getPrisma().product.findMany({
+      where: { isActive: true, stockStatus: "IN_STOCK" },
+      include: { images: { orderBy: { sortOrder: "asc" } } },
+      orderBy: { createdAt: "desc" }
+    });
+    return ok(products);
+  } catch (error) {
+    return handlePrismaError(error);
+  }
 }
 
 export async function POST(request: Request) {
   if (!(await isAdminAuthenticated())) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return err("Unauthorized", 401);
   }
 
   const parsed = productInputSchema.safeParse(await request.json());
   if (!parsed.success) {
-    return NextResponse.json(
-      { error: "Invalid product", issues: parsed.error.flatten() },
-      { status: 400 }
-    );
+    return err("Invalid product data", 400, zodDetails(parsed.error));
   }
 
   const { images, ...data } = parsed.data;
-  const product = await getPrisma().product.create({
-    data: {
-      ...data,
-      images: {
-        create: images.map((url, index) => ({
-          url,
-          altVi: data.nameVi,
-          altEn: data.nameEn,
-          sortOrder: index
-        }))
-      }
-    },
-    include: { images: { orderBy: { sortOrder: "asc" } } }
-  });
-
-  return NextResponse.json(product, { status: 201 });
+  try {
+    const product = await getPrisma().product.create({
+      data: {
+        ...data,
+        images: {
+          create: images.map((url, index) => ({
+            url,
+            altVi: data.nameVi,
+            altEn: data.nameEn,
+            sortOrder: index
+          }))
+        }
+      },
+      include: { images: { orderBy: { sortOrder: "asc" } } }
+    });
+    return ok(product, 201);
+  } catch (error) {
+    return handlePrismaError(error);
+  }
 }

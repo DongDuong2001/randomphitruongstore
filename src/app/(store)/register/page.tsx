@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { MockAuthForm } from "@/components/mock-auth-form";
+import { AuthForm } from "@/components/mock-auth-form";
 
 export const metadata: Metadata = {
   title: "Customer register",
@@ -18,7 +18,7 @@ export default function RegisterPage() {
             Form đăng ký preview cho khách hàng. Dữ liệu hiện lưu localStorage và sẽ
             thay bằng backend auth sau.
           </p>
-          <MockAuthForm
+          <AuthForm
             mode="register"
             labels={{
               email: "Email",
