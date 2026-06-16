@@ -54,15 +54,21 @@ export async function POST(request: Request) {
     const shippingFee = 0;
     const totalAmount = subtotal + shippingFee;
     const remainingAmount = depositAmount === null ? 0 : totalAmount - depositAmount;
+    const paymentOption = isDeposit ? "DEPOSIT_50" : "ONLINE_100";
 
     const order = await getPrisma().order.create({
       data: {
         orderNumber: orderNumber(),
         shippingRegion: input.shippingRegion,
         paymentMethod: input.paymentMethod,
+        paymentOption,
         status: isDeposit ? "PENDING_DEPOSIT" : "PENDING_ONLINE_PAYMENT",
         subtotal,
         depositAmount,
+        subtotalAmount: subtotal,
+        remainingAmount,
+        shippingFee,
+        totalAmount,
         note: input.note || null,
         customer: {
           create: {
