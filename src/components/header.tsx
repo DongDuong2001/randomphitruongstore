@@ -1,6 +1,6 @@
 "use client";
 
-import { Menu, User, X } from "lucide-react";
+import { Menu, X } from "lucide-react";
 import Image from "next/image";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
@@ -12,6 +12,7 @@ import {
 import { cn } from "@/lib/utils";
 import { CartCount } from "./cart-count";
 import { LanguageToggle } from "./language-toggle";
+import { UserMenu } from "./user-menu";
 
 export function Header() {
   const t = useTranslations("common");
@@ -70,13 +71,7 @@ export function Header() {
         <div className="flex shrink-0 items-center gap-1 sm:gap-2">
           <LanguageToggle />
           <CartCount />
-          <Link
-            aria-label="Customer login"
-            className="hidden p-2 text-white/70 hover:text-white sm:block"
-            href="/login"
-          >
-            <User size={18} />
-          </Link>
+          <UserMenu />
           <button
             aria-label={open ? "Close menu" : "Open menu"}
             className="p-2 lg:hidden"
