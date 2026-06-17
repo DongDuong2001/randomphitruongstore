@@ -176,5 +176,30 @@
     "zaloTitle": "Scan to message Phi Truong",
     "zaloBody": "Get direct advice on products, sizing, colors and order status through Zalo.",
     "zaloAction": "Open Zalo"
+  },
+  "account": {
+    "title": "My Account",
+    "welcomeBack": "Welcome back, {name}",
+    "customer": "Customer",
+    "signInRequired": "Sign in required",
+    "signInRequiredBody": "Please sign in to view your orders and consultation requests.",
+    "signIn": "Sign in",
+    "myOrders": "My Orders",
+    "myConsultations": "My Consultations",
+    "orderHistory": "Order History",
+    "consultationHistory": "Consultation History",
+    "noOrders": "No orders yet.",
+    "noConsultations": "No consultation requests yet.",
+    "orderNumber": "Order #",
+    "status": "Status",
+    "total": "Total",
+    "date": "Date",
+    "viewDetails": "View Details",
+    "size": "Size",
+    "color": "Color",
+    "quantity": "Qty",
+    "inspiration": "Inspiration",
+    "desiredSize": "Desired Size",
+    "desiredColor": "Desired Color"
   }
 }

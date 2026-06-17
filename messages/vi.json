@@ -176,5 +176,30 @@
     "zaloTitle": "Quét QR để nhắn Phi Trường",
     "zaloBody": "Tư vấn sản phẩm, size, màu và tình trạng đơn hàng trực tiếp qua Zalo.",
     "zaloAction": "Mở Zalo"
+  },
+  "account": {
+    "title": "Tài khoản của tôi",
+    "welcomeBack": "Chào mừng trở lại, {name}",
+    "customer": "Khách hàng",
+    "signInRequired": "Cần đăng nhập",
+    "signInRequiredBody": "Vui lòng đăng nhập để xem đơn hàng và yêu cầu tư vấn.",
+    "signIn": "Đăng nhập",
+    "myOrders": "Đơn hàng của tôi",
+    "myConsultations": "Yêu cầu tư vấn",
+    "orderHistory": "Lịch sử đơn hàng",
+    "consultationHistory": "Lịch sử tư vấn",
+    "noOrders": "Chưa có đơn hàng nào.",
+    "noConsultations": "Chưa có yêu cầu tư vấn nào.",
+    "orderNumber": "Mã đơn",
+    "status": "Trạng thái",
+    "total": "Tổng cộng",
+    "date": "Ngày đặt",
+    "viewDetails": "Xem chi tiết",
+    "size": "Size",
+    "color": "Màu",
+    "quantity": "Số lượng",
+    "inspiration": "Ảnh tham khảo",
+    "desiredSize": "Size mong muốn",
+    "desiredColor": "Màu mong muốn"
   }
 }

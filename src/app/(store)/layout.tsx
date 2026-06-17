@@ -12,6 +12,8 @@ export default function StoreLayout({
       <CartProvider>
         <Header />
         <main>{children}</main>
+        <Footer />
+        <FloatingZalo />
       </CartProvider>
     </AuthProvider>
   );

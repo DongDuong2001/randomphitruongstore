@@ -3,6 +3,7 @@
 import { LogOut, User, ChevronDown, Loader2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
+import Image from "next/image";
 import { useState } from "react";
 import { useAuth } from "@/context/auth-context";
 import { cn } from "@/lib/utils";
@@ -51,9 +52,11 @@ export function UserMenu() {
       >
         <div className="size-8 shrink-0 overflow-hidden rounded-full bg-white/10 flex items-center justify-center">
           {user.user_metadata?.avatar_url ? (
-            <img
+            <Image
               alt={displayName}
               className="size-full object-cover"
+              fill
+              sizes="32px"
               src={user.user_metadata.avatar_url}
             />
           ) : (
