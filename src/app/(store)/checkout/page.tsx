@@ -3,7 +3,6 @@ import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { CheckoutForm } from "@/components/checkout-form";
 import { getPrisma } from "@/lib/prisma";
-import { getSupabaseServerClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
@@ -48,11 +47,6 @@ export default async function CheckoutPage({ searchParams }: PageProps) {
     );
   }
 
-  // Get Supabase user session for email
-  const supabase = await getSupabaseServerClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  const userEmail = user?.email ?? null;
-
   const labelKeys = [
     "customerInfo",
     "fullName",
@@ -90,7 +84,6 @@ export default async function CheckoutPage({ searchParams }: PageProps) {
         product={product}
         selectedColor={params.color!}
         selectedSize={params.size!}
-        userEmail={userEmail}
       />
     </div>
   );

@@ -1,5 +1,10 @@
 import { err, handlePrismaError, ok, zodDetails } from "@/lib/api-response";
 import { isAdminAuthenticated } from "@/lib/admin-auth";
+import {
+  buildShippingAddressSnapshot,
+  isMissingCustomerEmailColumn,
+  normalizeEmail
+} from "@/lib/customer-account";
 import { orderNumber } from "@/lib/format";
 import { getPrisma } from "@/lib/prisma";
 import { orderInputSchema } from "@/lib/validations";
@@ -57,36 +62,48 @@ export async function POST(request: Request) {
     const remainingAmount = depositAmount === null ? 0 : totalAmount - depositAmount;
     const paymentOption = isDeposit ? "DEPOSIT_50" : "ONLINE_100";
 
-    // Get Supabase user if authenticated
     const supabase = await getSupabaseServerClient();
     const { data: { user } } = await supabase.auth.getUser();
-    const userEmail = user?.email ?? input.email ?? null;
+    const userEmail = normalizeEmail(user?.email);
 
-    // Find or create customer
     let customer;
     if (userEmail) {
-      // Try to find existing customer by email
-      customer = await getPrisma().customer.findFirst({
-        where: { email: userEmail }
-      });
-      if (customer) {
-        // Update customer info
-        customer = await getPrisma().customer.update({
-          where: { id: customer.id },
-          data: {
-            fullName: input.fullName,
-            phone: input.phone,
-            address: input.address,
-            province: input.province,
-            district: input.district,
-            ward: input.ward
-          }
+      try {
+        customer = await getPrisma().customer.findFirst({
+          where: { email: userEmail },
+          orderBy: { updatedAt: "desc" }
         });
-      } else {
-        // Create new customer with email
+        if (customer) {
+          customer = await getPrisma().customer.update({
+            where: { id: customer.id },
+            data: {
+              fullName: input.fullName,
+              phone: input.phone,
+              address: input.address,
+              province: input.province,
+              district: input.district,
+              ward: input.ward
+            }
+          });
+        } else {
+          customer = await getPrisma().customer.create({
+            data: {
+              email: userEmail,
+              fullName: input.fullName,
+              phone: input.phone,
+              address: input.address,
+              province: input.province,
+              district: input.district,
+              ward: input.ward
+            }
+          });
+        }
+      } catch (error) {
+        if (!isMissingCustomerEmailColumn(error)) {
+          throw error;
+        }
         customer = await getPrisma().customer.create({
           data: {
-            email: userEmail,
             fullName: input.fullName,
             phone: input.phone,
             address: input.address,
@@ -97,7 +114,6 @@ export async function POST(request: Request) {
         });
       }
     } else {
-      // No email - create customer without email (guest checkout)
       customer = await getPrisma().customer.create({
         data: {
           fullName: input.fullName,
@@ -125,6 +141,9 @@ export async function POST(request: Request) {
         totalAmount,
         note: input.note || null,
         customerId: customer.id,
+        shippingAddress: {
+          create: buildShippingAddressSnapshot(input)
+        },
         items: {
           create: input.items.map((item) => {
             const product = productMap.get(item.productId)!;

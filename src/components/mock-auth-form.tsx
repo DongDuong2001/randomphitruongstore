@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { getSupabaseBrowserClient } from "@/lib/supabase/client";
+import { useAuth } from "@/context/auth-context";
 
 const schema = z.object({
   fullName: z.string().trim().optional(),
@@ -24,6 +24,7 @@ export function AuthForm({
   labels: Record<string, string>;
 }) {
   const router = useRouter();
+  const { refreshUser } = useAuth();
   const [serverError, setServerError] = useState<string | null>(null);
 
   const {
@@ -55,13 +56,8 @@ export function AuthForm({
       return;
     }
 
-    // Refresh browser Supabase client to pick up the new session cookie
-    const supabase = getSupabaseBrowserClient();
-    await supabase.auth.getSession();
-
-    // On success redirect to account
-    router.push("/account");
-    router.refresh();
+    await refreshUser();
+    router.replace("/account");
   }
 
   return (
@@ -110,4 +106,3 @@ export function AuthForm({
 
 /** @deprecated Use AuthForm instead */
 export const MockAuthForm = AuthForm;
-

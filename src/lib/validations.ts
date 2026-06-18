@@ -61,8 +61,19 @@ export const orderInputSchema = z.object({
         color: z.string().min(1)
       })
     )
-    .min(1),
-  email: z.string().email().optional().nullable()
+    .min(1)
+});
+
+export const profileUpdateSchema = z.object({
+  fullName: z.string().trim().min(2).optional(),
+  phone: z.string().trim().min(9).max(20).optional(),
+  address: z.string().trim().min(5).optional(),
+  province: z.string().trim().min(2).optional(),
+  district: z.string().trim().min(2).optional(),
+  ward: z.string().trim().min(2).optional(),
+  zaloPhone: z.string().trim().optional(),
+  instagramHandle: z.string().trim().optional(),
+  preferredLanguage: z.enum(["vi", "en"]).optional()
 });
 
 export const orderRequestInputSchema = z.object({
@@ -95,6 +106,7 @@ export const orderRequestStatusSchema = z.object({
 
 export type ProductInput = z.infer<typeof productInputSchema>;
 export type OrderInput = z.infer<typeof orderInputSchema>;
+export type ProfileUpdateInput = z.infer<typeof profileUpdateSchema>;
 export type OrderRequestInput = z.infer<typeof orderRequestInputSchema>;
 
 // ─── Customer auth schemas ────────────────────────────────────────────────────

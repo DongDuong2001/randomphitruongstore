@@ -2,14 +2,16 @@ import { createServerClient } from "@supabase/ssr";
 import { type NextRequest, NextResponse } from "next/server";
 
 /**
- * Refresh the Supabase auth session on every request.
+ * Refresh the Supabase auth session before account pages render.
  *
  * This is required by @supabase/ssr: the access token is short-lived and the
  * only place we can reliably write the refreshed token back into cookies
  * (before any Server Component or Route Handler reads it) is middleware.
  *
- * We do NOT protect any routes here — auth guards live in the individual
- * pages/routes so the logic stays co-located with the feature.
+ * We do NOT protect routes here — auth guards live in the individual
+ * pages/routes so the logic stays co-located with the feature. Customer API
+ * route handlers call getUser() themselves, so they are intentionally excluded
+ * from this proxy to avoid duplicate auth requests.
  */
 export async function proxy(request: NextRequest) {
   let response = NextResponse.next({ request });
@@ -46,15 +48,6 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    /*
-     * Run the session-refresh proxy on page routes AND customer API routes.
-     * Exclude:
-     * - api/* (except /api/customer/*)   (other route handlers manage their own auth)
-     * - _next/static   (static files)
-     * - _next/image    (image optimisation)
-     * - favicon.ico, robots.txt, sitemap.xml
-     * - public/uploads (uploaded product images)
-     */
-    "/((?!api/(?!customer/)|_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|uploads/).*)"
+    "/account/:path*"
   ]
 };

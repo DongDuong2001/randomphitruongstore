@@ -8,6 +8,12 @@ import {
   useMemo,
   useState
 } from "react";
+import {
+  cartStorageKeyForOwner,
+  legacyCartStorageKey,
+  parseStoredCartItems
+} from "@/lib/cart-storage";
+import { useAuth } from "@/context/auth-context";
 
 export type CartItem = {
   productId: string;
@@ -23,6 +29,7 @@ export type CartItem = {
 type CartContextValue = {
   items: CartItem[];
   count: number;
+  hydrated: boolean;
   subtotal: number;
   addItem: (item: CartItem) => void;
   updateQuantity: (key: string, quantity: number) => void;
@@ -31,7 +38,6 @@ type CartContextValue = {
   itemKey: (item: Pick<CartItem, "productId" | "size" | "color">) => string;
 };
 
-const storageKey = "random.phitruong.cart.v1";
 const CartContext = createContext<CartContextValue | null>(null);
 
 export function cartItemKey({
@@ -43,30 +49,51 @@ export function cartItemKey({
 }
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
-  const [items, setItems] = useState<CartItem[]>(() => {
-    if (typeof window === "undefined") {
-      return [];
-    }
-    const stored = window.localStorage.getItem(storageKey);
-    if (!stored) {
-      return [];
-    }
-
-    try {
-      const parsed = JSON.parse(stored) as CartItem[];
-      if (Array.isArray(parsed)) {
-        return parsed;
-      }
-    } catch {
-      window.localStorage.removeItem(storageKey);
-    }
-
-    return [];
-  });
+  const { user, loading: authLoading } = useAuth();
+  const ownerId = user?.id ?? null;
+  const signedIn = Boolean(user);
+  const [items, setItems] = useState<CartItem[]>([]);
+  const [hydrated, setHydrated] = useState(false);
+  const [activeStorageKey, setActiveStorageKey] = useState<string | null>(null);
 
   useEffect(() => {
-    window.localStorage.setItem(storageKey, JSON.stringify(items));
-  }, [items]);
+    if (authLoading) {
+      return;
+    }
+    let cancelled = false;
+
+    const storageKey = cartStorageKeyForOwner(ownerId);
+    const stored = window.localStorage.getItem(storageKey);
+    const legacyStored =
+      !signedIn && !stored ? window.localStorage.getItem(legacyCartStorageKey) : null;
+    const nextItems = parseStoredCartItems(stored ?? legacyStored);
+
+    if (!signedIn && legacyStored && !stored) {
+      window.localStorage.setItem(storageKey, legacyStored);
+      window.localStorage.removeItem(legacyCartStorageKey);
+    }
+
+    queueMicrotask(() => {
+      if (cancelled) {
+        return;
+      }
+      setItems(nextItems);
+      setActiveStorageKey(storageKey);
+      setHydrated(true);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [authLoading, ownerId, signedIn]);
+
+  useEffect(() => {
+    if (!hydrated || !activeStorageKey) {
+      return;
+    }
+
+    window.localStorage.setItem(activeStorageKey, JSON.stringify(items));
+  }, [activeStorageKey, hydrated, items]);
 
   const addItem = useCallback((item: CartItem) => {
     setItems((current) => {
@@ -108,6 +135,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     () => ({
       items,
       count: items.reduce((total, item) => total + item.quantity, 0),
+      hydrated,
       subtotal: items.reduce(
         (total, item) => total + item.price * item.quantity,
         0
@@ -118,7 +146,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       clearCart,
       itemKey: cartItemKey
     }),
-    [addItem, clearCart, items, removeItem, updateQuantity]
+    [addItem, clearCart, hydrated, items, removeItem, updateQuantity]
   );
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;

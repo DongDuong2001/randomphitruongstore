@@ -27,11 +27,20 @@ export default async function AdminOrderDetailPage({
   const { id } = await params;
   const order = await getPrisma().order.findUnique({
     where: { id },
-    include: { customer: true, items: { include: { product: true } } }
+    include: {
+      customer: true,
+      items: { include: { product: true } },
+      shippingAddress: true
+    }
   });
   if (!order) {
     notFound();
   }
+  const shippingAddress =
+    order.shippingAddress?.fullAddress ??
+    `${order.customer.address}, ${order.customer.ward}, ${order.customer.district}, ${order.customer.province}`;
+  const recipientName = order.shippingAddress?.recipientName ?? order.customer.fullName;
+  const recipientPhone = order.shippingAddress?.phone ?? order.customer.phone;
 
   return (
     <>
@@ -59,12 +68,9 @@ export default async function AdminOrderDetailPage({
         <section className="border border-zinc-200 bg-white p-5">
           <h2 className="font-black">Customer</h2>
           <dl className="mt-4 grid gap-3 text-sm">
-            <Detail label="Name" value={order.customer.fullName} />
-            <Detail label="Phone" value={order.customer.phone} />
-            <Detail
-              label="Address"
-              value={`${order.customer.address}, ${order.customer.ward}, ${order.customer.district}, ${order.customer.province}`}
-            />
+            <Detail label="Name" value={recipientName} />
+            <Detail label="Phone" value={recipientPhone} />
+            <Detail label="Address" value={shippingAddress} />
             <Detail label="Shipping" value={order.shippingRegion} />
             <Detail label="Note" value={order.note || "-"} />
           </dl>

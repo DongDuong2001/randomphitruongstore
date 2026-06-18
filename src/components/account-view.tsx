@@ -480,6 +480,7 @@ function ProfileSection() {
   }, []);
 
   const handleSave = async () => {
+    setError(null);
     setSaving(true);
     try {
       const res = await fetch("/api/customer/profile", {
@@ -566,13 +567,19 @@ function ProfileSection() {
         )}
       </div>
 
+      {error && profile ? (
+        <div className="border-b border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700">
+          {error}
+        </div>
+      ) : null}
+
       {profile && (
         <div className="p-4">
           {editing ? (
             <div className="space-y-4">
               <ProfileField label={t("fullName")} value={form.fullName} onChange={(v) => setForm({ ...form, fullName: v })} />
               <ProfileField label={t("phone")} value={form.phone} onChange={(v) => setForm({ ...form, phone: v })} icon={<Phone size={16} />} />
-              <ProfileField label={t("email")} value={form.email} onChange={(v) => setForm({ ...form, email: v })} icon={<Mail size={16} />} />
+              {profile.email && <ProfileReadOnlyField label={t("email")} value={profile.email} icon={<Mail size={16} />} />}
               <ProfileField label={t("address")} value={form.address} onChange={(v) => setForm({ ...form, address: v })} icon={<MapPin size={16} />} />
               <div className="grid grid-cols-3 gap-3">
                 <ProfileField label={t("province")} value={form.province} onChange={(v) => setForm({ ...form, province: v })} />
@@ -589,7 +596,7 @@ function ProfileSection() {
               {profile.email && <ProfileRow label={t("email")} value={profile.email} icon={<Mail size={14} />} />}
               <ProfileRow
                 label={t("address")}
-                value={`${profile.address}, ${profile.ward}, ${profile.district}, ${profile.province}`}
+                value={formatAddress(profile)}
                 icon={<MapPin size={14} />}
               />
               {profile.zaloPhone && <ProfileRow label="Zalo" value={profile.zaloPhone} />}
@@ -620,6 +627,39 @@ function ProfileRow({
       <dd className="text-zinc-900 font-medium">{value}</dd>
     </div>
   );
+}
+
+function ProfileReadOnlyField({
+  label,
+  value,
+  icon,
+}: {
+  label: string;
+  value: string;
+  icon?: React.ReactNode;
+}) {
+  return (
+    <div>
+      <span className="mb-1 flex items-center gap-1.5 text-xs font-bold text-zinc-500">
+        {icon}
+        {label}
+      </span>
+      <div className="w-full rounded-md border border-black/10 bg-zinc-50 px-3 py-2 text-sm text-zinc-600">
+        {value}
+      </div>
+    </div>
+  );
+}
+
+function formatAddress(profile: Profile) {
+  const address = [
+    profile.address,
+    profile.ward,
+    profile.district,
+    profile.province
+  ].filter(Boolean);
+
+  return address.length > 0 ? address.join(", ") : "-";
 }
 
 function ProfileField({

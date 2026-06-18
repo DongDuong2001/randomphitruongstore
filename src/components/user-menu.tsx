@@ -3,7 +3,6 @@
 import { LogOut, User, ChevronDown, Loader2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
-import Image from "next/image";
 import { useState } from "react";
 import { useAuth } from "@/context/auth-context";
 import { cn } from "@/lib/utils";
@@ -34,6 +33,10 @@ export function UserMenu() {
   }
 
   const displayName = user.user_metadata?.full_name ?? user.email?.split("@")[0] ?? t("account");
+  const avatarUrl =
+    typeof user.user_metadata?.avatar_url === "string"
+      ? user.user_metadata.avatar_url
+      : null;
 
   const handleSignOut = async () => {
     setOpen(false);
@@ -51,13 +54,11 @@ export function UserMenu() {
         type="button"
       >
         <div className="size-8 shrink-0 overflow-hidden rounded-full bg-white/10 flex items-center justify-center">
-          {user.user_metadata?.avatar_url ? (
-            <Image
-              alt={displayName}
-              className="size-full object-cover"
-              fill
-              sizes="32px"
-              src={user.user_metadata.avatar_url}
+          {avatarUrl ? (
+            <span
+              aria-hidden="true"
+              className="size-full bg-cover bg-center"
+              style={{ backgroundImage: `url(${JSON.stringify(avatarUrl)})` }}
             />
           ) : (
             <User className="size-5 text-white/70" />

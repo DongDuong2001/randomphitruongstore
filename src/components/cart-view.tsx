@@ -5,12 +5,14 @@ import Image from "next/image";
 import Link from "next/link";
 import { useLocale } from "next-intl";
 import type { Locale } from "@/i18n/request";
+import { useAuth } from "@/context/auth-context";
 import { formatPrice } from "@/lib/format";
 import { useCart } from "./cart-provider";
 
 export function CartView() {
   const locale = useLocale() as Locale;
-  const { items, subtotal, updateQuantity, removeItem, itemKey } = useCart();
+  const { user, loading: authLoading } = useAuth();
+  const { items, subtotal, updateQuantity, removeItem, itemKey, hydrated } = useCart();
 
   return (
     <div className="container-shell py-10 sm:py-16">
@@ -25,7 +27,11 @@ export function CartView() {
             checkout hoàn thiện.
           </p>
 
-          {items.length === 0 ? (
+          {!hydrated ? (
+            <div className="mt-10 border border-dashed border-zinc-300 bg-white p-10 text-center">
+              <p className="font-bold">Đang tải giỏ hàng...</p>
+            </div>
+          ) : items.length === 0 ? (
             <div className="mt-10 border border-dashed border-zinc-300 bg-white p-10 text-center">
               <p className="font-bold">Giỏ hàng đang trống.</p>
               <Link className="button-primary mt-6" href="/shop">
@@ -112,12 +118,25 @@ export function CartView() {
             giữ danh sách hoặc checkout từng sản phẩm từ trang chi tiết.
           </p>
           <div className="mt-5 grid gap-3">
-            <Link className="button-primary w-full" href="/login">
-              Đăng nhập để mua hàng
-            </Link>
-            <Link className="button-secondary w-full" href="/register">
-              Tạo tài khoản
-            </Link>
+            {!authLoading && user ? (
+              <>
+                <Link className="button-primary w-full" href="/account">
+                  Tài khoản của tôi
+                </Link>
+                <Link className="button-secondary w-full" href="/shop">
+                  Tiếp tục mua hàng
+                </Link>
+              </>
+            ) : (
+              <>
+                <Link className="button-primary w-full" href="/login">
+                  Đăng nhập để mua hàng
+                </Link>
+                <Link className="button-secondary w-full" href="/register">
+                  Tạo tài khoản
+                </Link>
+              </>
+            )}
           </div>
         </aside>
       </div>

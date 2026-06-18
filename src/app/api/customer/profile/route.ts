@@ -1,32 +1,22 @@
 import { err, handlePrismaError, ok, zodDetails } from "@/lib/api-response";
+import { isMissingCustomerEmailColumn, normalizeEmail } from "@/lib/customer-account";
 import { getPrisma } from "@/lib/prisma";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
-import { z } from "zod";
-
-const profileUpdateSchema = z.object({
-  fullName: z.string().trim().min(2).optional(),
-  phone: z.string().trim().min(9).max(20).optional(),
-  email: z.string().trim().email().optional(),
-  address: z.string().trim().min(5).optional(),
-  province: z.string().trim().min(2).optional(),
-  district: z.string().trim().min(2).optional(),
-  ward: z.string().trim().min(2).optional(),
-  zaloPhone: z.string().trim().optional(),
-  instagramHandle: z.string().trim().optional(),
-  preferredLanguage: z.enum(["vi", "en"]).optional(),
-});
+import { profileUpdateSchema } from "@/lib/validations";
 
 export async function GET() {
   const supabase = await getSupabaseServerClient();
   const { data: { user } } = await supabase.auth.getUser();
+  const email = normalizeEmail(user?.email);
 
-  if (!user) {
+  if (!user || !email) {
     return err("Unauthorized", 401);
   }
 
   try {
     const customer = await getPrisma().customer.findFirst({
-      where: { email: user.email! },
+      where: { email },
+      orderBy: { updatedAt: "desc" },
       select: {
         id: true,
         fullName: true,
@@ -44,11 +34,14 @@ export async function GET() {
     });
 
     if (!customer) {
-      return err("Customer not found", 404);
+      return ok(authProfileFallback(user.id, email, user.user_metadata?.full_name));
     }
 
     return ok(customer);
   } catch (error) {
+    if (isMissingCustomerEmailColumn(error)) {
+      return ok(authProfileFallback(user.id, email, user.user_metadata?.full_name));
+    }
     return handlePrismaError(error);
   }
 }
@@ -56,8 +49,9 @@ export async function GET() {
 export async function PATCH(request: Request) {
   const supabase = await getSupabaseServerClient();
   const { data: { user } } = await supabase.auth.getUser();
+  const email = normalizeEmail(user?.email);
 
-  if (!user) {
+  if (!user || !email) {
     return err("Unauthorized", 401);
   }
 
@@ -68,12 +62,13 @@ export async function PATCH(request: Request) {
 
   try {
     const customer = await getPrisma().customer.findFirst({
-      where: { email: user.email! },
+      where: { email },
+      orderBy: { updatedAt: "desc" },
       select: { id: true }
     });
 
     if (!customer) {
-      return err("Customer not found", 404);
+      return err("Complete checkout details before saving a profile", 409);
     }
 
     const updated = await getPrisma().customer.update({
@@ -96,6 +91,30 @@ export async function PATCH(request: Request) {
 
     return ok(updated);
   } catch (error) {
+    if (isMissingCustomerEmailColumn(error)) {
+      return err("Customer profile storage is not migrated", 503);
+    }
     return handlePrismaError(error);
   }
+}
+
+function authProfileFallback(id: string, email: string, fullName?: unknown) {
+  const displayName = typeof fullName === "string" && fullName.trim()
+    ? fullName.trim()
+    : email.split("@")[0];
+
+  return {
+    id,
+    fullName: displayName,
+    phone: "",
+    email,
+    address: "",
+    province: "",
+    district: "",
+    ward: "",
+    zaloPhone: null,
+    instagramHandle: null,
+    preferredLanguage: "vi",
+    createdAt: new Date()
+  };
 }

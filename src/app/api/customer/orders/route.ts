@@ -1,27 +1,30 @@
 import { err, handlePrismaError, ok } from "@/lib/api-response";
+import { isMissingCustomerEmailColumn, normalizeEmail } from "@/lib/customer-account";
 import { getPrisma } from "@/lib/prisma";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 
 export async function GET() {
   const supabase = await getSupabaseServerClient();
   const { data: { user } } = await supabase.auth.getUser();
+  const email = normalizeEmail(user?.email);
 
-  if (!user) {
+  if (!user || !email) {
     return err("Unauthorized", 401);
   }
 
   try {
-    const customer = await getPrisma().customer.findFirst({
-      where: { email: user.email! },
+    const customers = await getPrisma().customer.findMany({
+      where: { email },
       select: { id: true }
     });
+    const customerIds = customers.map((customer) => customer.id);
 
-    if (!customer) {
+    if (customerIds.length === 0) {
       return ok([]);
     }
 
     const orders = await getPrisma().order.findMany({
-      where: { customerId: customer.id },
+      where: { customerId: { in: customerIds } },
       include: {
         items: {
           include: {
@@ -41,6 +44,9 @@ export async function GET() {
 
     return ok(orders);
   } catch (error) {
+    if (isMissingCustomerEmailColumn(error)) {
+      return ok([]);
+    }
     return handlePrismaError(error);
   }
 }
