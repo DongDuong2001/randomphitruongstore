@@ -1,0 +1,217 @@
+import assert from "node:assert/strict";
+import { describe, it } from "node:test";
+import { createCheckoutOrder } from "../src/lib/checkout-order";
+import { orderInputSchema } from "../src/lib/validations";
+
+const catalogProductId = "00000000-0000-4000-8000-000000000001";
+const selectedVariantId = "00000000-0000-4000-8000-000000000101";
+
+const validOrderInput = {
+  fullName: "Nguyen Van A",
+  phone: "0901234567",
+  address: "123 Nguyen Trai",
+  province: "Ho Chi Minh",
+  district: "District 1",
+  ward: "Ben Nghe",
+  shippingRegion: "VIETNAM" as const,
+  paymentMethod: "DEPOSIT_50_BANK_ZALO" as const,
+  noChangePolicyAck: true,
+  items: [
+    {
+      productId: catalogProductId,
+      productVariantId: selectedVariantId,
+      quantity: 2,
+      size: "tampered-size",
+      color: "tampered-color"
+    }
+  ]
+};
+
+describe("checkout ERD order creation", () => {
+  it("requires no-change policy acknowledgement before accepting checkout", () => {
+    const parsed = orderInputSchema.safeParse({
+      ...validOrderInput,
+      noChangePolicyAck: false
+    });
+
+    assert.equal(parsed.success, false);
+  });
+
+  it("creates customer, order, shipping address, order item, and payment in one transaction", async () => {
+    let usedTransaction = false;
+    let createdOrderData: Record<string, unknown> | null = null;
+    const prisma = {
+      product: {
+        findMany: async () => [
+          {
+            id: catalogProductId,
+            nameVi: "Sukajan Hac Song",
+            nameEn: "Crane Sukajan",
+            price: 2490000,
+            basePrice: 2400000,
+            sizes: ["M", "L"],
+            colors: ["Black", "Navy"]
+          }
+        ]
+      },
+      productVariant: {
+        findMany: async () => [
+          {
+            id: selectedVariantId,
+            productId: catalogProductId,
+            size: "M",
+            colorVi: "Black",
+            colorEn: "Black",
+            priceAdjustment: 90000,
+            isAvailable: true
+          }
+        ]
+      },
+      $transaction: async <T>(callback: (transaction: {
+        customer: {
+          findFirst: () => Promise<{ id: string } | null>;
+          create: () => Promise<{ id: string }>;
+          update: () => Promise<{ id: string }>;
+        };
+        order: {
+          create: (args: { data: Record<string, unknown> }) => Promise<Record<string, unknown>>;
+        };
+      }) => Promise<T>) => {
+        usedTransaction = true;
+        return callback({
+          customer: {
+            findFirst: async () => null,
+            create: async () => ({ id: "customer-1" }),
+            update: async () => {
+              assert.fail("Expected checkout for a new email to create customer");
+            }
+          },
+          order: {
+            create: async ({ data }) => {
+              createdOrderData = data;
+              return {
+                id: "order-1",
+                orderNumber: data.orderNumber,
+                subtotal: data.subtotal,
+                depositAmount: data.depositAmount,
+                paymentMethod: data.paymentMethod
+              };
+            }
+          }
+        });
+      }
+    };
+
+    const order = await createCheckoutOrder({
+      prisma,
+      input: validOrderInput,
+      userEmail: "CUSTOMER@EXAMPLE.COM",
+      generateOrderNumber: () => "RPT-0001",
+      now: () => new Date("2026-06-18T00:00:00.000Z")
+    });
+
+    assert.equal(usedTransaction, true);
+    assert.equal(order.orderNumber, "RPT-0001");
+    assert.deepEqual(createdOrderData, {
+      orderNumber: "RPT-0001",
+      shippingRegion: "VIETNAM",
+      paymentMethod: "DEPOSIT_50_BANK_ZALO",
+      paymentOption: "DEPOSIT_50",
+      status: "PENDING_DEPOSIT",
+      subtotal: 4980000,
+      depositAmount: 2490000,
+      subtotalAmount: 4980000,
+      remainingAmount: 2490000,
+      shippingFee: 0,
+      totalAmount: 4980000,
+      note: null,
+      customerId: "customer-1",
+      sizeColorLocked: true,
+      noChangePolicyAck: true,
+      noChangePolicyAckAt: new Date("2026-06-18T00:00:00.000Z"),
+      shippingAddress: {
+        create: {
+          recipientName: "Nguyen Van A",
+          phone: "0901234567",
+          country: "Vietnam",
+          provinceCity: "Ho Chi Minh",
+          district: "District 1",
+          ward: "Ben Nghe",
+          streetAddress: "123 Nguyen Trai",
+          fullAddress: "123 Nguyen Trai, Ben Nghe, District 1, Ho Chi Minh",
+          isInternational: false
+        }
+      },
+      items: {
+        create: [
+          {
+            productId: catalogProductId,
+            productVariantId: selectedVariantId,
+            productName: "Sukajan Hac Song",
+            itemNameSnapshot: "Sukajan Hac Song",
+            unitPrice: 2490000,
+            lineTotal: 4980000,
+            quantity: 2,
+            size: "M",
+            selectedSize: "M",
+            color: "Black",
+            selectedColor: "Black"
+          }
+        ]
+      },
+      payments: {
+        create: {
+          paymentType: "DEPOSIT",
+          paymentMethod: "DEPOSIT_50_BANK_ZALO",
+          paymentStatus: "PENDING",
+          amount: 2490000
+        }
+      }
+    });
+  });
+
+  it("rejects a product variant that does not belong to the selected product", async () => {
+    const prisma = {
+      product: {
+        findMany: async () => [
+          {
+            id: catalogProductId,
+            nameVi: "Sukajan Hac Song",
+            nameEn: "Crane Sukajan",
+            price: 2490000,
+            basePrice: null,
+            sizes: ["M"],
+            colors: ["Black"]
+          }
+        ]
+      },
+      productVariant: {
+        findMany: async () => [
+          {
+            id: selectedVariantId,
+            productId: "00000000-0000-4000-8000-000000000999",
+            size: "M",
+            colorVi: "Black",
+            colorEn: "Black",
+            priceAdjustment: 0,
+            isAvailable: true
+          }
+        ]
+      },
+      $transaction: async () => {
+        assert.fail("Invalid variants must be rejected before opening a transaction");
+      }
+    };
+
+    await assert.rejects(
+      createCheckoutOrder({
+        prisma,
+        input: validOrderInput,
+        userEmail: null,
+        generateOrderNumber: () => "RPT-0002",
+        now: () => new Date("2026-06-18T00:00:00.000Z")
+      }),
+      /Invalid product variant/
+    );
+  });
+});

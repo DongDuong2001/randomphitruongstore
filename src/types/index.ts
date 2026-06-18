@@ -29,6 +29,15 @@ export type ProductImageDTO = {
   sortOrder: number;
 };
 
+export type ProductVariantDTO = {
+  id: string;
+  size: string;
+  colorVi: string;
+  colorEn: string;
+  priceAdjustment: number;
+  isAvailable: boolean;
+};
+
 export type ProductDTO = {
   id: string;
   nameVi: string;
@@ -38,6 +47,7 @@ export type ProductDTO = {
   descriptionEn: string;
   category: ProductCategory;
   price: number;
+  basePrice?: number | null;
   sizes: string[];
   colors: string[];
   materialVi: string;
@@ -50,6 +60,7 @@ export type ProductDTO = {
   createdAt: Date | string;
   updatedAt: Date | string;
   images: ProductImageDTO[];
+  variants?: ProductVariantDTO[];
 };
 
 export type CustomerDTO = {
@@ -64,7 +75,8 @@ export type CustomerDTO = {
 
 export type OrderItemDTO = {
   id: string;
-  productId: string;
+  productId: string | null;
+  productVariantId?: string | null;
   productName: string;
   unitPrice: number;
   quantity: number;

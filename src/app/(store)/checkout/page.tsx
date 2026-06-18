@@ -14,6 +14,7 @@ export const metadata: Metadata = {
 type PageProps = {
   searchParams: Promise<{
     productId?: string;
+    variantId?: string;
     size?: string;
     color?: string;
   }>;
@@ -26,15 +27,28 @@ export default async function CheckoutPage({ searchParams }: PageProps) {
   const product = params.productId
     ? await getPrisma().product.findFirst({
         where: { id: params.productId, isActive: true, stockStatus: "IN_STOCK" },
-        include: { images: { orderBy: { sortOrder: "asc" } } }
+        include: {
+          images: { orderBy: { sortOrder: "asc" } },
+          variants: { orderBy: [{ size: "asc" }, { colorVi: "asc" }] }
+        }
       })
+    : null;
+  const selectedVariant = params.variantId
+    ? product?.variants.find(
+        (variant) =>
+          variant.id === params.variantId &&
+          variant.isAvailable &&
+          (!params.size || variant.size === params.size) &&
+          (!params.color || variant.colorVi === params.color || variant.colorEn === params.color)
+      )
     : null;
   const validSelection =
     product &&
-    params.size &&
-    params.color &&
-    product.sizes.includes(params.size) &&
-    product.colors.includes(params.color);
+    (selectedVariant ||
+      (params.size &&
+        params.color &&
+        product.sizes.includes(params.size) &&
+        product.colors.includes(params.color)));
 
   if (!product || !validSelection) {
     return (
@@ -82,8 +96,9 @@ export default async function CheckoutPage({ searchParams }: PageProps) {
       <CheckoutForm
         labels={{ ...labels, loading: common("loading") }}
         product={product}
-        selectedColor={params.color!}
-        selectedSize={params.size!}
+        selectedColor={selectedVariant?.colorVi ?? params.color!}
+        selectedSize={selectedVariant?.size ?? params.size!}
+        selectedVariantId={selectedVariant?.id}
       />
     </div>
   );

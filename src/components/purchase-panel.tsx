@@ -10,6 +10,13 @@ import { useCart } from "./cart-provider";
 import { InternationalShippingNotice } from "./international-shipping-notice";
 
 type ShippingRegion = "VIETNAM" | "KOREA" | "TAIWAN" | "JAPAN";
+type PurchasePanelVariant = {
+  id: string;
+  size: string;
+  colorVi: string;
+  colorEn: string;
+  isAvailable: boolean;
+};
 
 export function PurchasePanel({
   productId,
@@ -19,6 +26,7 @@ export function PurchasePanel({
   imageUrl,
   sizes,
   colors,
+  variants,
   labels
 }: {
   productId: string;
@@ -28,6 +36,7 @@ export function PurchasePanel({
   imageUrl?: string;
   sizes: string[];
   colors: string[];
+  variants?: PurchasePanelVariant[];
   labels: {
     size: string;
     color: string;
@@ -60,6 +69,7 @@ export function PurchasePanel({
     if (!validateSelection()) {
       return;
     }
+    const selectedVariant = variantForSelection(variants, size, color);
     if (region !== "VIETNAM") {
       const message = encodeURIComponent(
         `International order consultation: ${productName}, size ${size}, color ${color}, region ${region}`
@@ -67,9 +77,11 @@ export function PurchasePanel({
       window.location.assign(`${ZALO_URL}?text=${message}`);
       return;
     }
-    router.push(
-      `/checkout?productId=${encodeURIComponent(productId)}&size=${encodeURIComponent(size)}&color=${encodeURIComponent(color)}`
-    );
+    const params = new URLSearchParams({ productId, size, color });
+    if (selectedVariant) {
+      params.set("variantId", selectedVariant.id);
+    }
+    router.push(`/checkout?${params.toString()}`);
   }
 
   function addToCart() {
@@ -149,6 +161,19 @@ export function PurchasePanel({
         </a>
       </div>
     </div>
+  );
+}
+
+function variantForSelection(
+  variants: PurchasePanelVariant[] | undefined,
+  size: string,
+  color: string
+) {
+  return variants?.find(
+    (variant) =>
+      variant.isAvailable &&
+      variant.size === size &&
+      (variant.colorVi === color || variant.colorEn === color)
   );
 }
 

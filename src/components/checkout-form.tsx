@@ -27,7 +27,8 @@ const checkoutSchema = z.object({
     "DEPOSIT_50_BANK_ZALO",
     "ONLINE_100_VNPAY",
     "ONLINE_100_MOMO"
-  ])
+  ]),
+  noChangePolicyAck: z.boolean().refine((value) => value === true, "Required")
 });
 
 type CheckoutValues = z.infer<typeof checkoutSchema>;
@@ -43,11 +44,13 @@ export function CheckoutForm({
   product,
   selectedSize,
   selectedColor,
+  selectedVariantId,
   labels
 }: {
   product: ProductWithImages;
   selectedSize: string;
   selectedColor: string;
+  selectedVariantId?: string;
   labels: Record<string, string>;
 }) {
   const locale = useLocale() as Locale;
@@ -63,12 +66,18 @@ export function CheckoutForm({
     defaultValues: {
       shippingRegion: "VIETNAM",
       paymentMethod: "DEPOSIT_50_BANK_ZALO",
+      noChangePolicyAck: false,
       note: ""
     }
   });
   const region = useWatch({ control, name: "shippingRegion" });
   const paymentMethod = useWatch({ control, name: "paymentMethod" });
   const image = product.images[0];
+  const selectedVariant = product.variants?.find(
+    (variant) => variant.id === selectedVariantId
+  );
+  const selectedUnitPrice =
+    (product.basePrice ?? product.price) + (selectedVariant?.priceAdjustment ?? 0);
 
   async function onSubmit(values: CheckoutValues) {
     setServerError("");
@@ -89,6 +98,7 @@ export function CheckoutForm({
         items: [
           {
             productId: product.id,
+            ...(selectedVariantId ? { productVariantId: selectedVariantId } : {}),
             quantity: 1,
             size: selectedSize,
             color: selectedColor
@@ -218,7 +228,7 @@ export function CheckoutForm({
             {paymentMethod === "DEPOSIT_50_BANK_ZALO" ? (
               <div className="mt-5">
                 <BankTransferBox
-                  amount={Math.ceil(product.price / 2)}
+                  amount={Math.ceil(selectedUnitPrice / 2)}
                   instruction={labels.bankInstruction}
                   title={labels.bankTitle}
                 />
@@ -255,17 +265,25 @@ export function CheckoutForm({
             </p>
             <p className="mt-2 text-zinc-500">Size: {selectedSize}</p>
             <p className="text-zinc-500">Color: {selectedColor}</p>
-            <p className="mt-2 font-bold">{formatPrice(product.price, locale)}</p>
+            <p className="mt-2 font-bold">{formatPrice(selectedUnitPrice, locale)}</p>
           </div>
         </div>
         <div className="mt-5 flex justify-between border-t border-black pt-4 font-black">
           <span>{labels.total}</span>
-          <span>{formatPrice(product.price, locale)}</span>
+          <span>{formatPrice(selectedUnitPrice, locale)}</span>
         </div>
-        <div className="mt-5 flex gap-2 bg-amber-50 p-3 text-xs leading-5 text-amber-900">
+        <label className="mt-5 flex cursor-pointer gap-2 bg-amber-50 p-3 text-xs leading-5 text-amber-900">
+          <input
+            className="mt-1 accent-black"
+            type="checkbox"
+            {...register("noChangePolicyAck")}
+          />
           <AlertTriangle className="mt-0.5 shrink-0" size={16} />
-          {labels.warning}
-        </div>
+          <span>{labels.warning}</span>
+        </label>
+        {errors.noChangePolicyAck ? (
+          <p className="error-text mt-2">{errors.noChangePolicyAck.message}</p>
+        ) : null}
         {serverError ? <p className="error-text mt-4">{serverError}</p> : null}
         <button
           className="button-primary mt-5 w-full disabled:cursor-not-allowed disabled:opacity-50"

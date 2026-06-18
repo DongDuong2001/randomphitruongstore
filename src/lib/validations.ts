@@ -52,10 +52,12 @@ export const orderInputSchema = z.object({
     "ONLINE_100_VNPAY",
     "ONLINE_100_MOMO"
   ]),
+  noChangePolicyAck: z.boolean().refine((value) => value === true),
   items: z
     .array(
       z.object({
         productId: z.string().uuid(),
+        productVariantId: z.string().uuid().optional(),
         quantity: z.coerce.number().int().min(1).max(10),
         size: z.string().min(1),
         color: z.string().min(1)
