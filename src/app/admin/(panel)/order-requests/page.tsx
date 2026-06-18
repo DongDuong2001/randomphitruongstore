@@ -3,15 +3,14 @@ import { AdminStatusSelect } from "@/components/admin-status-select";
 import { AdminTable } from "@/components/admin-table";
 import { StatusBadge } from "@/components/status-badge";
 import { getPrisma } from "@/lib/prisma";
+import { listAdminProductInquiries } from "@/lib/product-inquiry";
 
 export const dynamic = "force-dynamic";
 
 const statuses = ["NEW", "CONTACTED", "QUOTED", "CLOSED"];
 
 export default async function AdminOrderRequestsPage() {
-  const requests = await getPrisma().orderRequest.findMany({
-    orderBy: { createdAt: "desc" }
-  });
+  const requests = await listAdminProductInquiries(getPrisma());
 
   return (
     <>
@@ -22,43 +21,54 @@ export default async function AdminOrderRequestsPage() {
       <AdminTable
         headers={["Inspiration", "Customer", "Request", "Status", "Update"]}
       >
-        {requests.map((request) => (
-          <tr key={request.id}>
-            <td className="px-4 py-4">
-              <a href={request.inspirationUrl} rel="noreferrer" target="_blank">
-                <Image
-                  alt="Customer inspiration"
-                  className="h-20 w-16 object-cover"
-                  height={80}
-                  src={request.inspirationUrl}
-                  width={64}
+        {requests.map((request) => {
+          const inspirationUrl =
+            request.images[0]?.imageUrl ?? request.externalProductUrl ?? "";
+          const socialContact =
+            request.instagramHandle ?? request.zaloPhone ?? request.email ?? "-";
+
+          return (
+            <tr key={request.id}>
+              <td className="px-4 py-4">
+                {inspirationUrl ? (
+                  <a href={inspirationUrl} rel="noreferrer" target="_blank">
+                    <Image
+                      alt="Customer inspiration"
+                      className="h-20 w-16 object-cover"
+                      height={80}
+                      src={inspirationUrl}
+                      width={64}
+                    />
+                  </a>
+                ) : (
+                  <span className="text-xs text-zinc-500">-</span>
+                )}
+              </td>
+              <td className="px-4 py-4">
+                <p className="font-bold">{request.fullName}</p>
+                <p className="text-xs text-zinc-500">{request.phone}</p>
+                <p className="text-xs text-zinc-500">{socialContact}</p>
+              </td>
+              <td className="max-w-xs px-4 py-4">
+                <p>Size: {request.preferredSize ?? "-"}</p>
+                <p>Color: {request.preferredColor ?? "-"}</p>
+                <p className="mt-1 truncate text-xs text-zinc-500">
+                  {request.customerMessage || "-"}
+                </p>
+              </td>
+              <td className="px-4 py-4">
+                <StatusBadge status={request.status} />
+              </td>
+              <td className="px-4 py-4">
+                <AdminStatusSelect
+                  endpoint={`/api/order-requests/${request.id}`}
+                  statuses={statuses}
+                  value={request.status}
                 />
-              </a>
-            </td>
-            <td className="px-4 py-4">
-              <p className="font-bold">{request.fullName}</p>
-              <p className="text-xs text-zinc-500">{request.phone}</p>
-              <p className="text-xs text-zinc-500">{request.socialContact}</p>
-            </td>
-            <td className="max-w-xs px-4 py-4">
-              <p>Size: {request.desiredSize}</p>
-              <p>Color: {request.desiredColor}</p>
-              <p className="mt-1 truncate text-xs text-zinc-500">
-                {request.note || "-"}
-              </p>
-            </td>
-            <td className="px-4 py-4">
-              <StatusBadge status={request.status} />
-            </td>
-            <td className="px-4 py-4">
-              <AdminStatusSelect
-                endpoint={`/api/order-requests/${request.id}`}
-                statuses={statuses}
-                value={request.status}
-              />
-            </td>
-          </tr>
-        ))}
+              </td>
+            </tr>
+          );
+        })}
       </AdminTable>
     </>
   );
