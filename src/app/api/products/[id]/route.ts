@@ -1,5 +1,6 @@
 import { err, handlePrismaError, ok, zodDetails } from "@/lib/api-response";
 import { isAdminAuthenticated } from "@/lib/admin-auth";
+import { buildProductCatalogWrite } from "@/lib/product-catalog";
 import { getPrisma } from "@/lib/prisma";
 import { productInputSchema } from "@/lib/validations";
 
@@ -16,24 +17,23 @@ export async function PATCH(request: Request, context: RouteContext) {
   }
 
   const { id } = await context.params;
-  const { images, ...data } = parsed.data;
+  const catalog = buildProductCatalogWrite(parsed.data);
   try {
     const product = await getPrisma().$transaction(async (prisma) => {
       await prisma.productImage.deleteMany({ where: { productId: id } });
+      await prisma.productVariant.deleteMany({ where: { productId: id } });
       return prisma.product.update({
         where: { id },
         data: {
-          ...data,
-          images: {
-            create: images.map((url, index) => ({
-              url,
-              altVi: data.nameVi,
-              altEn: data.nameEn,
-              sortOrder: index
-            }))
-          }
+          ...catalog.productData,
+          images: { create: catalog.images },
+          variants: { create: catalog.variants }
         },
-        include: { images: { orderBy: { sortOrder: "asc" } } }
+        include: {
+          categoryRecord: true,
+          images: { orderBy: { sortOrder: "asc" } },
+          variants: { orderBy: [{ size: "asc" }, { colorVi: "asc" }] }
+        }
       });
     });
     return ok(product);

@@ -6,6 +6,14 @@ const phoneSchema = z
   .min(9, "Phone number is too short")
   .max(20, "Phone number is too long");
 
+const productVariantInputSchema = z.object({
+  size: z.string().trim().min(1),
+  colorVi: z.string().trim().min(1),
+  colorEn: z.string().trim().optional(),
+  priceAdjustment: z.coerce.number().int().default(0),
+  isAvailable: z.boolean().default(true)
+});
+
 export const productInputSchema = z.object({
   nameVi: z.string().trim().min(2),
   nameEn: z.string().trim().min(2),
@@ -17,7 +25,11 @@ export const productInputSchema = z.object({
   descriptionVi: z.string().trim().min(10),
   descriptionEn: z.string().trim().min(10),
   category: z.enum(["SUKAJAN", "BOMBER", "HOODIE", "JACKET", "SEASONAL"]),
+  categoryId: z.string().trim().uuid().optional().or(z.literal("")),
   price: z.coerce.number().int().positive(),
+  basePrice: z.coerce.number().int().positive().optional(),
+  orderLeadTimeMinDays: z.coerce.number().int().positive().default(7),
+  orderLeadTimeMaxDays: z.coerce.number().int().positive().default(10),
   images: z
     .array(
       z
@@ -31,6 +43,7 @@ export const productInputSchema = z.object({
     .min(1),
   sizes: z.array(z.string().trim().min(1)).min(1),
   colors: z.array(z.string().trim().min(1)).min(1),
+  variants: z.array(productVariantInputSchema).optional(),
   materialVi: z.string().trim().min(2),
   materialEn: z.string().trim().min(2),
   stockStatus: z.enum(["IN_STOCK", "OUT_OF_STOCK"]).default("IN_STOCK"),

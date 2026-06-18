@@ -15,8 +15,23 @@ import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import type { ProductWithImages } from "@/types";
+import type { ProductCategory, ProductWithImages } from "@/types";
 import { AdminTable } from "./admin-table";
+
+type CategoryOption = {
+  id: string;
+  nameVi: string;
+  nameEn: string;
+  slug: string;
+};
+
+type ParsedVariant = {
+  size: string;
+  colorVi: string;
+  colorEn: string;
+  priceAdjustment: number;
+  isAvailable: boolean;
+};
 
 const formSchema = z.object({
   nameVi: z.string().trim().min(2),
@@ -25,10 +40,14 @@ const formSchema = z.object({
   descriptionVi: z.string().trim().min(10),
   descriptionEn: z.string().trim().min(10),
   category: z.enum(["SUKAJAN", "BOMBER", "HOODIE", "JACKET", "SEASONAL"]),
-  price: z.number().int().positive(),
+  categoryId: z.string(),
+  basePrice: z.number().int().positive(),
+  orderLeadTimeMinDays: z.number().int().positive(),
+  orderLeadTimeMaxDays: z.number().int().positive(),
   images: z.string().trim().min(5),
   sizes: z.string().trim().min(1),
   colors: z.string().trim().min(1),
+  variants: z.string().trim(),
   materialVi: z.string().trim().min(2),
   materialEn: z.string().trim().min(2),
   stockStatus: z.enum(["IN_STOCK", "OUT_OF_STOCK"]),
@@ -45,10 +64,14 @@ const defaults: FormValues = {
   descriptionVi: "",
   descriptionEn: "",
   category: "SUKAJAN",
-  price: 1500000,
+  categoryId: "",
+  basePrice: 1500000,
+  orderLeadTimeMinDays: 7,
+  orderLeadTimeMaxDays: 10,
   images: "",
   sizes: "M, L, XL",
   colors: "Black",
+  variants: "M | Black | Black | 0 | true\nL | Black | Black | 0 | true\nXL | Black | Black | 0 | true",
   materialVi: "",
   materialEn: "",
   stockStatus: "IN_STOCK",
@@ -56,12 +79,90 @@ const defaults: FormValues = {
   isActive: true
 };
 
-const categories = ["ALL", "SUKAJAN", "BOMBER", "HOODIE", "JACKET", "SEASONAL"];
+const categories: Array<"ALL" | ProductCategory> = [
+  "ALL",
+  "SUKAJAN",
+  "BOMBER",
+  "HOODIE",
+  "JACKET",
+  "SEASONAL"
+];
 const pageSize = 10;
 
+function splitList(value: string) {
+  return value
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function uniqueValues(values: string[]) {
+  return [...new Set(values.map((value) => value.trim()).filter(Boolean))];
+}
+
+function parseBoolean(value: string) {
+  return !["0", "false", "no", "out", "unavailable"].includes(
+    value.trim().toLowerCase()
+  );
+}
+
+function parseVariantRows(value: string): ParsedVariant[] {
+  const variants = value
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => {
+      const delimiter = line.includes("|") ? "|" : ",";
+      const [size = "", colorVi = "", colorEn = "", priceAdjustment = "0", isAvailable = "true"] =
+        line.split(delimiter).map((part) => part.trim());
+      const parsedAdjustment = Number.parseInt(priceAdjustment, 10);
+
+      return {
+        size,
+        colorVi,
+        colorEn: colorEn || colorVi,
+        priceAdjustment: Number.isFinite(parsedAdjustment) ? parsedAdjustment : 0,
+        isAvailable: parseBoolean(isAvailable)
+      };
+    })
+    .filter((variant) => variant.size && variant.colorVi);
+
+  const seen = new Set<string>();
+  return variants.filter((variant) => {
+    const key = `${variant.size.toLowerCase()}::${variant.colorVi.toLowerCase()}`;
+    if (seen.has(key)) {
+      return false;
+    }
+    seen.add(key);
+    return true;
+  });
+}
+
+function formatVariantRows(product: ProductWithImages) {
+  const variants = product.variants ?? [];
+  if (variants.length) {
+    return variants
+      .map(
+        (variant) =>
+          `${variant.size} | ${variant.colorVi} | ${variant.colorEn} | ${variant.priceAdjustment} | ${
+            variant.isAvailable ? "true" : "false"
+          }`
+      )
+      .join("\n");
+  }
+
+  return product.sizes
+    .flatMap((size) =>
+      product.colors.map((color) => `${size} | ${color} | ${color} | 0 | true`)
+    )
+    .join("\n");
+}
+
 export function AdminProductManager({
+  categories: categoryOptions,
   products
 }: {
+  categories: CategoryOption[];
   products: ProductWithImages[];
 }) {
   const router = useRouter();
@@ -135,7 +236,7 @@ export function AdminProductManager({
   function createProduct() {
     setEditingId(null);
     setServerError("");
-    reset(defaults);
+    reset({ ...defaults, categoryId: categoryOptions[0]?.id ?? "" });
     setOpen(true);
   }
 
@@ -149,10 +250,14 @@ export function AdminProductManager({
       descriptionVi: product.descriptionVi,
       descriptionEn: product.descriptionEn,
       category: product.category,
-      price: product.price,
+      categoryId: product.categoryId ?? "",
+      basePrice: product.basePrice ?? product.price,
+      orderLeadTimeMinDays: product.orderLeadTimeMinDays ?? 7,
+      orderLeadTimeMaxDays: product.orderLeadTimeMaxDays ?? 10,
       images: product.images.map((image) => image.url).join("\n"),
       sizes: product.sizes.join(", "),
       colors: product.colors.join(", "),
+      variants: formatVariantRows(product),
       materialVi: product.materialVi,
       materialEn: product.materialEn,
       stockStatus: product.stockStatus,
@@ -164,24 +269,28 @@ export function AdminProductManager({
 
   async function save(values: FormValues) {
     setServerError("");
+    const variants = parseVariantRows(values.variants);
+    const sizes = variants.length
+      ? uniqueValues(variants.map((variant) => variant.size))
+      : splitList(values.sizes);
+    const colors = variants.length
+      ? uniqueValues(variants.map((variant) => variant.colorVi))
+      : splitList(values.colors);
     const endpoint = editingId ? `/api/products/${editingId}` : "/api/products";
     const response = await fetch(endpoint, {
       method: editingId ? "PATCH" : "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         ...values,
+        price: values.basePrice,
+        categoryId: values.categoryId || "",
         images: values.images
           .split(/\r?\n/)
           .map((value) => value.trim())
           .filter(Boolean),
-        sizes: values.sizes
-          .split(",")
-          .map((value) => value.trim())
-          .filter(Boolean),
-        colors: values.colors
-          .split(",")
-          .map((value) => value.trim())
-          .filter(Boolean)
+        sizes,
+        colors,
+        variants
       })
     });
     const result = await response.json();
@@ -323,9 +432,22 @@ export function AdminProductManager({
             </td>
             <td className="px-4 py-4">
               <CategoryBadge category={product.category} />
+              {product.categoryRecord ? (
+                <p className="mt-1 text-xs text-zinc-500">
+                  {product.categoryRecord.nameEn}
+                </p>
+              ) : null}
             </td>
             <td className="px-4 py-4">
-              {new Intl.NumberFormat("vi-VN").format(product.price)} VND
+              {new Intl.NumberFormat("vi-VN").format(
+                product.basePrice ?? product.price
+              )}{" "}
+              VND
+              {product.variants?.length ? (
+                <p className="mt-1 text-xs text-zinc-500">
+                  {product.variants.length} variants
+                </p>
+              ) : null}
             </td>
             <td className="px-4 py-4">
               <StockBadge status={product.stockStatus} />
@@ -428,6 +550,19 @@ export function AdminProductManager({
               <AdminField label="Slug" error={errors.slug?.message}>
                 <input className="field" {...register("slug")} />
               </AdminField>
+              <AdminField
+                label="Catalog category"
+                error={errors.categoryId?.message}
+              >
+                <select className="field" {...register("categoryId")}>
+                  <option value="">No category record</option>
+                  {categoryOptions.map((category) => (
+                    <option key={category.id} value={category.id}>
+                      {category.nameEn} / {category.nameVi}
+                    </option>
+                  ))}
+                </select>
+              </AdminField>
               <AdminField label="Category" error={errors.category?.message}>
                 <select className="field" {...register("category")}>
                   <option value="SUKAJAN">Sukajan</option>
@@ -437,11 +572,34 @@ export function AdminProductManager({
                   <option value="SEASONAL">Seasonal</option>
                 </select>
               </AdminField>
-              <AdminField label="Price (VND)" error={errors.price?.message}>
+              <AdminField
+                label="Base price (VND)"
+                error={errors.basePrice?.message}
+              >
                 <input
                   className="field"
                   type="number"
-                  {...register("price", { valueAsNumber: true })}
+                  {...register("basePrice", { valueAsNumber: true })}
+                />
+              </AdminField>
+              <AdminField
+                label="Lead time min days"
+                error={errors.orderLeadTimeMinDays?.message}
+              >
+                <input
+                  className="field"
+                  type="number"
+                  {...register("orderLeadTimeMinDays", { valueAsNumber: true })}
+                />
+              </AdminField>
+              <AdminField
+                label="Lead time max days"
+                error={errors.orderLeadTimeMaxDays?.message}
+              >
+                <input
+                  className="field"
+                  type="number"
+                  {...register("orderLeadTimeMaxDays", { valueAsNumber: true })}
                 />
               </AdminField>
               <AdminField label="Sizes (comma separated)" error={errors.sizes?.message}>
@@ -450,6 +608,15 @@ export function AdminProductManager({
               <AdminField label="Colors (comma separated)" error={errors.colors?.message}>
                 <input className="field" {...register("colors")} />
               </AdminField>
+              <div className="sm:col-span-2">
+                <AdminField label="Variants" error={errors.variants?.message}>
+                  <textarea
+                    className="field min-h-28"
+                    placeholder="M | Black | Black | 0 | true"
+                    {...register("variants")}
+                  />
+                </AdminField>
+              </div>
               <AdminField label="Material (VI)" error={errors.materialVi?.message}>
                 <input className="field" {...register("materialVi")} />
               </AdminField>

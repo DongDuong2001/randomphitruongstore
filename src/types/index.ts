@@ -38,6 +38,13 @@ export type ProductVariantDTO = {
   isAvailable: boolean;
 };
 
+export type ProductCategoryRecordDTO = {
+  id: string;
+  nameVi: string;
+  nameEn: string;
+  slug: string;
+};
+
 export type ProductDTO = {
   id: string;
   nameVi: string;
@@ -46,8 +53,12 @@ export type ProductDTO = {
   descriptionVi: string;
   descriptionEn: string;
   category: ProductCategory;
+  categoryId?: string | null;
+  categoryRecord?: ProductCategoryRecordDTO | null;
   price: number;
   basePrice?: number | null;
+  orderLeadTimeMinDays?: number;
+  orderLeadTimeMaxDays?: number;
   sizes: string[];
   colors: string[];
   materialVi: string;
