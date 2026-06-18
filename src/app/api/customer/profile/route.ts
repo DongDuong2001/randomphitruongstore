@@ -1,5 +1,6 @@
 import { err, handlePrismaError, ok, zodDetails } from "@/lib/api-response";
 import { isMissingCustomerEmailColumn, normalizeEmail } from "@/lib/customer-account";
+import { saveCustomerProfileForEmail } from "@/lib/customer-profile";
 import { getPrisma } from "@/lib/prisma";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 import { profileUpdateSchema } from "@/lib/validations";
@@ -61,32 +62,12 @@ export async function PATCH(request: Request) {
   }
 
   try {
-    const customer = await getPrisma().customer.findFirst({
-      where: { email },
-      orderBy: { updatedAt: "desc" },
-      select: { id: true }
-    });
-
-    if (!customer) {
-      return err("Complete checkout details before saving a profile", 409);
-    }
-
-    const updated = await getPrisma().customer.update({
-      where: { id: customer.id },
-      data: parsed.data,
-      select: {
-        id: true,
-        fullName: true,
-        phone: true,
-        email: true,
-        address: true,
-        province: true,
-        district: true,
-        ward: true,
-        zaloPhone: true,
-        instagramHandle: true,
-        preferredLanguage: true
-      }
+    const updated = await saveCustomerProfileForEmail({
+      prisma: getPrisma(),
+      email,
+      authUserId: user.id,
+      authFullName: user.user_metadata?.full_name,
+      input: parsed.data
     });
 
     return ok(updated);

@@ -334,6 +334,7 @@ model Customer {
   contactSubmissions ContactSubmission[]
   productInquiries   ProductInquiry[]
 
+  @@index([email])
   @@index([phone])
 }
 
