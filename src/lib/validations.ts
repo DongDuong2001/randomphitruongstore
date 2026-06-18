@@ -6,6 +6,28 @@ const phoneSchema = z
   .min(9, "Phone number is too short")
   .max(20, "Phone number is too long");
 
+const productVariantInputSchema = z.object({
+  size: z.string().trim().min(1),
+  colorVi: z.string().trim().min(1),
+  colorEn: z.string().trim().optional(),
+  priceAdjustment: z.coerce.number().int().default(0),
+  isAvailable: z.boolean().default(true)
+});
+
+const optionalMeasurementSchema = z.preprocess(
+  (value) => (value === "" || value === null ? undefined : value),
+  z.coerce.number().positive().optional()
+);
+
+const productSizeChartInputSchema = z.object({
+  size: z.string().trim().min(1),
+  shoulder: optionalMeasurementSchema,
+  chest: optionalMeasurementSchema,
+  length: optionalMeasurementSchema,
+  sleeve: optionalMeasurementSchema,
+  unit: z.string().trim().min(1).default("cm")
+});
+
 export const productInputSchema = z.object({
   nameVi: z.string().trim().min(2),
   nameEn: z.string().trim().min(2),
@@ -17,7 +39,11 @@ export const productInputSchema = z.object({
   descriptionVi: z.string().trim().min(10),
   descriptionEn: z.string().trim().min(10),
   category: z.enum(["SUKAJAN", "BOMBER", "HOODIE", "JACKET", "SEASONAL"]),
+  categoryId: z.string().trim().uuid().optional().or(z.literal("")),
   price: z.coerce.number().int().positive(),
+  basePrice: z.coerce.number().int().positive().optional(),
+  orderLeadTimeMinDays: z.coerce.number().int().positive().default(7),
+  orderLeadTimeMaxDays: z.coerce.number().int().positive().default(10),
   images: z
     .array(
       z
@@ -31,6 +57,8 @@ export const productInputSchema = z.object({
     .min(1),
   sizes: z.array(z.string().trim().min(1)).min(1),
   colors: z.array(z.string().trim().min(1)).min(1),
+  variants: z.array(productVariantInputSchema).optional(),
+  sizeCharts: z.array(productSizeChartInputSchema).optional(),
   materialVi: z.string().trim().min(2),
   materialEn: z.string().trim().min(2),
   stockStatus: z.enum(["IN_STOCK", "OUT_OF_STOCK"]).default("IN_STOCK"),
@@ -52,10 +80,12 @@ export const orderInputSchema = z.object({
     "ONLINE_100_VNPAY",
     "ONLINE_100_MOMO"
   ]),
+  noChangePolicyAck: z.boolean().refine((value) => value === true),
   items: z
     .array(
       z.object({
         productId: z.string().uuid(),
+        productVariantId: z.string().uuid().optional(),
         quantity: z.coerce.number().int().min(1).max(10),
         size: z.string().min(1),
         color: z.string().min(1)
@@ -97,7 +127,8 @@ export const orderStatusSchema = z.object({
     "SHIPPING",
     "COMPLETED",
     "CANCELLED"
-  ])
+  ]),
+  note: z.string().trim().max(1000).optional().or(z.literal(""))
 });
 
 export const orderRequestStatusSchema = z.object({

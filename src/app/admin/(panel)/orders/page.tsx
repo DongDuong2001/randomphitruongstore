@@ -21,7 +21,11 @@ const statuses = [
 
 export default async function AdminOrdersPage() {
   const orders = await getPrisma().order.findMany({
-    include: { customer: true, items: true },
+    include: {
+      customer: true,
+      items: true,
+      payments: { orderBy: { createdAt: "asc" } }
+    },
     orderBy: { createdAt: "desc" }
   });
 
@@ -52,7 +56,12 @@ export default async function AdminOrdersPage() {
               <p className="text-xs text-zinc-500">{order.customer.phone}</p>
             </td>
             <td className="px-4 py-4">{formatPrice(order.subtotal)}</td>
-            <td className="px-4 py-4 text-xs">{order.paymentMethod}</td>
+            <td className="px-4 py-4 text-xs">
+              <p className="font-bold">{order.paymentMethod}</p>
+              <p className="mt-1 text-zinc-500">
+                {paymentSummary(order.payments)}
+              </p>
+            </td>
             <td className="px-4 py-4">
               <StatusBadge status={order.status} />
             </td>
@@ -68,4 +77,19 @@ export default async function AdminOrdersPage() {
       </AdminTable>
     </>
   );
+}
+
+function paymentSummary(
+  payments: Array<{ paymentType: string; paymentStatus: string }>
+) {
+  if (payments.length === 0) {
+    return "No payment record";
+  }
+
+  return payments
+    .map(
+      (payment) =>
+        `${payment.paymentType.replaceAll("_", " ")}: ${payment.paymentStatus}`
+    )
+    .join(" / ");
 }

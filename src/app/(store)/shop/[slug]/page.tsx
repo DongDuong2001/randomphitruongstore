@@ -6,6 +6,7 @@ import { ProductGallery } from "@/components/product-gallery";
 import { PurchasePanel } from "@/components/purchase-panel";
 import type { Locale } from "@/i18n/request";
 import { formatPrice } from "@/lib/format";
+import { productBasePrice } from "@/lib/product-pricing";
 import { getPrisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
@@ -41,7 +42,11 @@ export default async function ProductPage({ params }: PageProps) {
   const common = await getTranslations("common");
   const product = await getPrisma().product.findFirst({
     where: { slug, isActive: true, stockStatus: "IN_STOCK" },
-    include: { images: { orderBy: { sortOrder: "asc" } } }
+    include: {
+      images: { orderBy: { sortOrder: "asc" } },
+      variants: { orderBy: [{ size: "asc" }, { colorVi: "asc" }] },
+      sizeCharts: { orderBy: { size: "asc" } }
+    }
   });
   if (!product) {
     notFound();
@@ -51,6 +56,7 @@ export default async function ProductPage({ params }: PageProps) {
   const description =
     locale === "vi" ? product.descriptionVi : product.descriptionEn;
   const material = locale === "vi" ? product.materialVi : product.materialEn;
+  const basePrice = productBasePrice(product);
 
   return (
     <div className="container-shell grid gap-10 py-8 sm:py-14 lg:grid-cols-[1.15fr_0.85fr] lg:gap-16">
@@ -66,7 +72,7 @@ export default async function ProductPage({ params }: PageProps) {
           {name}
         </h1>
         <p className="mt-5 text-2xl font-bold">
-          {formatPrice(product.price, locale)}
+          {formatPrice(basePrice, locale)}
         </p>
         <p className="mt-6 text-sm leading-7 text-zinc-600">{description}</p>
         <dl className="my-7 border-y border-zinc-300 py-5 text-sm">
@@ -75,6 +81,43 @@ export default async function ProductPage({ params }: PageProps) {
             <dd className="text-right text-zinc-600">{material}</dd>
           </div>
         </dl>
+        {product.sizeCharts.length ? (
+          <section className="mb-6 overflow-x-auto border border-zinc-300">
+            <table className="w-full min-w-[460px] text-left text-xs">
+              <caption className="border-b border-zinc-300 px-4 py-3 text-left text-sm font-black">
+                Size chart
+              </caption>
+              <thead className="bg-zinc-100">
+                <tr>
+                  {["Size", "Shoulder", "Chest", "Length", "Sleeve"].map((label) => (
+                    <th className="px-4 py-3 font-bold" key={label}>
+                      {label}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {product.sizeCharts.map((sizeChart) => (
+                  <tr className="border-t border-zinc-200" key={sizeChart.id}>
+                    <td className="px-4 py-3 font-bold">{sizeChart.size}</td>
+                    <td className="px-4 py-3">
+                      {formatMeasurement(sizeChart.shoulder, sizeChart.unit)}
+                    </td>
+                    <td className="px-4 py-3">
+                      {formatMeasurement(sizeChart.chest, sizeChart.unit)}
+                    </td>
+                    <td className="px-4 py-3">
+                      {formatMeasurement(sizeChart.length, sizeChart.unit)}
+                    </td>
+                    <td className="px-4 py-3">
+                      {formatMeasurement(sizeChart.sleeve, sizeChart.unit)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </section>
+        ) : null}
         <div className="mb-6 bg-zinc-100 p-4">
           <p className="font-bold">{t("orderNotice")}</p>
           <p className="mt-2 flex gap-2 text-xs leading-5 text-zinc-600">
@@ -97,11 +140,19 @@ export default async function ProductPage({ params }: PageProps) {
           productId={product.id}
           productSlug={product.slug}
           productName={name}
-          productPrice={product.price}
+          productPrice={basePrice}
+          variants={product.variants}
           imageUrl={product.images[0]?.url}
           sizes={product.sizes}
         />
       </section>
     </div>
   );
+}
+
+function formatMeasurement(
+  value: { toString: () => string } | number | null,
+  unit: string
+) {
+  return value === null ? "-" : `${value.toString()} ${unit}`;
 }

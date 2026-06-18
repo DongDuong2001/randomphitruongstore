@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import type { Locale } from "@/i18n/request";
 import { categoryLabel, formatPrice } from "@/lib/format";
+import { productBasePrice } from "@/lib/product-pricing";
 import type { ProductWithImages } from "@/types";
 import { OrderBadge } from "./order-badge";
 
@@ -71,7 +72,7 @@ export function ProductCard({
               {name}
             </h3>
             <p className="mt-2 text-xs font-bold sm:mt-0 sm:shrink-0 sm:text-sm">
-              {formatPrice(product.price, locale)}
+              {formatPrice(productBasePrice(product), locale)}
             </p>
           </div>
           <span className="mt-3 hidden border-b border-black pb-0.5 text-xs font-bold uppercase tracking-[0.08em] group-hover:border-[#a72b1f] group-hover:text-[#a72b1f] sm:inline-block">

@@ -4,6 +4,7 @@ import { ChevronDown, SlidersHorizontal, X } from "lucide-react";
 import { useMemo, useState } from "react";
 import type { Locale } from "@/i18n/request";
 import { categoryLabel } from "@/lib/format";
+import { productBasePrice } from "@/lib/product-pricing";
 import type { ProductWithImages } from "@/types";
 import { ProductGrid } from "./product-grid";
 
@@ -51,7 +52,7 @@ export function ProductFilters({
           (category === "ALL" || product.category === category) &&
           (size === "ALL" || product.sizes.includes(size)) &&
           (color === "ALL" || product.colors.includes(color)) &&
-          product.price <= maxPrice
+          productBasePrice(product) <= maxPrice
       ),
     [category, color, maxPrice, products, size]
   );

@@ -29,8 +29,10 @@ export default async function AdminOrderDetailPage({
     where: { id },
     include: {
       customer: true,
-      items: { include: { product: true } },
-      shippingAddress: true
+      items: { include: { product: true, productVariant: true } },
+      payments: { orderBy: { createdAt: "asc" } },
+      shippingAddress: true,
+      statusHistory: { orderBy: { createdAt: "desc" } }
     }
   });
   if (!order) {
@@ -89,6 +91,33 @@ export default async function AdminOrderDetailPage({
               value={order.createdAt.toLocaleString("vi-VN")}
             />
           </dl>
+          <div className="mt-5 divide-y divide-zinc-200 border-t border-zinc-200">
+            {order.payments.length === 0 ? (
+              <p className="py-4 text-sm text-zinc-500">No payment record</p>
+            ) : (
+              order.payments.map((payment) => (
+                <div
+                  className="grid gap-2 py-4 text-sm sm:grid-cols-[1fr_auto]"
+                  key={payment.id}
+                >
+                  <div>
+                    <p className="font-bold">
+                      {payment.paymentType.replaceAll("_", " ")}
+                    </p>
+                    <p className="mt-1 text-xs text-zinc-500">
+                      {payment.paidAt
+                        ? `Paid ${payment.paidAt.toLocaleString("vi-VN")}`
+                        : "Awaiting payment"}
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+                    <StatusBadge status={payment.paymentStatus} />
+                    <span className="font-bold">{formatPrice(payment.amount)}</span>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
         </section>
       </div>
 
@@ -109,6 +138,30 @@ export default async function AdminOrderDetailPage({
               <p className="font-bold">{formatPrice(item.unitPrice * item.quantity)}</p>
             </div>
           ))}
+        </div>
+      </section>
+
+      <section className="mt-5 border border-zinc-200 bg-white p-5">
+        <h2 className="font-black">Status history</h2>
+        <div className="mt-4 divide-y divide-zinc-200">
+          {order.statusHistory.length === 0 ? (
+            <p className="py-4 text-sm text-zinc-500">No status history</p>
+          ) : (
+            order.statusHistory.map((history) => (
+              <div
+                className="grid gap-2 py-4 text-sm sm:grid-cols-[1fr_auto]"
+                key={history.id}
+              >
+                <div>
+                  <StatusBadge status={history.status} />
+                  <p className="mt-2 text-zinc-600">{history.note || "-"}</p>
+                </div>
+                <p className="text-xs font-bold text-zinc-500">
+                  {history.createdAt.toLocaleString("vi-VN")}
+                </p>
+              </div>
+            ))
+          )}
         </div>
       </section>
     </>

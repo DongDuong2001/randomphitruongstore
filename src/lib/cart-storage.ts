@@ -33,6 +33,8 @@ function isCartItem(value: unknown): value is CartItem {
   const item = value as Record<string, unknown>;
   return (
     typeof item.productId === "string" &&
+    (item.productVariantId === undefined ||
+      typeof item.productVariantId === "string") &&
     typeof item.slug === "string" &&
     typeof item.name === "string" &&
     typeof item.price === "number" &&

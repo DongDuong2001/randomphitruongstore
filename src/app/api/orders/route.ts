@@ -1,10 +1,7 @@
 import { err, handlePrismaError, ok, zodDetails } from "@/lib/api-response";
 import { isAdminAuthenticated } from "@/lib/admin-auth";
-import {
-  buildShippingAddressSnapshot,
-  isMissingCustomerEmailColumn,
-  normalizeEmail
-} from "@/lib/customer-account";
+import { CheckoutOrderError, createCheckoutOrder } from "@/lib/checkout-order";
+import { normalizeEmail } from "@/lib/customer-account";
 import { orderNumber } from "@/lib/format";
 import { getPrisma } from "@/lib/prisma";
 import { orderInputSchema } from "@/lib/validations";
@@ -34,135 +31,22 @@ export async function POST(request: Request) {
 
   const input = parsed.data;
   try {
-    const productIds = [...new Set(input.items.map((item) => item.productId))];
-    const products = await getPrisma().product.findMany({
-      where: { id: { in: productIds }, isActive: true, stockStatus: "IN_STOCK" }
-    });
-
-    if (products.length !== productIds.length) {
-      return err("One or more products are unavailable", 409);
-    }
-
-    const productMap = new Map(products.map((product) => [product.id, product]));
-    for (const item of input.items) {
-      const product = productMap.get(item.productId)!;
-      if (!product.sizes.includes(item.size) || !product.colors.includes(item.color)) {
-        return err(`Invalid size or color for ${product.nameEn}`, 400);
-      }
-    }
-
-    const subtotal = input.items.reduce((total, item) => {
-      const product = productMap.get(item.productId)!;
-      return total + product.price * item.quantity;
-    }, 0);
-    const isDeposit = input.paymentMethod === "DEPOSIT_50_BANK_ZALO";
-    const depositAmount = isDeposit ? Math.ceil(subtotal / 2) : null;
-    const shippingFee = 0;
-    const totalAmount = subtotal + shippingFee;
-    const remainingAmount = depositAmount === null ? 0 : totalAmount - depositAmount;
-    const paymentOption = isDeposit ? "DEPOSIT_50" : "ONLINE_100";
-
     const supabase = await getSupabaseServerClient();
     const { data: { user } } = await supabase.auth.getUser();
     const userEmail = normalizeEmail(user?.email);
 
-    let customer;
-    if (userEmail) {
-      try {
-        customer = await getPrisma().customer.findFirst({
-          where: { email: userEmail },
-          orderBy: { updatedAt: "desc" }
-        });
-        if (customer) {
-          customer = await getPrisma().customer.update({
-            where: { id: customer.id },
-            data: {
-              fullName: input.fullName,
-              phone: input.phone,
-              address: input.address,
-              province: input.province,
-              district: input.district,
-              ward: input.ward
-            }
-          });
-        } else {
-          customer = await getPrisma().customer.create({
-            data: {
-              email: userEmail,
-              fullName: input.fullName,
-              phone: input.phone,
-              address: input.address,
-              province: input.province,
-              district: input.district,
-              ward: input.ward
-            }
-          });
-        }
-      } catch (error) {
-        if (!isMissingCustomerEmailColumn(error)) {
-          throw error;
-        }
-        customer = await getPrisma().customer.create({
-          data: {
-            fullName: input.fullName,
-            phone: input.phone,
-            address: input.address,
-            province: input.province,
-            district: input.district,
-            ward: input.ward
-          }
-        });
-      }
-    } else {
-      customer = await getPrisma().customer.create({
-        data: {
-          fullName: input.fullName,
-          phone: input.phone,
-          address: input.address,
-          province: input.province,
-          district: input.district,
-          ward: input.ward
-        }
-      });
-    }
-
-    const order = await getPrisma().order.create({
-      data: {
-        orderNumber: orderNumber(),
-        shippingRegion: input.shippingRegion,
-        paymentMethod: input.paymentMethod,
-        paymentOption,
-        status: isDeposit ? "PENDING_DEPOSIT" : "PENDING_ONLINE_PAYMENT",
-        subtotal,
-        depositAmount,
-        subtotalAmount: subtotal,
-        remainingAmount,
-        shippingFee,
-        totalAmount,
-        note: input.note || null,
-        customerId: customer.id,
-        shippingAddress: {
-          create: buildShippingAddressSnapshot(input)
-        },
-        items: {
-          create: input.items.map((item) => {
-            const product = productMap.get(item.productId)!;
-            return {
-              productId: item.productId,
-              productName: product.nameVi,
-              unitPrice: product.price,
-              quantity: item.quantity,
-              size: item.size,
-              color: item.color
-            };
-          })
-        }
-      },
-      include: { customer: true, items: true }
+    const order = await createCheckoutOrder({
+      prisma: getPrisma(),
+      input,
+      userEmail,
+      generateOrderNumber: orderNumber
     });
 
     return ok(order, 201);
   } catch (error) {
+    if (error instanceof CheckoutOrderError) {
+      return err(error.message, error.status);
+    }
     return handlePrismaError(error);
   }
 }

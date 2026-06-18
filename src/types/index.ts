@@ -29,6 +29,32 @@ export type ProductImageDTO = {
   sortOrder: number;
 };
 
+export type ProductVariantDTO = {
+  id: string;
+  size: string;
+  colorVi: string;
+  colorEn: string;
+  priceAdjustment: number;
+  isAvailable: boolean;
+};
+
+export type SizeChartDTO = {
+  id: string;
+  size: string;
+  shoulder?: number | string | null;
+  chest?: number | string | null;
+  length?: number | string | null;
+  sleeve?: number | string | null;
+  unit: string;
+};
+
+export type ProductCategoryRecordDTO = {
+  id: string;
+  nameVi: string;
+  nameEn: string;
+  slug: string;
+};
+
 export type ProductDTO = {
   id: string;
   nameVi: string;
@@ -37,7 +63,12 @@ export type ProductDTO = {
   descriptionVi: string;
   descriptionEn: string;
   category: ProductCategory;
+  categoryId?: string | null;
+  categoryRecord?: ProductCategoryRecordDTO | null;
   price: number;
+  basePrice?: number | null;
+  orderLeadTimeMinDays?: number;
+  orderLeadTimeMaxDays?: number;
   sizes: string[];
   colors: string[];
   materialVi: string;
@@ -50,6 +81,8 @@ export type ProductDTO = {
   createdAt: Date | string;
   updatedAt: Date | string;
   images: ProductImageDTO[];
+  variants?: ProductVariantDTO[];
+  sizeCharts?: SizeChartDTO[];
 };
 
 export type CustomerDTO = {
@@ -64,7 +97,8 @@ export type CustomerDTO = {
 
 export type OrderItemDTO = {
   id: string;
-  productId: string;
+  productId: string | null;
+  productVariantId?: string | null;
   productName: string;
   unitPrice: number;
   quantity: number;

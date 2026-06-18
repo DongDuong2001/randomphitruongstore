@@ -334,6 +334,7 @@ model Customer {
   contactSubmissions ContactSubmission[]
   productInquiries   ProductInquiry[]
 
+  @@index([email])
   @@index([phone])
 }
 
@@ -455,8 +456,8 @@ model OrderItem {
   id               String          @id @default(uuid()) @db.Uuid
   orderId          String          @db.Uuid
   order            Order           @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  productId        String          @db.Uuid
-  product          Product         @relation(fields: [productId], references: [id])
+  productId        String?         @db.Uuid
+  product          Product?        @relation(fields: [productId], references: [id], onDelete: SetNull)
   productVariantId String?         @db.Uuid
   productVariant   ProductVariant? @relation(fields: [productVariantId], references: [id], onDelete: SetNull)
   productName      String
@@ -471,6 +472,7 @@ model OrderItem {
   itemNotes        String?         @db.Text
 
   @@index([orderId])
+  @@index([productId])
   @@index([productVariantId])
 }
 

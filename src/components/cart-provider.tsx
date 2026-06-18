@@ -17,6 +17,7 @@ import { useAuth } from "@/context/auth-context";
 
 export type CartItem = {
   productId: string;
+  productVariantId?: string;
   slug: string;
   name: string;
   price: number;
@@ -35,17 +36,20 @@ type CartContextValue = {
   updateQuantity: (key: string, quantity: number) => void;
   removeItem: (key: string) => void;
   clearCart: () => void;
-  itemKey: (item: Pick<CartItem, "productId" | "size" | "color">) => string;
+  itemKey: (
+    item: Pick<CartItem, "productId" | "productVariantId" | "size" | "color">
+  ) => string;
 };
 
 const CartContext = createContext<CartContextValue | null>(null);
 
 export function cartItemKey({
   productId,
+  productVariantId,
   size,
   color
-}: Pick<CartItem, "productId" | "size" | "color">) {
-  return `${productId}:${size}:${color}`;
+}: Pick<CartItem, "productId" | "productVariantId" | "size" | "color">) {
+  return `${productId}:${productVariantId ?? "legacy"}:${size}:${color}`;
 }
 
 export function CartProvider({ children }: { children: React.ReactNode }) {

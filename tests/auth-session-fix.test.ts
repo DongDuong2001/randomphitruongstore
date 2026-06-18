@@ -16,6 +16,7 @@ const validOrderInput = {
   ward: "Ben Nghe",
   shippingRegion: "VIETNAM",
   paymentMethod: "DEPOSIT_50_BANK_ZALO",
+  noChangePolicyAck: true,
   items: [
     {
       productId: "00000000-0000-4000-8000-000000000001",

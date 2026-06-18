@@ -1,8 +1,8 @@
 import { cn } from "@/lib/utils";
 
 export function StatusBadge({ status }: { status: string }) {
-  const completed = ["COMPLETED", "PAID_FULL", "CLOSED"].includes(status);
-  const danger = ["CANCELLED"].includes(status);
+  const completed = ["COMPLETED", "PAID_FULL", "CLOSED", "PAID"].includes(status);
+  const danger = ["CANCELLED", "FAILED", "REFUNDED"].includes(status);
   const active = [
     "DEPOSIT_CONFIRMED",
     "ORDERED_FROM_SUPPLIER",
