@@ -1,7 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { AlertTriangle, ArrowRight } from "lucide-react";
+import { AlertTriangle, ArrowRight, CreditCard } from "lucide-react";
 import Image from "next/image";
 import { useLocale } from "next-intl";
 import { useState } from "react";
@@ -26,7 +26,8 @@ const checkoutSchema = z.object({
   paymentMethod: z.enum([
     "DEPOSIT_50_BANK_ZALO",
     "ONLINE_100_VNPAY",
-    "ONLINE_100_MOMO"
+    "ONLINE_100_MOMO",
+    "ONLINE_100_SEPAY"
   ]),
   noChangePolicyAck: z.boolean().refine((value) => value === true, "Required")
 });
@@ -114,14 +115,34 @@ export function CheckoutForm({
 
     const order = result.data;
     setCreatedOrder(order);
-    if (values.paymentMethod === "ONLINE_100_VNPAY") {
-      window.location.assign(
-        `/api/payment/vnpay-placeholder?orderId=${encodeURIComponent(order.orderNumber)}`
-      );
+
+    if (values.paymentMethod === "ONLINE_100_SEPAY") {
+      const paymentResponse = await fetch("/api/payment/sepay", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          orderId: order.id,
+          amount: paymentAmount ?? order.totalAmount,
+          description: `Thanh toan don hang ${order.orderNumber}`
+        })
+      });
+      const paymentResult = await paymentResponse.json();
+      if (paymentResult.success && paymentResult.data?.paymentUrl) {
+        window.location.assign(paymentResult.data.paymentUrl);
+        return;
+      }
+      setServerError(paymentResult.error ?? "Unable to create SePay payment");
+      return;
     }
-    if (values.paymentMethod === "ONLINE_100_MOMO") {
+
+    const paymentRedirects: Partial<Record<CheckoutValues["paymentMethod"], string>> = {
+      ONLINE_100_VNPAY: "/api/payment/vnpay-placeholder",
+      ONLINE_100_MOMO: "/api/payment/momo-placeholder"
+    };
+    const paymentRedirect = paymentRedirects[values.paymentMethod];
+    if (paymentRedirect) {
       window.location.assign(
-        `/api/payment/momo-placeholder?orderId=${encodeURIComponent(order.orderNumber)}`
+        `${paymentRedirect}?orderId=${encodeURIComponent(order.orderNumber)}`
       );
     }
   }
@@ -215,14 +236,11 @@ export function CheckoutForm({
                 value="DEPOSIT_50_BANK_ZALO"
               />
               <PaymentOption
-                label={labels.vnpay}
+                description={labels.paymentSandboxNote}
+                label={labels.sepay}
                 registration={register("paymentMethod")}
-                value="ONLINE_100_VNPAY"
-              />
-              <PaymentOption
-                label={labels.momo}
-                registration={register("paymentMethod")}
-                value="ONLINE_100_MOMO"
+                value="ONLINE_100_SEPAY"
+                icon={<CreditCard size={18} />}
               />
             </div>
             {paymentMethod === "DEPOSIT_50_BANK_ZALO" ? (
@@ -319,16 +337,30 @@ function Field({
 function PaymentOption({
   value,
   label,
-  registration
+  description,
+  registration,
+  icon
 }: {
   value: CheckoutValues["paymentMethod"];
   label: string;
+  description?: string;
   registration: ReturnType<ReturnType<typeof useForm<CheckoutValues>>["register"]>;
+  icon?: React.ReactNode;
 }) {
   return (
     <label className="flex cursor-pointer items-start gap-3 border border-zinc-300 bg-white p-4 has-[:checked]:border-black has-[:checked]:ring-1 has-[:checked]:ring-black">
       <input className="mt-0.5 accent-black" type="radio" value={value} {...registration} />
-      <span className="text-sm font-bold">{label}</span>
+      <span>
+        <span className="block text-sm font-bold flex items-center gap-2">
+          {icon}
+          {label}
+        </span>
+        {description ? (
+          <span className="mt-1 block text-xs leading-5 text-zinc-500">
+            {description}
+          </span>
+        ) : null}
+      </span>
     </label>
   );
 }

@@ -67,6 +67,8 @@ export default async function CheckoutPage({ searchParams }: PageProps) {
     "region",
     "payment",
     "deposit",
+    "sepay",
+    "paymentSandboxNote",
     "vnpay",
     "momo",
     "summary",

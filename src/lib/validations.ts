@@ -74,7 +74,8 @@ export const orderInputSchema = z.object({
   paymentMethod: z.enum([
     "DEPOSIT_50_BANK_ZALO",
     "ONLINE_100_VNPAY",
-    "ONLINE_100_MOMO"
+    "ONLINE_100_MOMO",
+    "ONLINE_100_SEPAY"
   ]),
   noChangePolicyAck: z.boolean().refine((value) => value === true),
   items: z
