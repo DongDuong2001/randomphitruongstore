@@ -82,7 +82,7 @@ export const orderInputSchema = z.object({
     .array(
       z.object({
         productId: z.string().uuid(),
-        productVariantId: z.string().uuid(),
+        productVariantId: z.string().uuid().optional(),
         quantity: z.coerce.number().int().min(1).max(10),
         size: z.string().min(1),
         color: z.string().min(1)
@@ -143,7 +143,8 @@ export const registerInputSchema = z.object({
 
 export const loginInputSchema = z.object({
   email: z.string().trim().email("Invalid email address"),
-  password: z.string().min(1, "Password is required")
+  password: z.string().min(1, "Password is required"),
+  rememberMe: z.boolean().optional()
 });
 
 export type RegisterInput = z.infer<typeof registerInputSchema>;
