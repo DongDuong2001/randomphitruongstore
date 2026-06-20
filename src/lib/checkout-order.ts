@@ -37,7 +37,7 @@ export async function createCheckoutOrder({
   const productIds = [...new Set(input.items.map((item) => item.productId))];
   const variantIds = [
     ...new Set(
-      input.items.map((item) => item.productVariantId)
+      input.items.map((item) => item.productVariantId).filter((id): id is string => Boolean(id))
     )
   ];
 
@@ -65,10 +65,22 @@ export async function createCheckoutOrder({
       throw new CheckoutOrderError("One or more products are unavailable", 409);
     }
 
-    const variant = variantMap.get(item.productVariantId);
-
-    if (!variant || variant.productId !== item.productId) {
-      throw new CheckoutOrderError("Invalid product variant", 400);
+    // Handle legacy cart items without productVariantId
+    let variant;
+    if (item.productVariantId) {
+      variant = variantMap.get(item.productVariantId);
+      if (!variant || variant.productId !== item.productId) {
+        throw new CheckoutOrderError("Invalid product variant", 400);
+      }
+    } else {
+      // Fallback: find variant by size/color
+      const fallback = variants.find(
+        (v) => v.productId === item.productId && v.size === item.size && v.colorVi === item.color
+      );
+      if (!fallback) {
+        throw new CheckoutOrderError("Product variant not found for legacy item", 400);
+      }
+      variant = fallback;
     }
 
     const selectedSize = variant.size;
