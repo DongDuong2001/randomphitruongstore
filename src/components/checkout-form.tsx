@@ -173,7 +173,7 @@ export function CheckoutForm({
 
   return (
     <form
-      className="grid gap-10 lg:grid-cols-[1fr_380px]"
+      className="grid gap-10 lg:grid-cols-[1fr_380px] xl:grid-cols-[1fr_400px] lg:gap-10 xl:gap-12"
       onSubmit={handleSubmit(onSubmit)}
     >
       <section>
