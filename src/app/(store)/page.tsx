@@ -151,7 +151,7 @@ export default async function HomePage() {
       </section>
 
       <section className="border-b border-black/15 bg-[#a72b1f] text-white">
-        <div className="container-shell grid grid-cols-2 md:grid-cols-4">
+        <div className="container-shell grid grid-cols-2 md:grid-cols-4 xl:grid-cols-4 divide-x divide-y divide-white/20 md:divide-x-0 md:divide-y-0">
           {[
             ["4+", t("yearsLabel")],
             ["98K", t("instagramLabel")],
@@ -159,11 +159,7 @@ export default async function HomePage() {
             ["7–10", t("deliveryLabel")]
           ].map(([value, label], index) => (
             <div
-              className={`min-w-0 px-4 py-6 sm:px-6 ${
-                index % 2 === 0 ? "border-r border-white/20" : ""
-              } ${index < 2 ? "border-b border-white/20 md:border-b-0" : ""} ${
-                index === 1 ? "md:border-r" : ""
-              }`}
+              className={`min-w-0 px-4 py-6 sm:px-6 ${index % 2 === 1 ? "md:border-l md:border-white/20" : ""} ${index > 1 ? "md:border-t md:border-white/20" : ""}`}
               key={label}
             >
               <p className="text-3xl font-black tracking-[-0.05em] sm:text-4xl">
@@ -204,7 +200,7 @@ export default async function HomePage() {
           </p>
         </header>
 
-        <div className="mt-12 grid border-l border-t border-black/20 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="mt-12 grid border-l border-t border-black/20 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {benefits.map(({ icon: Icon, number, title, body }) => (
             <article
               className="group min-w-0 border-b border-r border-black/20 p-6 transition-colors hover:bg-[#11100e] hover:text-white sm:p-7"
@@ -241,7 +237,7 @@ export default async function HomePage() {
               {common("shop")} →
             </Link>
           </div>
-          <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3">
             {showcasedProducts.map((product, index) => (
               <article className="group min-w-0" key={product.image}>
                 <div className="relative aspect-[4/5] overflow-hidden bg-zinc-300">
@@ -305,7 +301,7 @@ export default async function HomePage() {
             </h2>
           </div>
 
-          <ol className="mt-14 grid border-l border-t border-white/15 md:grid-cols-2 lg:grid-cols-3">
+          <ol className="mt-14 grid border-l border-t border-white/15 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3">
             {steps.map((step) => (
               <li
                 className="min-w-0 border-b border-r border-white/15 p-6 sm:p-8"
