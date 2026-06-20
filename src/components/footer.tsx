@@ -142,7 +142,7 @@ export async function Footer() {
                 href={`mailto:${CONTACT_EMAIL}`}
               >
                 <Mail size={18} />
-                <span className="break-all">{CONTACT_EMAIL}</span>
+                <span className="whitespace-nowrap">{CONTACT_EMAIL}</span>
               </a>
             </div>
           </div>
