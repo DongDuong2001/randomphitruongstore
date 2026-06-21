@@ -26,8 +26,6 @@ const checkoutSchema = z.object({
   shippingRegion: z.enum(["VIETNAM", "KOREA", "TAIWAN", "JAPAN"]),
   paymentMethod: z.enum([
     "DEPOSIT_50_BANK_ZALO",
-    "ONLINE_100_VNPAY",
-    "ONLINE_100_MOMO",
     "ONLINE_100_SEPAY"
   ]),
   noChangePolicyAck: z.boolean().refine((value) => value === true, "Required")
@@ -164,8 +162,7 @@ export function CheckoutForm({
     }
 
     const paymentRedirects: Partial<Record<CheckoutValues["paymentMethod"], string>> = {
-      ONLINE_100_VNPAY: "/api/payment/vnpay-placeholder",
-      ONLINE_100_MOMO: "/api/payment/momo-placeholder"
+      ONLINE_100_SEPAY: "/api/payment/sepay-placeholder"
     };
     const paymentRedirect = paymentRedirects[values.paymentMethod];
     if (paymentRedirect) {
