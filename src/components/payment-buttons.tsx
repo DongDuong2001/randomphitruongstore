@@ -45,10 +45,6 @@ export function PaymentButtons({
     }
   };
 
-  const handlePlaceholder = (gateway: "vnpay" | "momo") => {
-    window.location.href = `/api/payment/${gateway}-placeholder?orderId=${encodeURIComponent(orderNumber)}`;
-  };
-
   return (
     <div className="space-y-3">
       <p className="text-sm text-zinc-600">Lưu ý: Đây là môi trường thử nghiệm.</p>
@@ -64,22 +60,6 @@ export function PaymentButtons({
           <CreditCard className="size-4" />
         )}
         Thanh toán qua SePay
-      </button>
-
-      <button
-        onClick={() => handlePlaceholder("vnpay")}
-        disabled={!!loading}
-        className="button-secondary w-full border border-zinc-300 bg-white py-2 text-sm font-bold hover:bg-zinc-50"
-      >
-        VNPay (placeholder)
-      </button>
-
-      <button
-        onClick={() => handlePlaceholder("momo")}
-        disabled={!!loading}
-        className="w-full border border-zinc-300 bg-white py-2 text-sm font-bold hover:bg-zinc-50"
-      >
-        MoMo (placeholder)
       </button>
     </div>
   );
