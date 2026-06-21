@@ -49,10 +49,12 @@ export async function createCheckoutOrder({
     throw new CheckoutOrderError("One or more products are unavailable", 409);
   }
 
+  const itemsWithoutVariantId = input.items.filter((item) => !item.productVariantId);
+  const productsNeedingVariants = [...new Set(itemsWithoutVariantId.map((i) => i.productId))];
+
   const variants = await prisma.productVariant.findMany({
     where: {
-      id: { in: variantIds },
-      productId: { in: productIds },
+      OR: [{ id: { in: variantIds } }, { productId: { in: productsNeedingVariants } }],
       isAvailable: true
     }
   });
@@ -89,7 +91,7 @@ export async function createCheckoutOrder({
 
     return {
       productId: item.productId,
-      productVariantId: item.productVariantId,
+      productVariantId: variant.id,
       productName: product.nameVi,
       itemNameSnapshot: product.nameVi,
       unitPrice,
