@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { createCheckoutOrder } from "../src/lib/checkout-order";
+import { hashOrderAccessToken } from "../src/lib/order-access";
 import { orderInputSchema } from "../src/lib/validations";
 
 const catalogProductId = "00000000-0000-4000-8000-000000000001";
@@ -9,6 +10,7 @@ const selectedVariantId = "00000000-0000-4000-8000-000000000101";
 const validOrderInput = {
   fullName: "Nguyen Van A",
   phone: "0901234567",
+  email: "guest@example.com",
   address: "123 Nguyen Trai",
   province: "Ho Chi Minh",
   district: "District 1",
@@ -40,6 +42,7 @@ describe("checkout ERD order creation", () => {
   it("creates customer, order, shipping address, order item, and payment in one transaction", async () => {
     let usedTransaction = false;
     let createdOrderData: Record<string, unknown> | null = null;
+    let createdCustomerData: Record<string, unknown> | null = null;
     const prisma = {
       product: {
         findMany: async () => [
@@ -67,7 +70,7 @@ describe("checkout ERD order creation", () => {
       $transaction: async <T>(callback: (transaction: {
         customer: {
           findFirst: () => Promise<{ id: string } | null>;
-          create: () => Promise<{ id: string }>;
+          create: (args: { data: Record<string, unknown> }) => Promise<{ id: string }>;
           update: () => Promise<{ id: string }>;
         };
         order: {
@@ -78,7 +81,10 @@ describe("checkout ERD order creation", () => {
         return callback({
           customer: {
             findFirst: async () => null,
-            create: async () => ({ id: "customer-1" }),
+            create: async ({ data }) => {
+              createdCustomerData = data;
+              return { id: "customer-1" };
+            },
             update: async () => {
               assert.fail("Expected checkout for a new email to create customer");
             }
@@ -104,13 +110,21 @@ describe("checkout ERD order creation", () => {
       input: validOrderInput,
       userEmail: "CUSTOMER@EXAMPLE.COM",
       generateOrderNumber: () => "RPT-0001",
+      generateTrackingToken: () => "guest-secret-token",
       now: () => new Date("2026-06-18T00:00:00.000Z")
-    })) as { orderNumber: string };
+    })) as { orderNumber: string; trackingToken: string };
 
     assert.equal(usedTransaction, true);
     assert.equal(order.orderNumber, "RPT-0001");
+    assert.equal(order.trackingToken, "guest-secret-token");
+    assert.deepEqual(createdCustomerData, {
+      fullName: "Nguyen Van A",
+      phone: "0901234567",
+      email: "customer@example.com"
+    });
     assert.deepEqual(createdOrderData, {
       orderNumber: "RPT-0001",
+      trackingToken: hashOrderAccessToken("guest-secret-token"),
       shippingRegion: "VIETNAM",
       paymentMethod: "DEPOSIT_50_BANK_ZALO",
       paymentOption: "DEPOSIT_50",

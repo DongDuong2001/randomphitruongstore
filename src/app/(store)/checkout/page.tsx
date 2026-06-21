@@ -59,6 +59,7 @@ export default async function CheckoutPage({ searchParams }: PageProps) {
     "customerInfo",
     "fullName",
     "phone",
+    "email",
     "address",
     "province",
     "district",

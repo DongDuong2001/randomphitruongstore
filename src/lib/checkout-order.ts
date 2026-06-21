@@ -1,4 +1,8 @@
 import { buildShippingAddressSnapshot, normalizeEmail } from "@/lib/customer-account";
+import {
+  generateOrderAccessToken,
+  hashOrderAccessToken
+} from "@/lib/order-access";
 import type { OrderInput } from "@/lib/validations";
 import type { PrismaClient } from "@prisma/client";
 
@@ -9,6 +13,7 @@ type CheckoutOrderTransaction = Parameters<PrismaClient["$transaction"]>[0] exte
 type CustomerCheckoutData = {
   fullName: string;
   phone: string;
+  email: string;
 };
 
 export class CheckoutOrderError extends Error {
@@ -26,12 +31,14 @@ export async function createCheckoutOrder({
   input,
   userEmail,
   generateOrderNumber,
+  generateTrackingToken = generateOrderAccessToken,
   now = () => new Date()
 }: {
   prisma: CheckoutOrderStore;
   input: OrderInput;
   userEmail: string | null | undefined;
   generateOrderNumber: () => string;
+  generateTrackingToken?: () => string;
   now?: () => Date;
 }) {
   const productIds = [...new Set(input.items.map((item) => item.productId))];
@@ -113,20 +120,25 @@ export async function createCheckoutOrder({
     depositPaymentAmount === null ? 0 : totalAmount - depositPaymentAmount;
   const paymentOption = isDeposit ? "DEPOSIT_50" : "ONLINE_100";
   const paymentAmount = depositPaymentAmount ?? totalAmount;
-  const normalizedEmail = normalizeEmail(userEmail);
-  const customerData = customerDataFromCheckout(input);
+  const normalizedEmail = normalizeEmail(userEmail) ?? normalizeEmail(input.email);
+  if (!normalizedEmail) {
+    throw new CheckoutOrderError("A valid email is required", 400);
+  }
+  const customerData = customerDataFromCheckout(input, normalizedEmail);
+  const trackingToken = generateTrackingToken();
+  const trackingTokenHash = hashOrderAccessToken(trackingToken);
 
   return prisma.$transaction(async (transaction) => {
-    const customer = normalizedEmail
-      ? await findOrCreateSignedInCustomer(transaction, normalizedEmail, customerData)
-      : await transaction.customer.create({
-          data: customerData,
-          select: { id: true }
-        });
+    const customer = await findOrCreateCustomer(
+      transaction,
+      normalizedEmail,
+      customerData
+    );
 
-    return transaction.order.create({
+    const order = await transaction.order.create({
       data: {
         orderNumber: generateOrderNumber(),
+        trackingToken: trackingTokenHash,
         shippingRegion: input.shippingRegion,
         paymentMethod: input.paymentMethod,
         paymentOption,
@@ -162,17 +174,23 @@ export async function createCheckoutOrder({
         payments: true
       }
     });
+
+    return { ...order, trackingToken };
   });
 }
 
-function customerDataFromCheckout(input: OrderInput): CustomerCheckoutData {
+function customerDataFromCheckout(
+  input: OrderInput,
+  email: string
+): CustomerCheckoutData {
   return {
     fullName: input.fullName,
-    phone: input.phone
+    phone: input.phone,
+    email
   };
 }
 
-async function findOrCreateSignedInCustomer(
+async function findOrCreateCustomer(
   transaction: CheckoutOrderTransaction,
   email: string,
   customerData: CustomerCheckoutData
@@ -192,10 +210,7 @@ async function findOrCreateSignedInCustomer(
   }
 
   return transaction.customer.create({
-    data: {
-      email,
-      ...customerData
-    },
+    data: customerData,
     select: { id: true }
   });
 }

@@ -2,6 +2,7 @@ import { err, handlePrismaError, ok, zodDetails } from "@/lib/api-response";
 import { getPrisma } from "@/lib/prisma";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 import { normalizeEmail } from "@/lib/customer-account";
+import { canAccessOrder } from "@/lib/order-access";
 import {
   buildSePayCancelUrl,
   buildSePayCheckout,
@@ -14,6 +15,7 @@ import { z } from "zod";
 
 const createPaymentSchema = z.object({
   orderId: z.string().uuid(),
+  accessToken: z.string().min(32).optional()
 });
 
 export async function POST(request: Request) {
@@ -36,8 +38,12 @@ export async function POST(request: Request) {
       return err("Order not found", 404);
     }
 
-    // Ownership check: if user is authenticated, order must belong to them
-    if (userEmail && order.customer?.email !== userEmail) {
+    if (!canAccessOrder({
+      authenticatedEmail: userEmail,
+      customerEmail: order.customer.email,
+      accessToken: parsed.data.accessToken,
+      storedTokenHash: order.trackingToken
+    })) {
       return err("Order not found", 404);
     }
 
@@ -70,7 +76,7 @@ export async function POST(request: Request) {
 
     if (isLocalSePaySandbox()) {
       return ok({
-        paymentUrl: `${SITE_URL}/api/payment/sepay-placeholder?orderId=${encodeURIComponent(order.orderNumber)}`
+        paymentUrl: `${SITE_URL}/api/payment/sepay-placeholder?orderId=${encodeURIComponent(order.orderNumber)}${parsed.data.accessToken ? `&token=${encodeURIComponent(parsed.data.accessToken)}` : ""}`
       });
     }
 
@@ -80,9 +86,9 @@ export async function POST(request: Request) {
         amount,
         description,
         customerId: order.customerId,
-        successUrl: buildSePaySuccessUrl(order.orderNumber),
-        errorUrl: buildSePayErrorUrl(order.orderNumber),
-        cancelUrl: buildSePayCancelUrl(order.orderNumber)
+        successUrl: buildSePaySuccessUrl(order.orderNumber, parsed.data.accessToken),
+        errorUrl: buildSePayErrorUrl(order.orderNumber, parsed.data.accessToken),
+        cancelUrl: buildSePayCancelUrl(order.orderNumber, parsed.data.accessToken)
       })
     });
   } catch (error) {

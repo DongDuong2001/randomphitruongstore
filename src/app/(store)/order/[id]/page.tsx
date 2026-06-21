@@ -7,33 +7,32 @@ import Link from "next/link";
 import { BankTransferBox } from "@/components/bank-transfer-box";
 import { formatPrice } from "@/lib/format";
 import { PaymentButtons } from "@/components/payment-buttons";
+import { getSupabaseServerClient } from "@/lib/supabase/server";
+import { canAccessOrder } from "@/lib/order-access";
+import { normalizeEmail } from "@/lib/customer-account";
 
 export const dynamic = "force-dynamic";
 
 type PageProps = {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ orderId?: string }>;
+  searchParams: Promise<{ token?: string }>;
 };
 
-export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
-  const { id } = await params;
-  const order = await getPrisma().order.findUnique({
-    where: { id },
-    select: { orderNumber: true }
-  });
-  return {
-    title: order ? `Order ${order.orderNumber}` : "Order",
-    description: "Order details and payment"
-  };
-}
+export const metadata: Metadata = {
+  title: "Order details",
+  description: "Secure order details and payment"
+};
 
 export default async function OrderPage({ params, searchParams }: PageProps) {
   const { id } = await params;
-  const { orderId } = await searchParams;
+  const { token } = await searchParams;
   const t = await getTranslations("checkout");
+  const supabase = await getSupabaseServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  const userEmail = normalizeEmail(user?.email);
 
   const order = await getPrisma().order.findUnique({
-    where: { id: orderId ?? id },
+    where: { id },
     include: {
       items: {
         include: {
@@ -47,7 +46,12 @@ export default async function OrderPage({ params, searchParams }: PageProps) {
     }
   });
 
-  if (!order) {
+  if (!order || !canAccessOrder({
+    authenticatedEmail: userEmail,
+    customerEmail: order.customer.email,
+    accessToken: token,
+    storedTokenHash: order.trackingToken
+  })) {
     notFound();
   }
 
@@ -133,6 +137,7 @@ export default async function OrderPage({ params, searchParams }: PageProps) {
                 orderId={order.id}
                 orderNumber={order.orderNumber}
                 amount={payment?.amount ?? order.totalAmount}
+                accessToken={token}
               />
             )}
             <p className="mt-4 text-xs text-zinc-500">

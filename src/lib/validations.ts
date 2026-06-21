@@ -65,6 +65,7 @@ export const productInputSchema = z.object({
 export const orderInputSchema = z.object({
   fullName: z.string().trim().min(2),
   phone: phoneSchema,
+  email: z.string().trim().email(),
   address: z.string().trim().min(5),
   province: z.string().trim().min(2),
   district: z.string().trim().min(2),

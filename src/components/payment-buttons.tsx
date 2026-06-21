@@ -9,13 +9,15 @@ interface PaymentButtonsProps {
   orderNumber: string;
   amount: number;
   paymentMethod?: string;
+  accessToken?: string;
 }
 
 export function PaymentButtons({
   orderId,
   orderNumber,
   amount,
-  paymentMethod
+  paymentMethod,
+  accessToken
 }: PaymentButtonsProps) {
   const [loading, setLoading] = useState<string | null>(null);
 
@@ -27,6 +29,7 @@ export function PaymentButtons({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           orderId,
+          ...(accessToken ? { accessToken } : {}),
           amount,
           description: `Thanh toan don hang ${orderNumber}`
         })

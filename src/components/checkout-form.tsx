@@ -19,6 +19,7 @@ import { useCart } from "./cart-provider";
 const checkoutSchema = z.object({
   fullName: z.string().trim().min(2, "Required"),
   phone: z.string().trim().min(9, "Required"),
+  email: z.string().trim().email("Required"),
   address: z.string().trim().min(5, "Required"),
   province: z.string().trim().min(2, "Required"),
   district: z.string().trim().min(2, "Required"),
@@ -36,6 +37,7 @@ type CheckoutValues = z.infer<typeof checkoutSchema>;
 type CreatedOrder = {
   id: string;
   orderNumber: string;
+  trackingToken: string;
   payments?: Array<{ amount: number }>;
   paymentMethod: CheckoutValues["paymentMethod"];
 };
@@ -149,6 +151,7 @@ export function CheckoutForm({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           orderId: order.id,
+          accessToken: order.trackingToken,
           amount: paymentAmount,
           description: `Thanh toan don hang ${order.orderNumber}`
         })
@@ -214,6 +217,13 @@ export function CheckoutForm({
             label={labels.phone}
             registration={register("phone")}
           />
+          <div className="sm:col-span-2">
+            <Field
+              error={errors.email?.message}
+              label={labels.email}
+              registration={register("email")}
+            />
+          </div>
           <div className="sm:col-span-2">
             <Field
               error={errors.address?.message}
