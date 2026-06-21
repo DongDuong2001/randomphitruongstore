@@ -12,14 +12,18 @@ interface SePayCreatePaymentResponse {
 }
 
 interface SePayWebhookPayload {
-  transactionId: string;
-  orderCode: string;
-  amount: number;
-  status: "SUCCESS" | "FAILED" | "PENDING";
+  id: number;
   gateway: string;
-  description?: string;
-  accountNumber?: string;
-  referenceCode?: string;
+  transaction_date: string;
+  account_number: string;
+  sub_account: string | null;
+  amount_in: number;
+  amount_out: number;
+  accumulated_balance: number;
+  code: string | null;
+  transaction_content: string;
+  reference_number: string;
+  body: string;
 }
 
 export function buildSePayPaymentUrl({
@@ -36,7 +40,7 @@ export function buildSePayPaymentUrl({
   cancelUrl: string;
 }): string {
   const apiKey = process.env.SEPAY_API_KEY;
-  const sandboxUrl = process.env.SEPAY_SANDBOX_URL ?? "https://my.sepay.vn/api/v1/payment";
+  const baseUrl = process.env.SEPAY_PAYMENT_URL ?? "https://my.sepay.vn/api/v1/payment/create";
 
   if (!apiKey) {
     throw new Error("SEPAY_API_KEY not configured");
@@ -48,10 +52,9 @@ export function buildSePayPaymentUrl({
     description,
     returnUrl,
     cancelUrl,
-    apiKey
   });
 
-  return `${sandboxUrl}?${params.toString()}`;
+  return `${baseUrl}?${params.toString()}`;
 }
 
 export async function createSePayPayment({
@@ -67,8 +70,15 @@ export async function createSePayPayment({
   returnUrl: string;
   cancelUrl: string;
 }): Promise<{ paymentUrl: string; transactionId: string }> {
+  if (process.env.SEPAY_ENVIRONMENT === "sandbox") {
+    return {
+      paymentUrl: `${SITE_URL}/api/payment/sepay-placeholder?orderId=${encodeURIComponent(orderNumber)}`,
+      transactionId: `sandbox-${orderNumber}-${Date.now()}`
+    };
+  }
+
   const apiKey = process.env.SEPAY_API_KEY;
-  const apiUrl = process.env.SEPAY_API_URL ?? "https://my.sepay.vn/api/v1/payment";
+  const apiUrl = process.env.SEPAY_API_URL ?? "https://my.sepay.vn/api/v1/payment/create";
 
   if (!apiKey) {
     throw new Error("SEPAY_API_KEY not configured");
@@ -89,6 +99,11 @@ export async function createSePayPayment({
     })
   });
 
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`SePay API error: ${response.status} ${errorText}`);
+  }
+
   const data: SePayCreatePaymentResponse = await response.json();
 
   if (!data.success || !data.data?.paymentUrl) {
@@ -97,29 +112,27 @@ export async function createSePayPayment({
 
   return {
     paymentUrl: data.data.paymentUrl,
-    transactionId: data.data.transactionId
+    transactionId: data.data.transactionId || data.data.orderCode
   };
 }
 
 export function verifySePaySignature(
-  payload: SePayWebhookPayload,
-  signature: string
+  request: Request,
+  payload: SePayWebhookPayload
 ): boolean {
-  const secret = process.env.SEPAY_WEBHOOK_SECRET;
+  const webhookToken = process.env.SEPAY_WEBHOOK_SECRET;
+  const authHeader = request.headers.get("Authorization");
 
-  if (!secret) {
-    return true;
+  if (!webhookToken) {
+    return true; // Or false if you want to enforce it
   }
 
-  const expectedPayload = JSON.stringify(payload);
-  const expectedSignature = createHmac("sha256", secret)
-    .update(expectedPayload)
-    .digest("hex");
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    return false;
+  }
 
-  return timingSafeEqual(
-    Buffer.from(signature),
-    Buffer.from(expectedSignature)
-  );
+  const token = authHeader.substring(7);
+  return token === webhookToken;
 }
 
 export function buildSePaySuccessUrl(orderNumber: string): string {
