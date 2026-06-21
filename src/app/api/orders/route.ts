@@ -24,15 +24,18 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  const parsed = orderInputSchema.safeParse(await request.json());
-  if (!parsed.success) {
-    return err("Invalid order data", 400, zodDetails(parsed.error));
-  }
-
-  const input = parsed.data;
   try {
+    const body = await request.json();
+    const parsed = orderInputSchema.safeParse(body);
+    if (!parsed.success) {
+      return err("Invalid order data", 400, zodDetails(parsed.error));
+    }
+
+    const input = parsed.data;
     const supabase = await getSupabaseServerClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: { user }
+    } = await supabase.auth.getUser();
     const userEmail = normalizeEmail(user?.email);
 
     const order = await createCheckoutOrder({
@@ -44,6 +47,9 @@ export async function POST(request: Request) {
 
     return ok(order, 201);
   } catch (error) {
+    if (error instanceof SyntaxError) {
+      return err("Invalid JSON payload", 400);
+    }
     if (error instanceof CheckoutOrderError) {
       return err(error.message, error.status);
     }
