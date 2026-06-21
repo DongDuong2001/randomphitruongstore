@@ -77,7 +77,6 @@ export function CheckoutForm({
   });
   const region = useWatch({ control, name: "shippingRegion" });
   const paymentMethod = useWatch({ control, name: "paymentMethod" });
-  const image = product?.images[0];
   const selectedVariant = product?.variants?.find(
     (variant) => variant.id === selectedVariantId
   );
@@ -147,15 +146,12 @@ export function CheckoutForm({
     }
 
     if (values.paymentMethod === "ONLINE_100_SEPAY") {
-      const paymentAmount = order.payments?.[0]?.amount ?? order.totalAmount;
       const paymentResponse = await fetch("/api/payment/sepay", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           orderId: order.id,
-          accessToken: order.trackingToken,
-          amount: paymentAmount,
-          description: `Thanh toan don hang ${order.orderNumber}`
+          accessToken: order.trackingToken
         })
       });
       const paymentResult = await paymentResponse.json();

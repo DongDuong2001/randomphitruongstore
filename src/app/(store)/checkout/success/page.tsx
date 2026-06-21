@@ -84,7 +84,7 @@ export default async function SuccessPage({ searchParams }: PageProps) {
             </div>
             <h1 className="mt-6 text-3xl font-black">Đang chờ thanh toán</h1>
             <p className="mt-3 text-zinc-600">
-              Hệ thống đang kiểm tra giao dịch của bạn cho đơn hàng {order.orderNumber}. 
+              Hệ thống đang kiểm tra giao dịch của bạn cho đơn hàng {order.orderNumber}.
               Vui lòng chờ trong giây lát hoặc kiểm tra lại sau.
             </p>
           </>

@@ -1,4 +1,5 @@
 import { Landmark } from "lucide-react";
+import Image from "next/image";
 import { BANK_DETAILS } from "@/lib/constants";
 import { formatPrice } from "@/lib/format";
 
@@ -47,10 +48,11 @@ export function BankTransferBox({
       </dl>
       <div className="mt-5 grid gap-4 sm:grid-cols-[140px_1fr]">
         <div className="flex aspect-square items-center justify-center border border-zinc-200 bg-white">
-          <img
+          <Image
             src="https://qr.sepay.vn/img?bank=BIDV&acc=9624715031978&template=compact&showinfo=true&fullacc=true&holder=DO%20PHI%20TRUONG&store=randomphitruong"
             alt="QR thanh toán - Ngân hàng TMCP Đầu tư và Phát triển Việt Nam - 2153102265 - DO PHI TRUONG"
-            width="300"
+            height={300}
+            width={300}
             className="mx-auto"
           />
         </div>

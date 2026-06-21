@@ -135,8 +135,6 @@ export default async function OrderPage({ params, searchParams }: PageProps) {
             ) : (
               <PaymentButtons
                 orderId={order.id}
-                orderNumber={order.orderNumber}
-                amount={payment?.amount ?? order.totalAmount}
                 accessToken={token}
               />
             )}

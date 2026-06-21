@@ -4,16 +4,122 @@ import {
   hashOrderAccessToken
 } from "@/lib/order-access";
 import type { OrderInput } from "@/lib/validations";
-import type { PrismaClient } from "@prisma/client";
 
-type CheckoutOrderStore = PrismaClient;
+type CatalogProduct = {
+  id: string;
+  nameVi: string;
+  basePrice: number;
+};
 
-type CheckoutOrderTransaction = Parameters<PrismaClient["$transaction"]>[0] extends (tx: infer T) => Promise<unknown> ? T : never;
+type CatalogVariant = {
+  id: string;
+  productId: string;
+  size: string;
+  colorVi: string;
+  priceAdjustment: number;
+};
+
+type CheckoutOrderStore = {
+  product: {
+    findMany(args: {
+      where: {
+        id: { in: string[] };
+        isActive: true;
+        stockStatus: "IN_STOCK";
+      };
+    }): Promise<CatalogProduct[]>;
+  };
+  productVariant: {
+    findMany(args: {
+      where: {
+        OR: Array<{ id: { in: string[] } } | { productId: { in: string[] } }>;
+        isAvailable: true;
+      };
+    }): Promise<CatalogVariant[]>;
+  };
+  $transaction<T>(
+    callback: (transaction: CheckoutOrderTransaction) => Promise<T>
+  ): Promise<T>;
+};
 
 type CustomerCheckoutData = {
   fullName: string;
   phone: string;
   email: string;
+};
+
+type CheckoutOrderTransaction = {
+  customer: {
+    findFirst(args: {
+      where: { email: string };
+      orderBy: { updatedAt: "desc" };
+      select: { id: true };
+    }): Promise<{ id: string } | null>;
+    update(args: {
+      where: { id: string };
+      data: CustomerCheckoutData;
+      select: { id: true };
+    }): Promise<{ id: string }>;
+    create(args: {
+      data: CustomerCheckoutData;
+      select: { id: true };
+    }): Promise<{ id: string }>;
+  };
+  order: {
+    create(args: {
+      data: CheckoutOrderCreateData;
+      include: {
+        customer: true;
+        items: true;
+        shippingAddress: true;
+        payments: true;
+      };
+    }): Promise<Record<string, unknown>>;
+  };
+};
+
+type CheckoutOrderCreateData = {
+  orderNumber: string;
+  trackingToken: string;
+  shippingRegion: OrderInput["shippingRegion"];
+  paymentMethod: OrderInput["paymentMethod"];
+  paymentOption: "DEPOSIT_50" | "ONLINE_100";
+  status: "PENDING_DEPOSIT" | "PENDING_ONLINE_PAYMENT";
+  subtotalAmount: number;
+  remainingAmount: number;
+  shippingFee: number;
+  totalAmount: number;
+  note: string | null;
+  customerId: string;
+  sizeColorLocked: true;
+  noChangePolicyAck: true;
+  noChangePolicyAckAt: Date;
+  shippingAddress: {
+    create: ReturnType<typeof buildShippingAddressSnapshot>;
+  };
+  items: {
+    create: Array<{
+      productId: string;
+      productVariantId: string;
+      productName: string;
+      itemNameSnapshot: string;
+      unitPrice: number;
+      lineTotal: number;
+      quantity: number;
+      size: string;
+      selectedSize: string;
+      color: string;
+      selectedColor: string;
+    }>;
+  };
+  payments: {
+    create: {
+      paymentType: "DEPOSIT" | "FULL_PAYMENT";
+      paymentMethod: OrderInput["paymentMethod"];
+      paymentStatus: "PENDING";
+      amount: number;
+    };
+  };
 };
 
 export class CheckoutOrderError extends Error {

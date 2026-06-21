@@ -14,7 +14,7 @@ export function CartView() {
   const locale = useLocale() as Locale;
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
-  const { items, subtotal, updateQuantity, removeItem, itemKey, hydrated, clearCart } = useCart();
+  const { items, subtotal, updateQuantity, removeItem, itemKey, hydrated } = useCart();
 
   function handleCheckout() {
     if (items.length === 0) return;

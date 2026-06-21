@@ -6,17 +6,11 @@ import { navigateToPayment } from "@/lib/payment-navigation";
 
 interface PaymentButtonsProps {
   orderId: string;
-  orderNumber: string;
-  amount: number;
-  paymentMethod?: string;
   accessToken?: string;
 }
 
 export function PaymentButtons({
   orderId,
-  orderNumber,
-  amount,
-  paymentMethod,
   accessToken
 }: PaymentButtonsProps) {
   const [loading, setLoading] = useState<string | null>(null);
@@ -29,9 +23,7 @@ export function PaymentButtons({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           orderId,
-          ...(accessToken ? { accessToken } : {}),
-          amount,
-          description: `Thanh toan don hang ${orderNumber}`
+          ...(accessToken ? { accessToken } : {})
         })
       });
 
@@ -51,7 +43,7 @@ export function PaymentButtons({
   return (
     <div className="space-y-3">
       <p className="text-sm text-zinc-600">Lưu ý: Đây là môi trường thử nghiệm.</p>
-      
+
       <button
         onClick={handleSePay}
         disabled={!!loading}
