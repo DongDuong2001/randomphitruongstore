@@ -16,33 +16,9 @@ export function CartView() {
   const { user, loading: authLoading } = useAuth();
   const { items, subtotal, updateQuantity, removeItem, itemKey, hydrated, clearCart } = useCart();
 
-  async function handleCheckout() {
+  function handleCheckout() {
     if (items.length === 0) return;
-
-    const response = await fetch("/api/orders", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        shippingRegion: "VIETNAM",
-        paymentMethod: "DEPOSIT_50_BANK_ZALO",
-        noChangePolicyAck: true,
-        items: items.map((item) => ({
-          productId: item.productId,
-          ...(item.productVariantId ? { productVariantId: item.productVariantId } : {}),
-          quantity: item.quantity,
-          size: item.size,
-          color: item.color
-        }))
-      })
-    });
-    const result = await response.json();
-    if (!response.ok || !result.success) {
-      alert(result.error ?? "Unable to create order");
-      return;
-    }
-
-    clearCart();
-    router.push(`/order/${result.data.id}`);
+    router.push("/checkout");
   }
 
   return (
