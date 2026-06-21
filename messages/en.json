@@ -103,6 +103,8 @@
     "payment": "Payment method",
     "deposit": "50% deposit via BIDV / Zalo, remaining 50% COD",
     "sepay": "Pay 100% with SePay sandbox",
+    "vnpay": "Pay 100% with VNPay",
+    "momo": "Pay 100% with MoMo",
     "paymentSandboxNote": "Use this to test payment UX and redirects. No real money is collected in sandbox.",
     "summary": "Order summary",
     "total": "Total",

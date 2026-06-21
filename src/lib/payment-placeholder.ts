@@ -40,17 +40,22 @@ export function paymentSandboxResponse({
   gateway,
   orderNumber,
   amount,
-  successUrl,
+  successAction,
+  successFields,
   cancelUrl,
   contactUrl
 }: {
   gateway: string;
   orderNumber: string;
   amount: string;
-  successUrl: string;
+  successAction: string;
+  successFields: Record<string, string>;
   cancelUrl: string;
   contactUrl: string;
 }) {
+  const successInputs = Object.entries(successFields)
+    .map(([name, value]) => `<input type="hidden" name="${escapeHtml(name)}" value="${escapeHtml(value)}" />`)
+    .join("");
   const html = `<!doctype html>
 <html lang="vi">
 <head>
@@ -60,7 +65,7 @@ export function paymentSandboxResponse({
   <style>
     :root{color-scheme:dark}*{box-sizing:border-box}body{margin:0;background:#0a0a0a;color:#fff;font-family:Arial,sans-serif;display:grid;min-height:100vh;place-items:center;padding:24px}
     main{width:min(620px,100%);border:1px solid #3f3f46;background:#111;padding:32px}
-    small{letter-spacing:.18em;color:#a1a1aa;font-weight:700}h1{margin:12px 0 0;font-size:42px;line-height:1}p{color:#c4c4c4;line-height:1.6}.box{margin:24px 0;border:1px solid #3f3f46;background:#18181b;padding:18px}.row{display:flex;justify-content:space-between;gap:16px;border-bottom:1px solid #27272a;padding:10px 0}.row:last-child{border-bottom:0}.label{color:#a1a1aa}.value{font-weight:800;text-align:right}.actions{display:grid;gap:12px;margin-top:24px}.btn{display:inline-flex;justify-content:center;align-items:center;min-height:48px;padding:0 18px;text-decoration:none;font-weight:800}.primary{background:#fff;color:#000}.secondary{border:1px solid #52525b;color:#fff}.danger{color:#fca5a5;border:1px solid #7f1d1d}@media(min-width:560px){.actions{grid-template-columns:1fr 1fr}.actions .full{grid-column:1/-1}}
+    small{letter-spacing:.18em;color:#a1a1aa;font-weight:700}h1{margin:12px 0 0;font-size:42px;line-height:1}p{color:#c4c4c4;line-height:1.6}.box{margin:24px 0;border:1px solid #3f3f46;background:#18181b;padding:18px}.row{display:flex;justify-content:space-between;gap:16px;border-bottom:1px solid #27272a;padding:10px 0}.row:last-child{border-bottom:0}.label{color:#a1a1aa}.value{font-weight:800;text-align:right}.actions{display:grid;gap:12px;margin-top:24px}.actions form{margin:0}.btn{border:0;cursor:pointer;width:100%;display:inline-flex;justify-content:center;align-items:center;min-height:48px;padding:0 18px;text-decoration:none;font-weight:800}.primary{background:#fff;color:#000}.secondary{border:1px solid #52525b;color:#fff}.danger{color:#fca5a5;border:1px solid #7f1d1d}@media(min-width:560px){.actions{grid-template-columns:1fr 1fr}.actions .full{grid-column:1/-1}}
   </style>
 </head>
 <body>
@@ -74,7 +79,7 @@ export function paymentSandboxResponse({
       <div class="row"><span class="label">Môi trường</span><span class="value">Sandbox</span></div>
     </div>
     <div class="actions">
-      <a class="btn primary" href="${escapeHtml(successUrl)}">Giả lập thanh toán thành công</a>
+      <form action="${escapeHtml(successAction)}" method="post">${successInputs}<button class="btn primary" type="submit">Giả lập thanh toán thành công</button></form>
       <a class="btn danger" href="${escapeHtml(cancelUrl)}">Giả lập hủy thanh toán</a>
       <a class="btn secondary full" href="${escapeHtml(contactUrl)}">Liên hệ Zalo nếu cần hỗ trợ</a>
     </div>

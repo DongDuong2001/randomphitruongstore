@@ -1,49 +1,61 @@
+import { ZALO_URL } from "@/lib/constants";
+import { normalizeEmail } from "@/lib/customer-account";
 import { formatPrice } from "@/lib/format";
+import { canAccessOrder } from "@/lib/order-access";
 import {
   paymentResultResponse,
   paymentSandboxResponse
 } from "@/lib/payment-placeholder";
 import { getPrisma } from "@/lib/prisma";
-import { isSePaySandboxMethod } from "@/lib/sepay-sandbox";
-import { ZALO_URL } from "@/lib/constants";
+import { isLocalSePaySandbox } from "@/lib/sepay";
+import {
+  createSePaySandboxProof,
+  isSePaySandboxMethod
+} from "@/lib/sepay-sandbox";
+import { getSupabaseServerClient } from "@/lib/supabase/server";
 
 export async function GET(request: Request) {
   const url = new URL(request.url);
   const orderNumber = url.searchParams.get("orderId")?.trim();
+  const accessToken = url.searchParams.get("token");
 
-  if (!orderNumber) {
-    return paymentResultResponse({
-      gateway: "SePay Sandbox",
-      title: "Missing order",
-      body: "No order number was provided for this payment session.",
-      orderNumber: "Unknown"
-    });
+  if (!isLocalSePaySandbox() || !orderNumber) {
+    return unavailable(orderNumber ?? "Unknown");
   }
 
   const order = await getPrisma().order.findUnique({
     where: { orderNumber },
-    include: { payments: { orderBy: { createdAt: "asc" } } }
+    include: {
+      customer: true,
+      payments: { orderBy: { createdAt: "asc" } }
+    }
   });
+  const supabase = await getSupabaseServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
 
-  if (!order || !isSePaySandboxMethod(order.paymentMethod)) {
-    return paymentResultResponse({
-      gateway: "SePay Sandbox",
-      title: "Payment session unavailable",
-      body: "This order is not available for SePay sandbox payment.",
-      orderNumber
-    });
+  if (
+    !order ||
+    !isSePaySandboxMethod(order.paymentMethod) ||
+    !canAccessOrder({
+      authenticatedEmail: normalizeEmail(user?.email),
+      customerEmail: order.customer.email,
+      accessToken,
+      storedTokenHash: order.trackingToken
+    })
+  ) {
+    return unavailable(orderNumber);
   }
 
   const payment =
     order.payments.find((item) => item.paymentType === "FULL_PAYMENT") ??
     order.payments[0];
-  const successUrl = new URL("/api/payment/sepay-placeholder/return", url);
-  successUrl.searchParams.set("orderId", order.orderNumber);
-  successUrl.searchParams.set("status", "success");
+  if (!payment) return unavailable(orderNumber);
 
+  const successAction = new URL("/api/payment/sepay-placeholder/return", url);
   const cancelUrl = new URL("/api/payment/sepay-placeholder/return", url);
   cancelUrl.searchParams.set("orderId", order.orderNumber);
   cancelUrl.searchParams.set("status", "cancelled");
+  if (accessToken) cancelUrl.searchParams.set("token", accessToken);
 
   const contactUrl = new URL(ZALO_URL);
   contactUrl.searchParams.set(
@@ -54,9 +66,27 @@ export async function GET(request: Request) {
   return paymentSandboxResponse({
     gateway: "SePay Sandbox",
     orderNumber: order.orderNumber,
-    amount: formatPrice(payment?.amount ?? order.totalAmount),
-    successUrl: successUrl.toString(),
+    amount: formatPrice(payment.amount),
+    successAction: successAction.toString(),
+    successFields: {
+      orderId: order.orderNumber,
+      token: accessToken ?? "",
+      proof: createSePaySandboxProof({
+        orderNumber: order.orderNumber,
+        paymentId: payment.id,
+        amount: payment.amount
+      })
+    },
     cancelUrl: cancelUrl.toString(),
     contactUrl: contactUrl.toString()
+  });
+}
+
+function unavailable(orderNumber: string) {
+  return paymentResultResponse({
+    gateway: "SePay Sandbox",
+    title: "Payment session unavailable",
+    body: "This payment session is unavailable or you do not have access.",
+    orderNumber
   });
 }

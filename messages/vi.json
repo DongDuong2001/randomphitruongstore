@@ -103,6 +103,8 @@
     "payment": "Phương thức thanh toán",
     "deposit": "Cọc 50% qua BIDV / Zalo, COD 50% còn lại",
     "sepay": "Thanh toán 100% qua SePay sandbox",
+    "vnpay": "Thanh toán 100% qua VNPay",
+    "momo": "Thanh toán 100% qua MoMo",
     "paymentSandboxNote": "Dùng để test luồng thanh toán và redirect. Không thu tiền thật trong sandbox.",
     "summary": "Tóm tắt đơn hàng",
     "total": "Tổng cộng",
