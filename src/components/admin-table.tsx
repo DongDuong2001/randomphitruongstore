@@ -1,10 +1,16 @@
 export function AdminTable({
   headers,
-  children
+  children,
+  emptyMessage = "No records found."
 }: {
   headers: string[];
   children: React.ReactNode;
+  emptyMessage?: string;
 }) {
+  const isEmpty =
+    !children ||
+    (Array.isArray(children) && children.filter(Boolean).length === 0);
+
   return (
     <div className="overflow-x-auto border border-zinc-200 bg-white shadow-[0_10px_30px_rgba(0,0,0,0.04)]">
       <table className="w-full min-w-[720px] border-collapse text-left text-sm">
@@ -18,7 +24,18 @@ export function AdminTable({
           </tr>
         </thead>
         <tbody className="divide-y divide-zinc-200 text-zinc-800 [&>tr]:transition-colors [&>tr:hover]:bg-[#faf9f7]">
-          {children}
+          {isEmpty ? (
+            <tr>
+              <td
+                className="px-4 py-12 text-center text-sm text-zinc-400"
+                colSpan={headers.length}
+              >
+                {emptyMessage}
+              </td>
+            </tr>
+          ) : (
+            children
+          )}
         </tbody>
       </table>
     </div>
