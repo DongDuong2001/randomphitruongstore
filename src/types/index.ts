@@ -5,8 +5,6 @@ export type StockStatus = "IN_STOCK" | "OUT_OF_STOCK";
 export type ShippingRegion = "VIETNAM" | "KOREA" | "TAIWAN" | "JAPAN";
 export type PaymentMethod =
   | "DEPOSIT_50_BANK_ZALO"
-  | "ONLINE_100_VNPAY"
-  | "ONLINE_100_MOMO"
   | "ONLINE_100_SEPAY";
 export type OrderStatus =
   | "PENDING_DEPOSIT"

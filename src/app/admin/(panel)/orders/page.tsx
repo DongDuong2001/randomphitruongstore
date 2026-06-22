@@ -36,6 +36,7 @@ export default async function AdminOrdersPage() {
         <h1 className="mt-2 text-4xl font-black">Orders</h1>
       </header>
       <AdminTable
+        emptyMessage="No orders yet."
         headers={["Order", "Customer", "Total", "Payment", "Status", "Update"]}
       >
         {orders.map((order) => (

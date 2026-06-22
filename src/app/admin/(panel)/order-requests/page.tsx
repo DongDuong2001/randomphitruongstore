@@ -19,6 +19,7 @@ export default async function AdminProductInquiriesPage() {
         <h1 className="mt-2 text-4xl font-black">Order requests</h1>
       </header>
       <AdminTable
+        emptyMessage="No order requests yet."
         headers={["Inspiration", "Customer", "Request", "Status", "Update"]}
       >
         {requests.map((request) => {
