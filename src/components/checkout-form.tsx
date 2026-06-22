@@ -28,8 +28,6 @@ const checkoutSchema = z.object({
   shippingRegion: z.enum(["VIETNAM", "KOREA", "TAIWAN", "JAPAN"]),
   paymentMethod: z.enum([
     "DEPOSIT_50_BANK_ZALO",
-    "ONLINE_100_VNPAY",
-    "ONLINE_100_MOMO",
     "ONLINE_100_SEPAY"
   ]),
   noChangePolicyAck: z.boolean().refine((value) => value === true, "Required")
@@ -162,16 +160,7 @@ export function CheckoutForm({
       return;
     }
 
-    const paymentRedirects: Partial<Record<CheckoutValues["paymentMethod"], string>> = {
-      ONLINE_100_VNPAY: "/api/payment/vnpay-placeholder",
-      ONLINE_100_MOMO: "/api/payment/momo-placeholder"
-    };
-    const paymentRedirect = paymentRedirects[values.paymentMethod];
-    if (paymentRedirect) {
-      window.location.assign(
-        `${paymentRedirect}?orderId=${encodeURIComponent(order.orderNumber)}&token=${encodeURIComponent(order.trackingToken)}`
-      );
-    }
+
   }
 
   if (createdOrder) {
@@ -276,16 +265,7 @@ export function CheckoutForm({
                 value="ONLINE_100_SEPAY"
                 icon={<CreditCard size={18} />}
               />
-              <PaymentOption
-                label={labels.vnpay}
-                registration={register("paymentMethod")}
-                value="ONLINE_100_VNPAY"
-              />
-              <PaymentOption
-                label={labels.momo}
-                registration={register("paymentMethod")}
-                value="ONLINE_100_MOMO"
-              />
+
             </div>
             {paymentMethod === "DEPOSIT_50_BANK_ZALO" ? (
               <div className="mt-5">
