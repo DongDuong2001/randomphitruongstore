@@ -1,7 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { AlertTriangle, ArrowRight } from "lucide-react";
+import { AlertTriangle, ArrowRight, CreditCard } from "lucide-react";
 import Image from "next/image";
 import { useLocale } from "next-intl";
 import { useState } from "react";
@@ -10,13 +10,16 @@ import { z } from "zod";
 import type { Locale } from "@/i18n/request";
 import { ZALO_URL } from "@/lib/constants";
 import { formatPrice } from "@/lib/format";
+import { navigateToPayment } from "@/lib/payment-navigation";
 import type { ProductWithImages } from "@/types";
 import { BankTransferBox } from "./bank-transfer-box";
 import { InternationalShippingNotice } from "./international-shipping-notice";
+import { useCart } from "./cart-provider";
 
 const checkoutSchema = z.object({
   fullName: z.string().trim().min(2, "Required"),
   phone: z.string().trim().min(9, "Required"),
+  email: z.string().trim().email("Required"),
   address: z.string().trim().min(5, "Required"),
   province: z.string().trim().min(2, "Required"),
   district: z.string().trim().min(2, "Required"),
@@ -25,8 +28,7 @@ const checkoutSchema = z.object({
   shippingRegion: z.enum(["VIETNAM", "KOREA", "TAIWAN", "JAPAN"]),
   paymentMethod: z.enum([
     "DEPOSIT_50_BANK_ZALO",
-    "ONLINE_100_VNPAY",
-    "ONLINE_100_MOMO"
+    "ONLINE_100_SEPAY"
   ]),
   noChangePolicyAck: z.boolean().refine((value) => value === true, "Required")
 });
@@ -35,6 +37,7 @@ type CheckoutValues = z.infer<typeof checkoutSchema>;
 type CreatedOrder = {
   id: string;
   orderNumber: string;
+  trackingToken: string;
   payments?: Array<{ amount: number }>;
   paymentMethod: CheckoutValues["paymentMethod"];
 };
@@ -46,13 +49,14 @@ export function CheckoutForm({
   selectedVariantId,
   labels
 }: {
-  product: ProductWithImages;
+  product: ProductWithImages | null;
   selectedSize: string;
   selectedColor: string;
   selectedVariantId?: string;
   labels: Record<string, string>;
 }) {
   const locale = useLocale() as Locale;
+  const { items: cartItems, subtotal: cartSubtotal, clearCart } = useCart();
   const [createdOrder, setCreatedOrder] = useState<CreatedOrder | null>(null);
   const [serverError, setServerError] = useState("");
   const {
@@ -71,31 +75,37 @@ export function CheckoutForm({
   });
   const region = useWatch({ control, name: "shippingRegion" });
   const paymentMethod = useWatch({ control, name: "paymentMethod" });
-  const image = product.images[0];
-  const selectedVariant = product.variants?.find(
+  const selectedVariant = product?.variants?.find(
     (variant) => variant.id === selectedVariantId
   );
-  const selectedUnitPrice =
-    product.basePrice + (selectedVariant?.priceAdjustment ?? 0);
+  const selectedUnitPrice = product
+    ? product.basePrice + (selectedVariant?.priceAdjustment ?? 0)
+    : 0;
+
+  const finalSubtotal = product ? selectedUnitPrice : cartSubtotal;
   const paymentAmount = createdOrder?.payments?.[0]?.amount;
 
   async function onSubmit(values: CheckoutValues) {
     setServerError("");
+
+    if (!product && cartItems.length === 0) {
+      setServerError("Your cart is empty");
+      return;
+    }
+
     if (values.shippingRegion !== "VIETNAM") {
+      const productName = product
+        ? (locale === "vi" ? product.nameVi : product.nameEn)
+        : "Cart Items";
       const message = encodeURIComponent(
-        `International order: ${locale === "vi" ? product.nameVi : product.nameEn}, size ${selectedSize}, color ${selectedColor}, region ${values.shippingRegion}. Customer: ${values.fullName}, ${values.phone}`
+        `International order: ${productName}, region ${values.shippingRegion}. Customer: ${values.fullName}, ${values.phone}`
       );
       window.location.assign(`${ZALO_URL}?text=${message}`);
       return;
     }
 
-    const response = await fetch("/api/orders", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        ...values,
-        shippingRegion: "VIETNAM",
-        items: [
+    const orderItems = product
+      ? [
           {
             productId: product.id,
             ...(selectedVariantId ? { productVariantId: selectedVariantId } : {}),
@@ -103,7 +113,22 @@ export function CheckoutForm({
             size: selectedSize,
             color: selectedColor
           }
-        ],
+        ]
+      : cartItems.map((item) => ({
+          productId: item.productId,
+          productVariantId: item.productVariantId,
+          quantity: item.quantity,
+          size: item.size,
+          color: item.color
+        }));
+
+    const response = await fetch("/api/orders", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        ...values,
+        shippingRegion: "VIETNAM",
+        items: orderItems
       })
     });
     const result = await response.json();
@@ -114,16 +139,28 @@ export function CheckoutForm({
 
     const order = result.data;
     setCreatedOrder(order);
-    if (values.paymentMethod === "ONLINE_100_VNPAY") {
-      window.location.assign(
-        `/api/payment/vnpay-placeholder?orderId=${encodeURIComponent(order.orderNumber)}`
-      );
+    if (!product) {
+      clearCart();
     }
-    if (values.paymentMethod === "ONLINE_100_MOMO") {
-      window.location.assign(
-        `/api/payment/momo-placeholder?orderId=${encodeURIComponent(order.orderNumber)}`
-      );
+
+    if (values.paymentMethod === "ONLINE_100_SEPAY") {
+      const paymentResponse = await fetch("/api/payment/sepay", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          orderId: order.id,
+          accessToken: order.trackingToken
+        })
+      });
+      const paymentResult = await paymentResponse.json();
+      if (paymentResult.success && navigateToPayment(paymentResult.data)) {
+        return;
+      }
+      setServerError(paymentResult.error ?? "Unable to create SePay payment");
+      return;
     }
+
+
   }
 
   if (createdOrder) {
@@ -152,7 +189,7 @@ export function CheckoutForm({
 
   return (
     <form
-      className="grid gap-10 lg:grid-cols-[1fr_380px]"
+      className="grid gap-10 lg:grid-cols-[1fr_380px] xl:grid-cols-[1fr_400px] lg:gap-10 xl:gap-12"
       onSubmit={handleSubmit(onSubmit)}
     >
       <section>
@@ -168,6 +205,13 @@ export function CheckoutForm({
             label={labels.phone}
             registration={register("phone")}
           />
+          <div className="sm:col-span-2">
+            <Field
+              error={errors.email?.message}
+              label={labels.email}
+              registration={register("email")}
+            />
+          </div>
           <div className="sm:col-span-2">
             <Field
               error={errors.address?.message}
@@ -215,20 +259,18 @@ export function CheckoutForm({
                 value="DEPOSIT_50_BANK_ZALO"
               />
               <PaymentOption
-                label={labels.vnpay}
+                description={labels.paymentSandboxNote}
+                label={labels.sepay}
                 registration={register("paymentMethod")}
-                value="ONLINE_100_VNPAY"
+                value="ONLINE_100_SEPAY"
+                icon={<CreditCard size={18} />}
               />
-              <PaymentOption
-                label={labels.momo}
-                registration={register("paymentMethod")}
-                value="ONLINE_100_MOMO"
-              />
+
             </div>
             {paymentMethod === "DEPOSIT_50_BANK_ZALO" ? (
               <div className="mt-5">
                 <BankTransferBox
-                  amount={Math.ceil(selectedUnitPrice / 2)}
+                  amount={Math.ceil(finalSubtotal / 2)}
                   instruction={labels.bankInstruction}
                   title={labels.bankTitle}
                 />
@@ -247,30 +289,57 @@ export function CheckoutForm({
 
       <aside className="h-fit border border-black bg-white p-5 lg:sticky lg:top-24">
         <h2 className="text-lg font-black">{labels.summary}</h2>
-        <div className="mt-5 flex gap-4">
-          <div className="relative h-28 w-24 shrink-0 overflow-hidden bg-zinc-200">
-            {image ? (
-              <Image
-                alt={locale === "vi" ? image.altVi : image.altEn}
-                className="object-cover"
-                fill
-                sizes="96px"
-                src={image.url}
-              />
-            ) : null}
+        {product ? (
+          <div className="mt-5 flex gap-4">
+            <div className="relative h-28 w-24 shrink-0 overflow-hidden bg-zinc-200">
+              {product.images[0] ? (
+                <Image
+                  alt={locale === "vi" ? product.images[0].altVi : product.images[0].altEn}
+                  className="object-cover"
+                  fill
+                  sizes="96px"
+                  src={product.images[0].url}
+                />
+              ) : null}
+            </div>
+            <div className="text-sm">
+              <p className="font-bold">
+                {locale === "vi" ? product.nameVi : product.nameEn}
+              </p>
+              <p className="mt-2 text-zinc-500">Size: {selectedSize}</p>
+              <p className="text-zinc-500">Color: {selectedColor}</p>
+              <p className="mt-2 font-bold">{formatPrice(selectedUnitPrice, locale)}</p>
+            </div>
           </div>
-          <div className="text-sm">
-            <p className="font-bold">
-              {locale === "vi" ? product.nameVi : product.nameEn}
-            </p>
-            <p className="mt-2 text-zinc-500">Size: {selectedSize}</p>
-            <p className="text-zinc-500">Color: {selectedColor}</p>
-            <p className="mt-2 font-bold">{formatPrice(selectedUnitPrice, locale)}</p>
+        ) : (
+          <div className="mt-5 grid gap-4">
+            {cartItems.map((item) => (
+              <div key={`${item.productId}-${item.productVariantId}-${item.size}`} className="flex gap-4">
+                <div className="relative h-20 w-16 shrink-0 overflow-hidden bg-zinc-200">
+                  {item.imageUrl ? (
+                    <Image
+                      alt={item.name}
+                      className="object-cover"
+                      fill
+                      sizes="64px"
+                      src={item.imageUrl}
+                    />
+                  ) : null}
+                </div>
+                <div className="text-sm">
+                  <p className="font-bold">{item.name}</p>
+                  <p className="text-xs text-zinc-500">
+                    {item.size} · {item.color} · x{item.quantity}
+                  </p>
+                  <p className="mt-1 font-bold">{formatPrice(item.price, locale)}</p>
+                </div>
+              </div>
+            ))}
           </div>
-        </div>
+        )}
         <div className="mt-5 flex justify-between border-t border-black pt-4 font-black">
           <span>{labels.total}</span>
-          <span>{formatPrice(selectedUnitPrice, locale)}</span>
+          <span>{formatPrice(finalSubtotal, locale)}</span>
         </div>
         <label className="mt-5 flex cursor-pointer gap-2 bg-amber-50 p-3 text-xs leading-5 text-amber-900">
           <input
@@ -319,16 +388,30 @@ function Field({
 function PaymentOption({
   value,
   label,
-  registration
+  description,
+  registration,
+  icon
 }: {
   value: CheckoutValues["paymentMethod"];
   label: string;
+  description?: string;
   registration: ReturnType<ReturnType<typeof useForm<CheckoutValues>>["register"]>;
+  icon?: React.ReactNode;
 }) {
   return (
     <label className="flex cursor-pointer items-start gap-3 border border-zinc-300 bg-white p-4 has-[:checked]:border-black has-[:checked]:ring-1 has-[:checked]:ring-black">
       <input className="mt-0.5 accent-black" type="radio" value={value} {...registration} />
-      <span className="text-sm font-bold">{label}</span>
+      <span>
+        <span className="block text-sm font-bold flex items-center gap-2">
+          {icon}
+          {label}
+        </span>
+        {description ? (
+          <span className="mt-1 block text-xs leading-5 text-zinc-500">
+            {description}
+          </span>
+        ) : null}
+      </span>
     </label>
   );
 }

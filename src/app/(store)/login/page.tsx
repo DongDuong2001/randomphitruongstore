@@ -25,7 +25,8 @@ export default function LoginPage() {
           invalidEmail: "Email chưa hợp lệ",
           passwordHint: "Mật khẩu tối thiểu 6 ký tự",
           loginAction: "Đăng nhập",
-          registerAction: "Tạo tài khoản"
+          registerAction: "Tạo tài khoản",
+          rememberMe: "Ghi nhớ đăng nhập"
         }}
       />
     </AuthShell>

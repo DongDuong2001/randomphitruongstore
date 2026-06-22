@@ -98,11 +98,12 @@
     "district": "District",
     "ward": "Ward",
     "note": "Note",
+    "email": "Email",
     "region": "Shipping region",
     "payment": "Payment method",
     "deposit": "50% deposit via BIDV / Zalo, remaining 50% COD",
-    "vnpay": "Pay 100% with VNPay (placeholder)",
-    "momo": "Pay 100% with MoMo (placeholder)",
+    "sepay": "Pay 100% with SePay sandbox",
+    "paymentSandboxNote": "Use this to test payment UX and redirects. No real money is collected in sandbox.",
     "summary": "Order summary",
     "total": "Total",
     "depositAmount": "50% deposit",
@@ -114,7 +115,14 @@
     "internationalCustoms": "International orders require valid customs information (ID, passport or residence card depending on country). Shipping is quoted separately.",
     "warning": "Check your size carefully. International items cannot change size or color after shop confirmation.",
     "missingProduct": "Your order has no product.",
-    "backToShop": "Return to shop"
+    "backToShop": "Return to shop",
+    "paymentSuccess": "Payment Successful",
+    "paymentSuccessBody": "Order {orderId} has been paid. The shop will confirm and process your order shortly.",
+    "paymentCancelled": "Payment Cancelled",
+    "paymentCancelledBody": "Payment for order {orderId} was cancelled. You can try again or choose a different method.",
+    "gatewayProcessed": "Processed via {gateway}",
+    "gatewayCancelled": "Cancelled via {gateway}",
+    "viewAccount": "View Account"
   },
   "request": {
     "title": "Send the piece you are looking for",
@@ -156,7 +164,7 @@
     "returnPolicy": "Returns & exchanges",
     "returnPolicyBody": "Report defects or a wrong confirmed color/size within 48 hours. Changes of mind, customer sizing mistakes and used items are not eligible.",
     "paymentPolicy": "Payment methods",
-    "paymentPolicyBody": "Bank transfer and remaining-balance COD in Vietnam; ZaloPay and MoMo are available through direct consultation.",
+    "paymentPolicyBody": "Bank transfer and remaining-balance COD in Vietnam; 100% online payment through SePay is being tested in sandbox.",
     "name": "Your name",
     "message": "How can we help?",
     "send": "Send via email",
@@ -215,5 +223,23 @@
     "save": "Save",
     "latestUpdate": "Latest Update",
     "quotedPrice": "Quoted Price"
+  },
+  "international": {
+    "eyebrow": "International order",
+    "title": "Order to Korea, Taiwan or Japan",
+    "subtitle": "Fill in your details and we will confirm shipping fees, customs requirements and availability via Zalo.",
+    "fullName": "Full name",
+    "phone": "Phone number",
+    "social": "Instagram / Zalo",
+    "productName": "Product name or reference",
+    "region": "Destination",
+    "size": "Desired size",
+    "color": "Desired color",
+    "customsNote": "Customs ID type (passport, residence card or virtual ID)",
+    "note": "Additional notes",
+    "submit": "Send consultation request",
+    "success": "Request received",
+    "successBody": "We will contact you via Zalo or Instagram to confirm shipping fees, customs details and availability. You can also message us directly.",
+    "zaloButton": "Message Zalo now"
   }
 }

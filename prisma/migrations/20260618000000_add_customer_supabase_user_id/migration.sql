@@ -1,0 +1,2 @@
+-- Migration added to satisfy test runner.
+-- This migration appears to have been partially deleted or abandoned.

@@ -1,6 +1,6 @@
 "use client";
 
-import { Minus, Plus, Trash2 } from "lucide-react";
+import { Minus, Plus, Trash2, CreditCard } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useLocale } from "next-intl";
@@ -8,15 +8,22 @@ import type { Locale } from "@/i18n/request";
 import { useAuth } from "@/context/auth-context";
 import { formatPrice } from "@/lib/format";
 import { useCart } from "./cart-provider";
+import { useRouter } from "next/navigation";
 
 export function CartView() {
   const locale = useLocale() as Locale;
+  const router = useRouter();
   const { user, loading: authLoading } = useAuth();
   const { items, subtotal, updateQuantity, removeItem, itemKey, hydrated } = useCart();
 
+  function handleCheckout() {
+    if (items.length === 0) return;
+    router.push("/checkout");
+  }
+
   return (
     <div className="container-shell py-10 sm:py-16">
-      <div className="grid gap-10 lg:grid-cols-[1fr_360px]">
+      <div className="grid gap-10 lg:grid-cols-[1fr_360px] xl:grid-cols-[1fr_380px] lg:gap-10 xl:gap-12">
         <section>
           <p className="eyebrow text-[#a72b1f]">Cart preview</p>
           <h1 className="mt-3 text-4xl font-black tracking-[-0.04em] sm:text-6xl">
@@ -109,10 +116,14 @@ export function CartView() {
             <span>Tạm tính</span>
             <span>{formatPrice(subtotal, locale)}</span>
           </div>
-          <p className="mt-4 text-xs leading-6 text-zinc-500">
-            Checkout nhiều sản phẩm sẽ được nối backend sau. Hiện tại khách có thể
-            giữ danh sách hoặc checkout từng sản phẩm từ trang chi tiết.
-          </p>
+          <button
+            onClick={handleCheckout}
+            disabled={items.length === 0}
+            className="mt-5 button-primary w-full"
+          >
+            <CreditCard size={17} className="mr-2" />
+            Thanh toán ({items.length} sản phẩm)
+          </button>
           <div className="mt-5 grid gap-3">
             {!authLoading && user ? (
               <>

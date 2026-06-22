@@ -68,7 +68,7 @@ export function ProductFilters({
   }
 
   return (
-    <div className="grid gap-7 lg:grid-cols-[240px_1fr] lg:gap-10">
+    <div className="grid gap-7 lg:grid-cols-[240px_1fr] xl:grid-cols-[260px_1fr] lg:gap-10 xl:gap-12">
       <aside className="min-w-0">
         <button
           aria-expanded={filtersOpen}

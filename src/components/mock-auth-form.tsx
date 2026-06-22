@@ -11,7 +11,8 @@ import { useAuth } from "@/context/auth-context";
 const schema = z.object({
   fullName: z.string().trim().optional(),
   email: z.string().trim().email(),
-  password: z.string().min(6)
+  password: z.string().min(6),
+  rememberMe: z.boolean().optional()
 });
 
 type Values = z.infer<typeof schema>;
@@ -45,6 +46,7 @@ export function AuthForm({
       body: JSON.stringify({
         email: values.email,
         password: values.password,
+        rememberMe: values.rememberMe,
         ...(mode === "register" && { fullName: values.fullName })
       })
     });
@@ -96,6 +98,16 @@ export function AuthForm({
           <span className="error-text">{labels.passwordHint}</span>
         ) : null}
       </label>
+      {mode === "login" && (
+        <label className="flex items-center gap-2">
+          <input
+            type="checkbox"
+            className="mt-1 accent-black size-4"
+            {...register("rememberMe")}
+          />
+          <span className="text-sm text-zinc-600">{labels.rememberMe}</span>
+        </label>
+      )}
       <button className="button-primary" disabled={isSubmitting} type="submit">
         {mode === "login" ? labels.loginAction : labels.registerAction}
         <ArrowRight size={16} />

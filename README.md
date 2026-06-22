@@ -15,7 +15,7 @@ Production-oriented MVP order store for the Vietnamese streetwear brand
 ## Features
 
 - Localized storefront, catalog filters, product details and social links
-- Vietnam checkout with 50% deposit or VNPay/MoMo placeholder boundaries
+- Vietnam checkout with 50% deposit, SePay Payment Gateway, or VNPay/MoMo placeholder boundaries
 - Korea, Taiwan and Japan consultation handoff through Zalo
 - Inspiration image upload and database-backed order requests
 - Signed temporary admin session, product CRUD and order/request management
@@ -76,13 +76,22 @@ Open `http://localhost:3000`. Admin sign-in is at
 | `ADMIN_SESSION_SECRET` | Secret used to sign the HTTP-only admin session |
 | `NEXT_PUBLIC_SITE_URL` | Canonical origin for metadata and sitemap |
 | `UPLOAD_DRIVER` | Upload implementation; currently supports `local` |
+| `SEPAY_ENVIRONMENT` | `sandbox` for the signed local simulator or `production` for SePay |
+| `SEPAY_MERCHANT_ID` | SePay Payment Gateway merchant ID |
+| `SEPAY_MERCHANT_SECRET_KEY` | SePay merchant secret used to sign checkout forms |
+| `SEPAY_IPN_SECRET_KEY` | Secret configured for SePay's `X-Secret-Key` IPN authentication |
+| `SEPAY_SANDBOX_SECRET` | Optional dedicated secret for local simulator completion proofs |
 
-## Payment integration boundary
+## Payment integration
 
-`/api/payment/vnpay-placeholder` and `/api/payment/momo-placeholder` do not
-collect money. They intentionally represent the point where signed gateway
-requests, return URLs and verified webhooks should be integrated. Orders are
-created as `PENDING_ONLINE_PAYMENT` before redirecting.
+SePay uses its official Node SDK to generate a signed form POST. Configure the
+public HTTPS IPN URL as `/api/payment/sepay/webhook` with authentication type
+`SECRET_KEY`, and set the same value in `SEPAY_IPN_SECRET_KEY`. The server
+validates nested IPN data, currency, amount, invoice, and transaction IDs before
+an atomic payment transition.
+
+In local `sandbox` mode, the signed simulator uses the same atomic settlement
+path without collecting money. VNPay and MoMo remain explicit placeholders.
 
 ## Upload storage
 

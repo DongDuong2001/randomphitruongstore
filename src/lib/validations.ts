@@ -65,6 +65,7 @@ export const productInputSchema = z.object({
 export const orderInputSchema = z.object({
   fullName: z.string().trim().min(2),
   phone: phoneSchema,
+  email: z.string().trim().email(),
   address: z.string().trim().min(5),
   province: z.string().trim().min(2),
   district: z.string().trim().min(2),
@@ -73,15 +74,14 @@ export const orderInputSchema = z.object({
   shippingRegion: z.enum(["VIETNAM", "KOREA", "TAIWAN", "JAPAN"]),
   paymentMethod: z.enum([
     "DEPOSIT_50_BANK_ZALO",
-    "ONLINE_100_VNPAY",
-    "ONLINE_100_MOMO"
+    "ONLINE_100_SEPAY"
   ]),
   noChangePolicyAck: z.boolean().refine((value) => value === true),
   items: z
     .array(
       z.object({
         productId: z.string().uuid(),
-        productVariantId: z.string().uuid(),
+        productVariantId: z.string().uuid().optional(),
         quantity: z.coerce.number().int().min(1).max(10),
         size: z.string().min(1),
         color: z.string().min(1)
@@ -142,7 +142,8 @@ export const registerInputSchema = z.object({
 
 export const loginInputSchema = z.object({
   email: z.string().trim().email("Invalid email address"),
-  password: z.string().min(1, "Password is required")
+  password: z.string().min(1, "Password is required"),
+  rememberMe: z.boolean().optional()
 });
 
 export type RegisterInput = z.infer<typeof registerInputSchema>;

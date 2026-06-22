@@ -1,4 +1,5 @@
-import { Landmark, QrCode } from "lucide-react";
+import { Landmark } from "lucide-react";
+import Image from "next/image";
 import { BANK_DETAILS } from "@/lib/constants";
 import { formatPrice } from "@/lib/format";
 
@@ -46,13 +47,14 @@ export function BankTransferBox({
         ) : null}
       </dl>
       <div className="mt-5 grid gap-4 sm:grid-cols-[140px_1fr]">
-        <div className="flex aspect-square items-center justify-center border border-dashed border-zinc-400 bg-zinc-50">
-          <div className="text-center text-zinc-500">
-            <QrCode className="mx-auto" size={42} />
-            <span className="mt-2 block text-[10px] font-bold uppercase tracking-wider">
-              VietQR placeholder
-            </span>
-          </div>
+        <div className="flex aspect-square items-center justify-center border border-zinc-200 bg-white">
+          <Image
+            src="https://qr.sepay.vn/img?bank=BIDV&acc=9624715031978&template=compact&showinfo=true&fullacc=true&holder=DO%20PHI%20TRUONG&store=randomphitruong"
+            alt="QR thanh toán - Ngân hàng TMCP Đầu tư và Phát triển Việt Nam - 2153102265 - DO PHI TRUONG"
+            height={300}
+            width={300}
+            className="mx-auto"
+          />
         </div>
         <div className="text-xs leading-5 text-zinc-600">
           {orderNumber ? (

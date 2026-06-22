@@ -44,7 +44,7 @@ export default async function CheckoutPage({ searchParams }: PageProps) {
       )
     : null;
 
-  if (!product || !selectedVariant) {
+  if (params.productId && (!product || !selectedVariant)) {
     return (
       <div className="container-shell min-h-[60vh] py-20 text-center">
         <h1 className="text-4xl font-black">{t("missingProduct")}</h1>
@@ -59,6 +59,7 @@ export default async function CheckoutPage({ searchParams }: PageProps) {
     "customerInfo",
     "fullName",
     "phone",
+    "email",
     "address",
     "province",
     "district",
@@ -67,8 +68,8 @@ export default async function CheckoutPage({ searchParams }: PageProps) {
     "region",
     "payment",
     "deposit",
-    "vnpay",
-    "momo",
+    "sepay",
+    "paymentSandboxNote",
     "summary",
     "total",
     "placeOrder",
@@ -90,9 +91,9 @@ export default async function CheckoutPage({ searchParams }: PageProps) {
       <CheckoutForm
         labels={{ ...labels, loading: common("loading") }}
         product={product}
-        selectedColor={selectedVariant.colorVi}
-        selectedSize={selectedVariant.size}
-        selectedVariantId={selectedVariant.id}
+        selectedColor={selectedVariant?.colorVi ?? ""}
+        selectedSize={selectedVariant?.size ?? ""}
+        selectedVariantId={selectedVariant?.id}
       />
     </div>
   );

@@ -98,11 +98,12 @@
     "district": "Quận / huyện",
     "ward": "Phường / xã",
     "note": "Ghi chú",
+    "email": "Email",
     "region": "Khu vực giao hàng",
     "payment": "Phương thức thanh toán",
     "deposit": "Cọc 50% qua BIDV / Zalo, COD 50% còn lại",
-    "vnpay": "Thanh toán 100% qua VNPay (bản thử nghiệm)",
-    "momo": "Thanh toán 100% qua MoMo (bản thử nghiệm)",
+    "sepay": "Thanh toán 100% qua SePay sandbox",
+    "paymentSandboxNote": "Dùng để test luồng thanh toán và redirect. Không thu tiền thật trong sandbox.",
     "summary": "Tóm tắt đơn hàng",
     "total": "Tổng cộng",
     "depositAmount": "Số tiền cọc 50%",
@@ -114,7 +115,14 @@
     "internationalCustoms": "Đơn quốc tế cần thông tin hải quan hợp lệ (ID, hộ chiếu hoặc thẻ cư trú tùy quốc gia). Phí vận chuyển được báo sau.",
     "warning": "Vui lòng kiểm tra kỹ size. Sản phẩm quốc tế không thể đổi size/màu sau khi shop xác nhận.",
     "missingProduct": "Chưa có sản phẩm trong đơn hàng.",
-    "backToShop": "Quay lại cửa hàng"
+    "backToShop": "Quay lại cửa hàng",
+    "paymentSuccess": "Thanh toán thành công",
+    "paymentSuccessBody": "Đơn hàng {orderId} đã được thanh toán. Shop sẽ xác nhận và xử lý đơn hàng sớm nhất.",
+    "paymentCancelled": "Thanh toán bị hủy",
+    "paymentCancelledBody": "Quá trình thanh toán cho đơn hàng {orderId} đã bị hủy. Bạn có thể thử lại hoặc chọn phương thức khác.",
+    "gatewayProcessed": "Đã xử lý qua {gateway}",
+    "gatewayCancelled": "Đã hủy qua {gateway}",
+    "viewAccount": "Xem tài khoản"
   },
   "request": {
     "title": "Gửi mẫu bạn đang tìm",
@@ -156,7 +164,7 @@
     "returnPolicy": "Chính sách đổi trả",
     "returnPolicyBody": "Báo trong 48 giờ nếu hàng lỗi hoặc sai màu/size so với đơn xác nhận. Không áp dụng khi khách đổi ý, chọn sai size hoặc đã sử dụng.",
     "paymentPolicy": "Phương thức thanh toán",
-    "paymentPolicyBody": "Chuyển khoản ngân hàng, COD phần còn lại tại Việt Nam; ZaloPay và MoMo được hỗ trợ qua tư vấn trực tiếp.",
+    "paymentPolicyBody": "Chuyển khoản ngân hàng, COD phần còn lại tại Việt Nam; thanh toán 100% qua SePay đang được thử nghiệm trong sandbox.",
     "name": "Tên của bạn",
     "message": "Nội dung cần hỗ trợ",
     "send": "Gửi qua email",
@@ -215,5 +223,23 @@
     "save": "Lưu",
     "latestUpdate": "Cập nhật mới nhất",
     "quotedPrice": "Báo giá"
+  },
+  "international": {
+    "eyebrow": "Đơn hàng quốc tế",
+    "title": "Order đi Hàn Quốc, Đài Loan hoặc Nhật Bản",
+    "subtitle": "Điền thông tin và shop sẽ xác nhận phí vận chuyển, yêu cầu hải quan và tình trạng hàng qua Zalo.",
+    "fullName": "Họ và tên",
+    "phone": "Số điện thoại",
+    "social": "Instagram / Zalo",
+    "productName": "Tên hoặc mô tả sản phẩm",
+    "region": "Quốc gia nhận hàng",
+    "size": "Size mong muốn",
+    "color": "Màu mong muốn",
+    "customsNote": "Loại giấy tờ hải quan (hộ chiếu, thẻ cư trú hoặc virtual ID)",
+    "note": "Ghi chú thêm",
+    "submit": "Gửi yêu cầu tư vấn",
+    "success": "Đã nhận yêu cầu",
+    "successBody": "Shop sẽ liên hệ qua Zalo hoặc Instagram để xác nhận phí ship, thông tin hải quan và tình trạng hàng. Bạn cũng có thể nhắn trực tiếp.",
+    "zaloButton": "Nhắn Zalo ngay"
   }
 }

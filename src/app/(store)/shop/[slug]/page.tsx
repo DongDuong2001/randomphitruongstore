@@ -62,7 +62,7 @@ export default async function ProductPage({ params }: PageProps) {
   const availableColors = productVariantColors(product.variants);
 
   return (
-    <div className="container-shell grid gap-10 py-8 sm:py-14 lg:grid-cols-[1.15fr_0.85fr] lg:gap-16">
+    <div className="container-shell grid gap-10 py-8 sm:py-14 lg:grid-cols-[1.15fr_0.85fr] xl:grid-cols-[1.2fr_0.8fr] lg:gap-16 xl:gap-20">
       <ProductGallery
         images={product.images.map((image) => ({
           url: image.url,

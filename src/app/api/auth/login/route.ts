@@ -15,10 +15,12 @@ export async function POST(request: Request) {
   });
 
   if (error) {
-    // Always return the same message for wrong email/password
-    // to prevent user enumeration attacks
     return err("Invalid email or password", 401);
   }
+
+  // Note: Session duration ("Remember me") is configured in Supabase Dashboard
+  // under Authentication > Settings > JWT expiry and Refresh token rotation.
+  // The rememberMe field is accepted for future extensibility.
 
   return ok({ user: data.user });
 }

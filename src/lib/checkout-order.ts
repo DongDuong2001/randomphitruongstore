@@ -1,10 +1,13 @@
 import { buildShippingAddressSnapshot, normalizeEmail } from "@/lib/customer-account";
+import {
+  generateOrderAccessToken,
+  hashOrderAccessToken
+} from "@/lib/order-access";
 import type { OrderInput } from "@/lib/validations";
 
 type CatalogProduct = {
   id: string;
   nameVi: string;
-  nameEn: string;
   basePrice: number;
 };
 
@@ -13,9 +16,7 @@ type CatalogVariant = {
   productId: string;
   size: string;
   colorVi: string;
-  colorEn: string;
   priceAdjustment: number;
-  isAvailable: boolean;
 };
 
 type CheckoutOrderStore = {
@@ -31,13 +32,20 @@ type CheckoutOrderStore = {
   productVariant: {
     findMany(args: {
       where: {
-        id: { in: string[] };
-        productId: { in: string[] };
+        OR: Array<{ id: { in: string[] } } | { productId: { in: string[] } }>;
         isAvailable: true;
       };
     }): Promise<CatalogVariant[]>;
   };
-  $transaction<T>(callback: (transaction: CheckoutOrderTransaction) => Promise<T>): Promise<T>;
+  $transaction<T>(
+    callback: (transaction: CheckoutOrderTransaction) => Promise<T>
+  ): Promise<T>;
+};
+
+type CustomerCheckoutData = {
+  fullName: string;
+  phone: string;
+  email: string;
 };
 
 type CheckoutOrderTransaction = {
@@ -53,7 +61,7 @@ type CheckoutOrderTransaction = {
       select: { id: true };
     }): Promise<{ id: string }>;
     create(args: {
-      data: CustomerCheckoutData & { email?: string };
+      data: CustomerCheckoutData;
       select: { id: true };
     }): Promise<{ id: string }>;
   };
@@ -66,17 +74,13 @@ type CheckoutOrderTransaction = {
         shippingAddress: true;
         payments: true;
       };
-    }): Promise<unknown>;
+    }): Promise<Record<string, unknown>>;
   };
-};
-
-type CustomerCheckoutData = {
-  fullName: string;
-  phone: string;
 };
 
 type CheckoutOrderCreateData = {
   orderNumber: string;
+  trackingToken: string;
   shippingRegion: OrderInput["shippingRegion"];
   paymentMethod: OrderInput["paymentMethod"];
   paymentOption: "DEPOSIT_50" | "ONLINE_100";
@@ -87,7 +91,7 @@ type CheckoutOrderCreateData = {
   totalAmount: number;
   note: string | null;
   customerId: string;
-  sizeColorLocked: boolean;
+  sizeColorLocked: true;
   noChangePolicyAck: true;
   noChangePolicyAckAt: Date;
   shippingAddress: {
@@ -96,7 +100,7 @@ type CheckoutOrderCreateData = {
   items: {
     create: Array<{
       productId: string;
-      productVariantId?: string;
+      productVariantId: string;
       productName: string;
       itemNameSnapshot: string;
       unitPrice: number;
@@ -133,18 +137,20 @@ export async function createCheckoutOrder({
   input,
   userEmail,
   generateOrderNumber,
+  generateTrackingToken = generateOrderAccessToken,
   now = () => new Date()
 }: {
   prisma: CheckoutOrderStore;
   input: OrderInput;
   userEmail: string | null | undefined;
   generateOrderNumber: () => string;
+  generateTrackingToken?: () => string;
   now?: () => Date;
 }) {
   const productIds = [...new Set(input.items.map((item) => item.productId))];
   const variantIds = [
     ...new Set(
-      input.items.map((item) => item.productVariantId)
+      input.items.map((item) => item.productVariantId).filter((id): id is string => Boolean(id))
     )
   ];
 
@@ -156,10 +162,12 @@ export async function createCheckoutOrder({
     throw new CheckoutOrderError("One or more products are unavailable", 409);
   }
 
+  const itemsWithoutVariantId = input.items.filter((item) => !item.productVariantId);
+  const productsNeedingVariants = [...new Set(itemsWithoutVariantId.map((i) => i.productId))];
+
   const variants = await prisma.productVariant.findMany({
     where: {
-      id: { in: variantIds },
-      productId: { in: productIds },
+      OR: [{ id: { in: variantIds } }, { productId: { in: productsNeedingVariants } }],
       isAvailable: true
     }
   });
@@ -172,10 +180,22 @@ export async function createCheckoutOrder({
       throw new CheckoutOrderError("One or more products are unavailable", 409);
     }
 
-    const variant = variantMap.get(item.productVariantId);
-
-    if (!variant || variant.productId !== item.productId) {
-      throw new CheckoutOrderError("Invalid product variant", 400);
+    // Handle legacy cart items without productVariantId
+    let variant;
+    if (item.productVariantId) {
+      variant = variantMap.get(item.productVariantId);
+      if (!variant || variant.productId !== item.productId) {
+        throw new CheckoutOrderError("Invalid product variant", 400);
+      }
+    } else {
+      // Fallback: find variant by size/color
+      const fallback = variants.find(
+        (v) => v.productId === item.productId && v.size === item.size && v.colorVi === item.color
+      );
+      if (!fallback) {
+        throw new CheckoutOrderError("Product variant not found for legacy item", 400);
+      }
+      variant = fallback;
     }
 
     const selectedSize = variant.size;
@@ -184,7 +204,7 @@ export async function createCheckoutOrder({
 
     return {
       productId: item.productId,
-      productVariantId: item.productVariantId,
+      productVariantId: variant.id,
       productName: product.nameVi,
       itemNameSnapshot: product.nameVi,
       unitPrice,
@@ -206,20 +226,25 @@ export async function createCheckoutOrder({
     depositPaymentAmount === null ? 0 : totalAmount - depositPaymentAmount;
   const paymentOption = isDeposit ? "DEPOSIT_50" : "ONLINE_100";
   const paymentAmount = depositPaymentAmount ?? totalAmount;
-  const normalizedEmail = normalizeEmail(userEmail);
-  const customerData = customerDataFromCheckout(input);
+  const normalizedEmail = normalizeEmail(userEmail) ?? normalizeEmail(input.email);
+  if (!normalizedEmail) {
+    throw new CheckoutOrderError("A valid email is required", 400);
+  }
+  const customerData = customerDataFromCheckout(input, normalizedEmail);
+  const trackingToken = generateTrackingToken();
+  const trackingTokenHash = hashOrderAccessToken(trackingToken);
 
   return prisma.$transaction(async (transaction) => {
-    const customer = normalizedEmail
-      ? await findOrCreateSignedInCustomer(transaction, normalizedEmail, customerData)
-      : await transaction.customer.create({
-          data: customerData,
-          select: { id: true }
-        });
+    const customer = await findOrCreateCustomer(
+      transaction,
+      normalizedEmail,
+      customerData
+    );
 
-    return transaction.order.create({
+    const order = await transaction.order.create({
       data: {
         orderNumber: generateOrderNumber(),
+        trackingToken: trackingTokenHash,
         shippingRegion: input.shippingRegion,
         paymentMethod: input.paymentMethod,
         paymentOption,
@@ -255,17 +280,23 @@ export async function createCheckoutOrder({
         payments: true
       }
     });
+
+    return { ...order, trackingToken };
   });
 }
 
-function customerDataFromCheckout(input: OrderInput): CustomerCheckoutData {
+function customerDataFromCheckout(
+  input: OrderInput,
+  email: string
+): CustomerCheckoutData {
   return {
     fullName: input.fullName,
-    phone: input.phone
+    phone: input.phone,
+    email
   };
 }
 
-async function findOrCreateSignedInCustomer(
+async function findOrCreateCustomer(
   transaction: CheckoutOrderTransaction,
   email: string,
   customerData: CustomerCheckoutData
@@ -285,10 +316,7 @@ async function findOrCreateSignedInCustomer(
   }
 
   return transaction.customer.create({
-    data: {
-      email,
-      ...customerData
-    },
+    data: customerData,
     select: { id: true }
   });
 }

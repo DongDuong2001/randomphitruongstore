@@ -86,10 +86,14 @@ export function PurchasePanel({
       return;
     }
     if (region !== "VIETNAM") {
-      const message = encodeURIComponent(
-        `International order consultation: ${productName}, size ${size}, color ${color}, region ${region}`
-      );
-      window.location.assign(`${ZALO_URL}?text=${message}`);
+      // Redirect to the international consultation page with pre-filled context.
+      const params = new URLSearchParams({
+        product: productName,
+        size: size,
+        color: color,
+        region
+      });
+      router.push(`/international?${params.toString()}`);
       return;
     }
     const params = new URLSearchParams({ productId, size, color });

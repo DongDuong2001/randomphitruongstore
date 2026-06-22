@@ -10,6 +10,7 @@ import { orderInputSchema, profileUpdateSchema } from "../src/lib/validations";
 const validOrderInput = {
   fullName: "Nguyen Van A",
   phone: "0901234567",
+  email: "guest@example.com",
   address: "123 Nguyen Trai",
   province: "Ho Chi Minh",
   district: "District 1",
@@ -29,16 +30,23 @@ const validOrderInput = {
 };
 
 describe("auth/account safety regressions", () => {
-  it("does not accept client-supplied email for public order account linkage", () => {
+  it("accepts a valid guest email for verified account linkage later", () => {
     const parsed = orderInputSchema.safeParse({
       ...validOrderInput,
-      email: "victim@example.com"
+      email: " Guest@Example.com "
     });
 
     assert.equal(parsed.success, true);
     if (parsed.success) {
-      assert.equal("email" in parsed.data, false);
+      assert.equal(parsed.data.email, "Guest@Example.com");
     }
+  });
+
+  it("rejects checkout without a valid contact email", () => {
+    assert.equal(
+      orderInputSchema.safeParse({ ...validOrderInput, email: "not-an-email" }).success,
+      false
+    );
   });
 
   it("does not allow profile updates to mutate the auth lookup email", () => {

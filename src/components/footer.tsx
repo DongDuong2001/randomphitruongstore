@@ -24,7 +24,7 @@ export async function Footer() {
 
   return (
     <footer className="border-t border-white/15 bg-[#11100e] text-white">
-      <div className="container-shell grid gap-12 py-14 lg:grid-cols-[1fr_1.1fr_0.8fr] lg:py-16">
+      <div className="container-shell grid gap-12 py-14 lg:grid-cols-[1fr_1.1fr_0.8fr] xl:grid-cols-[1fr_1.2fr_1fr] lg:py-16 xl:py-20">
         <div className="min-w-0">
           <div className="flex items-center gap-3">
             <span className="relative size-12 shrink-0 overflow-hidden rounded-full bg-white">
@@ -106,7 +106,7 @@ export async function Footer() {
 
         <div className="min-w-0">
           <p className="eyebrow text-[#d64b3d]">{t("contact")}</p>
-          <div className="mt-5 grid gap-5 sm:grid-cols-[168px_1fr]">
+          <div className="mt-5 grid gap-5 sm:grid-cols-[168px_1fr] xl:grid-cols-[180px_1fr]">
             <a
               aria-label={t("zaloAction")}
               className="relative aspect-square w-full max-w-[168px] overflow-hidden border-4 border-white bg-white"
@@ -142,7 +142,7 @@ export async function Footer() {
                 href={`mailto:${CONTACT_EMAIL}`}
               >
                 <Mail size={18} />
-                <span className="break-all">{CONTACT_EMAIL}</span>
+                <span className="whitespace-nowrap">{CONTACT_EMAIL}</span>
               </a>
             </div>
           </div>
