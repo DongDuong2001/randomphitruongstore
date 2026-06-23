@@ -25,5 +25,5 @@ export function categoryLabel(
 
 export function orderNumber() {
   const date = new Date().toISOString().slice(0, 10).replaceAll("-", "");
-  return `RPT-${date}-${crypto.randomUUID().slice(0, 6).toUpperCase()}`;
+  return `ODR-${date}-${crypto.randomUUID().slice(0, 6).toUpperCase()}`;
 }
