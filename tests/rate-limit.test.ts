@@ -94,7 +94,8 @@ describe("database-backed rate limiting", () => {
       ["../src/app/api/orders/route.ts", "checkoutOrderIp"],
       ["../src/app/api/order-requests/route.ts", "inquiryIp"],
       ["../src/app/api/international-requests/route.ts", "internationalRequestIp"],
-      ["../src/app/api/upload/route.ts", "uploadIp"]
+      ["../src/app/api/upload/route.ts", "uploadIp"],
+      ["../src/app/api/upload/intent/route.ts", "uploadIp"]
     ] as const;
 
     for (const [routePath, ...policies] of routePolicies) {

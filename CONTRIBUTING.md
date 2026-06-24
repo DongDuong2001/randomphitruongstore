@@ -25,10 +25,15 @@ cp .env.example .env.local
 | --- | --- |
 | `DATABASE_URL` | Connection string PostgreSQL local (xem compose.yaml) |
 | `DIRECT_URL` | Giống `DATABASE_URL` khi chạy local |
-| `ADMIN_PASSWORD` | Tự đặt, dùng để đăng nhập `/admin` |
-| `ADMIN_SESSION_SECRET` | Chuỗi ngẫu nhiên dài ≥ 32 ký tự |
+| `ADMIN_BOOTSTRAP_EMAIL` | Email dùng một lần để seed admin đầu tiên |
+| `ADMIN_BOOTSTRAP_PASSWORD` | Mật khẩu mạnh dùng một lần để seed admin đầu tiên |
+| `ADMIN_BOOTSTRAP_NAME` | Tên hiển thị cho admin đầu tiên |
 | `NEXT_PUBLIC_SUPABASE_URL` | Supabase Dashboard → Project Settings → API → Project URL |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase Dashboard → Project Settings → API → anon/public key |
+| `SEPAY_ENVIRONMENT` | `sandbox` khi local, `production` khi deploy production |
+| `SEPAY_MERCHANT_ID` | SePay Payment Gateway merchant ID |
+| `SEPAY_MERCHANT_SECRET_KEY` | SePay merchant secret |
+| `SEPAY_IPN_SECRET_KEY` | Secret cấu hình cho SePay IPN `X-Secret-Key` |
 
 ### PostgreSQL/Prisma local setup
 
@@ -116,11 +121,11 @@ curl -X POST http://localhost:3000/api/auth/login \
   -d '{"email":"test@example.com","password":"123456"}'
 ```
 
-**Admin login** — dùng `ADMIN_PASSWORD` trong `.env.local`:
+**Admin login** — dùng email/password của `AdminUser` đã seed:
 ```bash
 curl -X POST http://localhost:3000/api/admin/session \
   -H "Content-Type: application/json" \
-  -d '{"password":"your-admin-password"}'
+  -d '{"email":"owner@example.com","password":"your-admin-password"}'
 ```
 
 ### Các trang chính
@@ -227,6 +232,8 @@ Giữ PR tập trung; nếu có nhiều thay đổi không phụ thuộc nhau, t
 
 ```bash
 npm run lint
+npm test
+npm audit --omit=dev
 npm run build
 ```
 
@@ -245,14 +252,15 @@ git diff --cached --check
 git diff --cached --name-only
 ```
 
-Secret scan tối thiểu:
+Secret scan:
 
 ```bash
-git grep -n -E "(BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY|AKIA[0-9A-Z]{16}|github_pat_|gh[pousr]_|sk-[A-Za-z0-9_-]{20,}|DATABASE_URL[[:space:]]*=|ADMIN_PASSWORD[[:space:]]*=|ADMIN_SESSION_SECRET[[:space:]]*=)" -- . ':(exclude)CONTRIBUTING.md'
+docker run --rm -v "$PWD:/repo" zricethezav/gitleaks:v8.30.1 detect --no-git --source=/repo --redact --exit-code=1
 ```
 
-Kết quả chỉ được phép chứa placeholder trong `.env.example`. Nếu secret thật đã
-được commit, không chỉ xóa file: phải rotate/revoke secret và báo ngay cho owner.
+CI cũng chạy Gitleaks trên pull request working tree. Nếu secret thật đã được
+commit, không chỉ xóa file: phải rotate/revoke secret, kiểm tra lịch sử Git và
+báo ngay cho owner.
 
 ## 8. Review and merge
 

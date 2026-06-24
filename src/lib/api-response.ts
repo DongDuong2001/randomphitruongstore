@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import type { ZodError } from "zod";
 import type { PrismaClientKnownRequestError } from "@prisma/client/runtime/library";
+import { logServerError } from "@/lib/error-logging";
 
 // ─── Response shape types ─────────────────────────────────────────────────────
 
@@ -56,8 +57,7 @@ export function handlePrismaError(error: unknown) {
     return err("Record not found", 404);
   }
 
-  // Unknown DB/server error — log it, return generic 500
-  const e = error as { message?: string; code?: string; meta?: unknown; name?: string };
-  console.error("[DB Error]", e?.name, e?.code, e?.message, JSON.stringify(e?.meta));
+  // Unknown DB/server error — log metadata only, return generic 500.
+  logServerError("[DB Error]", error);
   return err("Internal server error", 500);
 }

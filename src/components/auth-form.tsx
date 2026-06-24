@@ -115,6 +115,3 @@ export function AuthForm({
     </form>
   );
 }
-
-/** @deprecated Use AuthForm instead */
-export const MockAuthForm = AuthForm;
