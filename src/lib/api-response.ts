@@ -57,6 +57,7 @@ export function handlePrismaError(error: unknown) {
   }
 
   // Unknown DB/server error — log it, return generic 500
-  console.error("[DB Error]", error);
+  const e = error as { message?: string; code?: string; meta?: unknown; name?: string };
+  console.error("[DB Error]", e?.name, e?.code, e?.message, JSON.stringify(e?.meta));
   return err("Internal server error", 500);
 }

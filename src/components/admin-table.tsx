@@ -1,15 +1,15 @@
-import { Fragment, isValidElement, type ReactNode } from "react";
-
 export function AdminTable({
   headers,
   children,
   emptyMessage = "No records found."
 }: {
   headers: string[];
-  children?: ReactNode;
+  children: React.ReactNode;
   emptyMessage?: string;
 }) {
-  const isEmpty = !hasRenderableContent(children);
+  const isEmpty =
+    !children ||
+    (Array.isArray(children) && children.filter(Boolean).length === 0);
 
   return (
     <div className="overflow-x-auto border border-zinc-200 bg-white shadow-[0_10px_30px_rgba(0,0,0,0.04)]">
@@ -40,24 +40,4 @@ export function AdminTable({
       </table>
     </div>
   );
-}
-
-function hasRenderableContent(node: ReactNode): boolean {
-  if (node === null || node === undefined || typeof node === "boolean") {
-    return false;
-  }
-
-  if (Array.isArray(node)) {
-    return node.some(hasRenderableContent);
-  }
-
-  if (typeof node === "string") {
-    return node.length > 0;
-  }
-
-  if (isValidElement<{ children?: ReactNode }>(node) && node.type === Fragment) {
-    return hasRenderableContent(node.props.children);
-  }
-
-  return true;
 }

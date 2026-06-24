@@ -84,7 +84,7 @@ export async function PATCH(request: Request, context: RouteContext) {
           sizeCharts: { orderBy: { size: "asc" } }
         }
       });
-    });
+    }, { timeout: 30000 });
     return ok(product);
   } catch (error) {
     return handlePrismaError(error);
