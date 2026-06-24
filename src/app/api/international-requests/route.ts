@@ -54,9 +54,9 @@ export async function POST(request: Request) {
     // Find or create the customer record so the inquiry is linked to an account
     // when the user is signed in.
     let customerId: string | null = null;
-    if (email) {
+    if (user?.id) {
       const customer = await getPrisma().customer.findFirst({
-        where: { email },
+        where: { supabaseUserId: user.id },
         select: { id: true }
       });
       customerId = customer?.id ?? null;

@@ -46,12 +46,13 @@ type CustomerCheckoutData = {
   fullName: string;
   phone: string;
   email: string;
+  supabaseUserId?: string;
 };
 
 type CheckoutOrderTransaction = {
   customer: {
     findFirst(args: {
-      where: { email: string };
+      where: { supabaseUserId: string };
       orderBy: { updatedAt: "desc" };
       select: { id: true };
     }): Promise<{ id: string } | null>;
@@ -136,6 +137,7 @@ export async function createCheckoutOrder({
   prisma,
   input,
   userEmail,
+  supabaseUserId,
   generateOrderNumber,
   generateTrackingToken = generateOrderAccessToken,
   now = () => new Date()
@@ -143,6 +145,7 @@ export async function createCheckoutOrder({
   prisma: CheckoutOrderStore;
   input: OrderInput;
   userEmail: string | null | undefined;
+  supabaseUserId?: string | null | undefined;
   generateOrderNumber: () => string;
   generateTrackingToken?: () => string;
   now?: () => Date;
@@ -226,21 +229,25 @@ export async function createCheckoutOrder({
     depositPaymentAmount === null ? 0 : totalAmount - depositPaymentAmount;
   const paymentOption = isDeposit ? "DEPOSIT_50" : "ONLINE_100";
   const paymentAmount = depositPaymentAmount ?? totalAmount;
-  const authenticatedEmail = normalizeEmail(userEmail);
+  const authenticatedUserId = normalizeSupabaseUserId(supabaseUserId);
+  const authenticatedEmail = authenticatedUserId ? normalizeEmail(userEmail) : null;
   const normalizedEmail = authenticatedEmail ?? normalizeEmail(input.email);
   if (!normalizedEmail) {
     throw new CheckoutOrderError("A valid email is required", 400);
   }
-  const customerData = customerDataFromCheckout(input, normalizedEmail);
+  const customerData = customerDataFromCheckout(
+    input,
+    normalizedEmail,
+    authenticatedUserId
+  );
   const trackingToken = generateTrackingToken();
   const trackingTokenHash = hashOrderAccessToken(trackingToken);
 
   return prisma.$transaction(async (transaction) => {
     const customer = await findOrCreateCustomer(
       transaction,
-      normalizedEmail,
       customerData,
-      Boolean(authenticatedEmail)
+      authenticatedUserId
     );
 
     const order = await transaction.order.create({
@@ -289,22 +296,23 @@ export async function createCheckoutOrder({
 
 function customerDataFromCheckout(
   input: OrderInput,
-  email: string
+  email: string,
+  supabaseUserId?: string | null
 ): CustomerCheckoutData {
   return {
     fullName: input.fullName,
     phone: input.phone,
-    email
+    email,
+    ...(supabaseUserId ? { supabaseUserId } : {})
   };
 }
 
 async function findOrCreateCustomer(
   transaction: CheckoutOrderTransaction,
-  email: string,
   customerData: CustomerCheckoutData,
-  canUpdateExistingCustomer: boolean
+  supabaseUserId: string | null
 ) {
-  if (!canUpdateExistingCustomer) {
+  if (!supabaseUserId) {
     return transaction.customer.create({
       data: customerData,
       select: { id: true }
@@ -312,7 +320,7 @@ async function findOrCreateCustomer(
   }
 
   const customer = await transaction.customer.findFirst({
-    where: { email },
+    where: { supabaseUserId },
     orderBy: { updatedAt: "desc" },
     select: { id: true }
   });
@@ -329,4 +337,9 @@ async function findOrCreateCustomer(
     data: customerData,
     select: { id: true }
   });
+}
+
+function normalizeSupabaseUserId(userId: string | null | undefined) {
+  const trimmed = userId?.trim();
+  return trimmed || null;
 }

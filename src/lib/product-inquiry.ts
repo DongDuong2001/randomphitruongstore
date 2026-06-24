@@ -20,7 +20,7 @@ type ProductInquiryStore = {
 type ProductInquiryTransaction = {
   customer: {
     findFirst(args: {
-      where: { email: string };
+      where: { supabaseUserId: string };
       orderBy: { updatedAt: "desc" };
       select: { id: true };
     }): Promise<{ id: string } | null>;
@@ -89,18 +89,21 @@ type ProductInquiryStatusStore = {
 export async function createProductInquiry({
   prisma,
   input,
-  userEmail
+  userEmail,
+  supabaseUserId
 }: {
   prisma: ProductInquiryStore;
   input: ProductInquiryInput;
   userEmail: string | null | undefined;
+  supabaseUserId?: string | null | undefined;
 }) {
   const email = normalizeEmail(userEmail);
+  const authUserId = normalizeSupabaseUserId(supabaseUserId);
 
   return prisma.$transaction(async (transaction) => {
-    const customer = email
+    const customer = authUserId
       ? await transaction.customer.findFirst({
-          where: { email },
+          where: { supabaseUserId: authUserId },
           orderBy: { updatedAt: "desc" },
           select: { id: true }
         })
@@ -144,4 +147,9 @@ export function updateProductInquiryStatus(
     where: { id },
     data: { status }
   });
+}
+
+function normalizeSupabaseUserId(userId: string | null | undefined) {
+  const trimmed = userId?.trim();
+  return trimmed || null;
 }

@@ -9,7 +9,6 @@ import { formatPrice } from "@/lib/format";
 import { PaymentButtons } from "@/components/payment-buttons";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 import { canAccessOrder } from "@/lib/order-access";
-import { normalizeEmail } from "@/lib/customer-account";
 
 export const dynamic = "force-dynamic";
 
@@ -29,7 +28,6 @@ export default async function OrderPage({ params, searchParams }: PageProps) {
   const t = await getTranslations("checkout");
   const supabase = await getSupabaseServerClient();
   const { data: { user } } = await supabase.auth.getUser();
-  const userEmail = normalizeEmail(user?.email);
 
   const order = await getPrisma().order.findUnique({
     where: { id },
@@ -47,8 +45,8 @@ export default async function OrderPage({ params, searchParams }: PageProps) {
   });
 
   if (!order || !canAccessOrder({
-    authenticatedEmail: userEmail,
-    customerEmail: order.customer.email,
+    authenticatedUserId: user?.id,
+    customerSupabaseUserId: order.customer.supabaseUserId,
     accessToken: token,
     storedTokenHash: order.trackingToken
   })) {

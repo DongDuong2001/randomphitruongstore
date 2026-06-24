@@ -24,7 +24,7 @@ type CustomerProfile = {
 type CustomerProfileStore = {
   customer: {
     findFirst(args: {
-      where: { email: string };
+      where: { supabaseUserId: string };
       orderBy: { updatedAt: "desc" };
       select: { id: true };
     }): Promise<{ id: string } | null>;
@@ -35,6 +35,7 @@ type CustomerProfileStore = {
     }): Promise<CustomerProfile>;
     create(args: {
       data: {
+        supabaseUserId: string;
         email: string;
         fullName: string;
         phone: string;
@@ -66,7 +67,7 @@ export async function saveCustomerProfileForEmail({
   }
 
   const customer = await prisma.customer.findFirst({
-    where: { email: normalizedEmail },
+    where: { supabaseUserId: authUserId },
     orderBy: { updatedAt: "desc" },
     select: { id: true }
   });
@@ -103,10 +104,12 @@ function buildCustomerCreateData({
 }) {
   const fullName = input.fullName?.trim() || authDisplayName(email, authUserId, authFullName);
   const data = {
+    supabaseUserId: authUserId,
     email,
     fullName,
     phone: input.phone ?? ""
   } satisfies {
+    supabaseUserId: string;
     email: string;
     fullName: string;
     phone: string;

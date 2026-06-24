@@ -7,15 +7,31 @@ import {
 } from "../src/lib/order-access";
 
 describe("order access", () => {
-  it("allows an authenticated customer with the same normalized email", () => {
+  it("allows an authenticated customer with the matching Supabase user id", () => {
     assert.equal(
       canAccessOrder({
-        authenticatedEmail: " CUSTOMER@EXAMPLE.COM ",
-        customerEmail: "customer@example.com",
+        authenticatedUserId: "auth-user-1",
+        customerSupabaseUserId: "auth-user-1",
         accessToken: null,
         storedTokenHash: null
       }),
       true
+    );
+  });
+
+  it("does not authorize by email when Supabase user id differs", () => {
+    const accessAttempt = {
+      authenticatedUserId: "attacker-user",
+      customerSupabaseUserId: "victim-user",
+      authenticatedEmail: "victim@example.com",
+      customerEmail: "victim@example.com",
+      accessToken: null,
+      storedTokenHash: null
+    };
+
+    assert.equal(
+      canAccessOrder(accessAttempt),
+      false
     );
   });
 
@@ -24,8 +40,8 @@ describe("order access", () => {
 
     assert.equal(
       canAccessOrder({
-        authenticatedEmail: null,
-        customerEmail: "guest@example.com",
+        authenticatedUserId: null,
+        customerSupabaseUserId: null,
         accessToken: "guest-secret-token",
         storedTokenHash
       }),
@@ -39,8 +55,8 @@ describe("order access", () => {
 
     assert.equal(
       canAccessOrder({
-        authenticatedEmail: "attacker@example.com",
-        customerEmail: "customer@example.com",
+        authenticatedUserId: "attacker-user",
+        customerSupabaseUserId: "customer-user",
         accessToken: null,
         storedTokenHash
       }),
@@ -48,8 +64,8 @@ describe("order access", () => {
     );
     assert.equal(
       canAccessOrder({
-        authenticatedEmail: null,
-        customerEmail: "guest@example.com",
+        authenticatedUserId: null,
+        customerSupabaseUserId: null,
         accessToken: null,
         storedTokenHash
       }),
@@ -57,8 +73,8 @@ describe("order access", () => {
     );
     assert.equal(
       canAccessOrder({
-        authenticatedEmail: null,
-        customerEmail: "guest@example.com",
+        authenticatedUserId: null,
+        customerSupabaseUserId: null,
         accessToken: "anything",
         storedTokenHash: null
       }),

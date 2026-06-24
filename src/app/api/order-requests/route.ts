@@ -33,7 +33,8 @@ export async function POST(request: Request) {
     const inquiry = await createProductInquiry({
       prisma: getPrisma(),
       input: parsed.data,
-      userEmail: email
+      userEmail: email,
+      supabaseUserId: user?.id
     });
 
     return ok(inquiry, 201);

@@ -1,5 +1,4 @@
 import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
-import { normalizeEmail } from "@/lib/customer-account";
 
 export function generateOrderAccessToken() {
   return randomBytes(32).toString("base64url");
@@ -23,19 +22,21 @@ export function verifyOrderAccessToken(
 }
 
 export function canAccessOrder({
-  authenticatedEmail,
-  customerEmail,
+  authenticatedUserId,
+  customerSupabaseUserId,
   accessToken,
   storedTokenHash
 }: {
-  authenticatedEmail: string | null | undefined;
-  customerEmail: string | null | undefined;
+  authenticatedUserId: string | null | undefined;
+  customerSupabaseUserId: string | null | undefined;
   accessToken: string | null | undefined;
   storedTokenHash: string | null | undefined;
 }) {
-  const userEmail = normalizeEmail(authenticatedEmail);
-  const orderEmail = normalizeEmail(customerEmail);
-  if (userEmail && orderEmail && userEmail === orderEmail) {
+  if (
+    authenticatedUserId &&
+    customerSupabaseUserId &&
+    authenticatedUserId === customerSupabaseUserId
+  ) {
     return true;
   }
 

@@ -4,7 +4,6 @@ import Link from "next/link";
 import { getPrisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
-import { normalizeEmail } from "@/lib/customer-account";
 import { canAccessOrder } from "@/lib/order-access";
 
 export const metadata: Metadata = {
@@ -42,8 +41,8 @@ export default async function CancelPage({ searchParams }: PageProps) {
   const supabase = await getSupabaseServerClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!order || !canAccessOrder({
-    authenticatedEmail: normalizeEmail(user?.email),
-    customerEmail: order.customer.email,
+    authenticatedUserId: user?.id,
+    customerSupabaseUserId: order.customer.supabaseUserId,
     accessToken: token,
     storedTokenHash: order.trackingToken
   })) {

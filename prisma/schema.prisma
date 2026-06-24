@@ -303,6 +303,7 @@ model Customer {
   fullName           String
   phone              String
   email              String?
+  supabaseUserId     String?             @unique
   zaloPhone          String?
   instagramHandle    String?
   preferredLanguage  String              @default("vi")

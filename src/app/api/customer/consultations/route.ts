@@ -1,38 +1,36 @@
 import { err, handlePrismaError, ok } from "@/lib/api-response";
-import { isMissingCustomerEmailColumn, normalizeEmail } from "@/lib/customer-account";
+import { isMissingCustomerSupabaseUserIdColumn } from "@/lib/customer-account";
 import { getPrisma } from "@/lib/prisma";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 
 export async function GET() {
   const supabase = await getSupabaseServerClient();
   const { data: { user } } = await supabase.auth.getUser();
-  const email = normalizeEmail(user?.email);
 
-  if (!user || !email) {
+  if (!user) {
     return err("Unauthorized", 401);
   }
 
   try {
-    let customerIds: string[] = [];
+    let customerId: string | null = null;
     try {
-      const customers = await getPrisma().customer.findMany({
-        where: { email },
+      const customer = await getPrisma().customer.findFirst({
+        where: { supabaseUserId: user.id },
         select: { id: true }
       });
-      customerIds = customers.map((customer) => customer.id);
+      customerId = customer?.id ?? null;
     } catch (error) {
-      if (!isMissingCustomerEmailColumn(error)) {
+      if (!isMissingCustomerSupabaseUserIdColumn(error)) {
         throw error;
       }
     }
 
+    if (!customerId) {
+      return ok({ inquiries: [] });
+    }
+
     const inquiries = await getPrisma().productInquiry.findMany({
-      where: {
-        OR: [
-          ...(customerIds.length > 0 ? [{ customerId: { in: customerIds } }] : []),
-          { email }
-        ]
-      },
+      where: { customerId },
       include: {
         product: {
           select: { nameVi: true, nameEn: true, slug: true }

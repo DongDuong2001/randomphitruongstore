@@ -19,10 +19,11 @@ const inquiryInput = {
 describe("product inquiry flow", () => {
   it("creates ProductInquiry without a legacy request mirror", async () => {
     let createdProductInquiry: unknown;
+    let customerLookupWhere: Record<string, unknown> | null = null;
     const prisma = {
       $transaction: async <T>(callback: (transaction: {
         customer: {
-          findFirst: () => Promise<{ id: string } | null>;
+          findFirst: (args: { where: Record<string, unknown> }) => Promise<{ id: string } | null>;
         };
         productInquiry: {
           create: (args: { data: unknown; include: unknown }) => Promise<Record<string, unknown>>;
@@ -30,7 +31,10 @@ describe("product inquiry flow", () => {
       }) => Promise<T>) =>
         callback({
           customer: {
-            findFirst: async () => ({ id: "customer-1" })
+            findFirst: async ({ where }) => {
+              customerLookupWhere = where;
+              return { id: "customer-1" };
+            }
           },
           productInquiry: {
             create: async ({ data }) => {
@@ -47,10 +51,12 @@ describe("product inquiry flow", () => {
     const inquiry = (await createProductInquiry({
       prisma: prisma as never,
       input: inquiryInput,
-      userEmail: "CUSTOMER@EXAMPLE.COM"
+      userEmail: "CUSTOMER@EXAMPLE.COM",
+      supabaseUserId: "auth-user-1"
     })) as { id: string };
 
     assert.equal(inquiry.id, "inquiry-1");
+    assert.deepEqual(customerLookupWhere, { supabaseUserId: "auth-user-1" });
     assert.deepEqual(createdProductInquiry, {
       customerId: "customer-1",
       fullName: "Nguyen Van A",

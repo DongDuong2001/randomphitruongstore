@@ -1,5 +1,4 @@
 import { ZALO_URL } from "@/lib/constants";
-import { normalizeEmail } from "@/lib/customer-account";
 import { formatPrice } from "@/lib/format";
 import { canAccessOrder } from "@/lib/order-access";
 import {
@@ -37,8 +36,8 @@ export async function GET(request: Request) {
     !order ||
     !isSePaySandboxMethod(order.paymentMethod) ||
     !canAccessOrder({
-      authenticatedEmail: normalizeEmail(user?.email),
-      customerEmail: order.customer.email,
+      authenticatedUserId: user?.id,
+      customerSupabaseUserId: order.customer.supabaseUserId,
       accessToken,
       storedTokenHash: order.trackingToken
     })

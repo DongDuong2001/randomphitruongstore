@@ -40,6 +40,19 @@ export function isMissingCustomerEmailColumn(error: unknown) {
   );
 }
 
+export function isMissingCustomerSupabaseUserIdColumn(error: unknown) {
+  const prismaError = error as {
+    code?: string;
+    meta?: { modelName?: string; column?: string };
+  };
+
+  return (
+    prismaError?.code === "P2022" &&
+    prismaError.meta?.modelName === "Customer" &&
+    prismaError.meta?.column === "Customer.supabaseUserId"
+  );
+}
+
 function countryForShippingRegion(region: OrderInput["shippingRegion"]) {
   switch (region) {
     case "KOREA":

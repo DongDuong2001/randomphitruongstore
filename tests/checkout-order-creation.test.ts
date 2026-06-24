@@ -109,6 +109,7 @@ describe("checkout ERD order creation", () => {
       prisma,
       input: validOrderInput,
       userEmail: "CUSTOMER@EXAMPLE.COM",
+      supabaseUserId: "auth-user-1",
       generateOrderNumber: () => "RPT-0001",
       generateTrackingToken: () => "guest-secret-token",
       now: () => new Date("2026-06-18T00:00:00.000Z")
@@ -120,7 +121,8 @@ describe("checkout ERD order creation", () => {
     assert.deepEqual(createdCustomerData, {
       fullName: "Nguyen Van A",
       phone: "0901234567",
-      email: "customer@example.com"
+      email: "customer@example.com",
+      supabaseUserId: "auth-user-1"
     });
     assert.deepEqual(createdOrderData, {
       orderNumber: "RPT-0001",
@@ -272,6 +274,92 @@ describe("checkout ERD order creation", () => {
       email: "guest@example.com"
     });
     assert.equal(order.customerId, "guest-customer");
+  });
+
+  it("links authenticated checkout by Supabase user id instead of matching email", async () => {
+    let customerLookupWhere: Record<string, unknown> | null = null;
+    let createdCustomerData: Record<string, unknown> | null = null;
+    let updatedExistingCustomerData: Record<string, unknown> | null = null;
+    const prisma = {
+      product: {
+        findMany: async () => [
+          {
+            id: catalogProductId,
+            nameVi: "Sukajan Hac Song",
+            nameEn: "Crane Sukajan",
+            basePrice: 2400000
+          }
+        ]
+      },
+      productVariant: {
+        findMany: async () => [
+          {
+            id: selectedVariantId,
+            productId: catalogProductId,
+            size: "M",
+            colorVi: "Black",
+            colorEn: "Black",
+            priceAdjustment: 90000,
+            isAvailable: true
+          }
+        ]
+      },
+      $transaction: async <T>(callback: (transaction: {
+        customer: {
+          findFirst: (args: { where: Record<string, unknown> }) => Promise<{ id: string } | null>;
+          create: (args: { data: Record<string, unknown> }) => Promise<{ id: string }>;
+          update: (args: { data: Record<string, unknown> }) => Promise<{ id: string }>;
+        };
+        order: {
+          create: (args: { data: Record<string, unknown> }) => Promise<Record<string, unknown>>;
+        };
+      }) => Promise<T>) => callback({
+        customer: {
+          findFirst: async ({ where }) => {
+            customerLookupWhere = where;
+            if (where.email === "customer@example.com") {
+              return { id: "historical-email-customer" };
+            }
+            return null;
+          },
+          create: async ({ data }) => {
+            createdCustomerData = data;
+            return { id: "auth-customer" };
+          },
+          update: async ({ data }) => {
+            updatedExistingCustomerData = data;
+            return { id: "historical-email-customer" };
+          }
+        },
+        order: {
+          create: async ({ data }) => ({
+            id: "order-1",
+            orderNumber: data.orderNumber,
+            customerId: data.customerId
+          })
+        }
+      })
+    };
+
+    const order = (await createCheckoutOrder({
+      prisma,
+      input: validOrderInput,
+      userEmail: "CUSTOMER@example.com",
+      supabaseUserId: "auth-user-1",
+      generateOrderNumber: () => "RPT-0004",
+      generateTrackingToken: () => "guest-secret-token",
+      now: () => new Date("2026-06-18T00:00:00.000Z")
+    })) as unknown as { customerId: string };
+
+    assert.deepEqual(customerLookupWhere, { supabaseUserId: "auth-user-1" });
+    assert.equal(updatedExistingCustomerData, null);
+    assert.deepEqual(createdCustomerData, {
+      fullName: "Nguyen Van A",
+      phone: "0901234567",
+      email: "customer@example.com",
+      supabaseUserId: "auth-user-1"
+    });
+    assert.equal(order.customerId, "auth-customer");
   });
 
   it("rejects a product variant that does not belong to the selected product", async () => {

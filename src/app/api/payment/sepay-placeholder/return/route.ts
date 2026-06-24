@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { normalizeEmail } from "@/lib/customer-account";
 import { canAccessOrder } from "@/lib/order-access";
 import { paymentResultResponse } from "@/lib/payment-placeholder";
 import { getPrisma } from "@/lib/prisma";
@@ -116,8 +115,8 @@ async function findAccessibleSandboxOrder(
   const supabase = await getSupabaseServerClient();
   const { data: { user } } = await supabase.auth.getUser();
   return canAccessOrder({
-    authenticatedEmail: normalizeEmail(user?.email),
-    customerEmail: order.customer.email,
+    authenticatedUserId: user?.id,
+    customerSupabaseUserId: order.customer.supabaseUserId,
     accessToken,
     storedTokenHash: order.trackingToken
   }) ? order : null;

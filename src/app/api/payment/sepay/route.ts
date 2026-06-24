@@ -1,7 +1,6 @@
 import { err, handlePrismaError, ok, zodDetails } from "@/lib/api-response";
 import { getPrisma } from "@/lib/prisma";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
-import { normalizeEmail } from "@/lib/customer-account";
 import { canAccessOrder } from "@/lib/order-access";
 import {
   buildSePayCancelUrl,
@@ -27,7 +26,6 @@ export async function POST(request: Request) {
   try {
     const supabase = await getSupabaseServerClient();
     const { data: { user } } = await supabase.auth.getUser();
-    const userEmail = normalizeEmail(user?.email);
 
     const order = await getPrisma().order.findUnique({
       where: { id: parsed.data.orderId },
@@ -39,8 +37,8 @@ export async function POST(request: Request) {
     }
 
     if (!canAccessOrder({
-      authenticatedEmail: userEmail,
-      customerEmail: order.customer.email,
+      authenticatedUserId: user?.id,
+      customerSupabaseUserId: order.customer.supabaseUserId,
       accessToken: parsed.data.accessToken,
       storedTokenHash: order.trackingToken
     })) {

@@ -1,5 +1,9 @@
 import { err, handlePrismaError, ok, zodDetails } from "@/lib/api-response";
-import { isMissingCustomerEmailColumn, normalizeEmail } from "@/lib/customer-account";
+import {
+  isMissingCustomerEmailColumn,
+  isMissingCustomerSupabaseUserIdColumn,
+  normalizeEmail
+} from "@/lib/customer-account";
 import { saveCustomerProfileForEmail } from "@/lib/customer-profile";
 import { getPrisma } from "@/lib/prisma";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
@@ -10,13 +14,13 @@ export async function GET() {
   const { data: { user } } = await supabase.auth.getUser();
   const email = normalizeEmail(user?.email);
 
-  if (!user || !email) {
+  if (!user) {
     return err("Unauthorized", 401);
   }
 
   try {
     const customer = await getPrisma().customer.findFirst({
-      where: { email },
+      where: { supabaseUserId: user.id },
       orderBy: { updatedAt: "desc" },
       select: {
         id: true,
@@ -36,7 +40,10 @@ export async function GET() {
 
     return ok(customer);
   } catch (error) {
-    if (isMissingCustomerEmailColumn(error)) {
+    if (
+      isMissingCustomerEmailColumn(error) ||
+      isMissingCustomerSupabaseUserIdColumn(error)
+    ) {
       return ok(authProfileFallback(user.id, email, user.user_metadata?.full_name));
     }
     return handlePrismaError(error);
@@ -75,10 +82,10 @@ export async function PATCH(request: Request) {
   }
 }
 
-function authProfileFallback(id: string, email: string, fullName?: unknown) {
+function authProfileFallback(id: string, email: string | null, fullName?: unknown) {
   const displayName = typeof fullName === "string" && fullName.trim()
     ? fullName.trim()
-    : email.split("@")[0];
+    : email?.split("@")[0] ?? id;
 
   return {
     id,

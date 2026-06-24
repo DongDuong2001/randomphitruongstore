@@ -1,7 +1,6 @@
 import { err, handlePrismaError, ok, zodDetails } from "@/lib/api-response";
 import { isAdminAuthenticated } from "@/lib/admin-auth";
 import { CheckoutOrderError, createCheckoutOrder } from "@/lib/checkout-order";
-import { normalizeEmail } from "@/lib/customer-account";
 import { orderNumber } from "@/lib/format";
 import { getPrisma } from "@/lib/prisma";
 import { orderInputSchema } from "@/lib/validations";
@@ -36,12 +35,12 @@ export async function POST(request: Request) {
     const {
       data: { user }
     } = await supabase.auth.getUser();
-    const userEmail = normalizeEmail(user?.email);
 
     const order = await createCheckoutOrder({
       prisma: getPrisma(),
       input,
-      userEmail,
+      userEmail: user?.email,
+      supabaseUserId: user?.id,
       generateOrderNumber: orderNumber
     });
 
