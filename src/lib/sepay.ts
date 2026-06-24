@@ -106,10 +106,18 @@ export function verifySePayIpnSecret(
 }
 
 export function isLocalSePaySandbox() {
-  return process.env.SEPAY_ENVIRONMENT === "sandbox";
+  return process.env.NODE_ENV !== "production" &&
+    process.env.SEPAY_ENVIRONMENT === "sandbox";
 }
 
 export function sePayConfigFromEnvironment(): SePayConfig {
+  if (
+    process.env.NODE_ENV === "production" &&
+    process.env.SEPAY_ENVIRONMENT !== "production"
+  ) {
+    throw new Error("SEPAY_ENVIRONMENT=sandbox is not allowed in production");
+  }
+
   const environment = process.env.SEPAY_ENVIRONMENT === "production"
     ? "production"
     : "sandbox";

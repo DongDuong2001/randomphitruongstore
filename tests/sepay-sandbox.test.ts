@@ -2,12 +2,34 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { paymentSandboxResponse } from "../src/lib/payment-placeholder";
 import {
+  isLocalSePaySandbox,
+  sePayConfigFromEnvironment
+} from "../src/lib/sepay";
+import {
   createSePaySandboxIpn,
   createSePaySandboxProof,
   verifySePaySandboxProof
 } from "../src/lib/sepay-sandbox";
 
 describe("SePay local sandbox", () => {
+  it("blocks sandbox settlement when the app is running in production", () => {
+    withEnv(
+      {
+        NODE_ENV: "production",
+        SEPAY_ENVIRONMENT: "sandbox",
+        SEPAY_MERCHANT_ID: "merchant-1",
+        SEPAY_MERCHANT_SECRET_KEY: "secret-1"
+      },
+      () => {
+        assert.equal(isLocalSePaySandbox(), false);
+        assert.throws(
+          () => sePayConfigFromEnvironment(),
+          /SEPAY_ENVIRONMENT=sandbox is not allowed in production/
+        );
+      }
+    );
+  });
+
   it("signs a sandbox completion proof bound to order, payment, and amount", () => {
     const input = { orderNumber: "RPT-0001", paymentId: "payment-1", amount: 50000 };
     const proof = createSePaySandboxProof(input, "sandbox-secret");
@@ -55,3 +77,28 @@ describe("SePay local sandbox", () => {
     assert.doesNotMatch(html, /href="[^"]+status=success/);
   });
 });
+
+function withEnv(values: Record<string, string | undefined>, test: () => void) {
+  const previous = new Map(
+    Object.keys(values).map((key) => [key, process.env[key]])
+  );
+
+  try {
+    for (const [key, value] of Object.entries(values)) {
+      if (value === undefined) {
+        delete process.env[key];
+      } else {
+        process.env[key] = value;
+      }
+    }
+    test();
+  } finally {
+    for (const [key, value] of previous) {
+      if (value === undefined) {
+        delete process.env[key];
+      } else {
+        process.env[key] = value;
+      }
+    }
+  }
+}
