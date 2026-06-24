@@ -18,7 +18,7 @@ Production-oriented MVP order store for the Vietnamese streetwear brand
 - Vietnam checkout with 50% deposit, SePay Payment Gateway, or VNPay/MoMo placeholder boundaries
 - Korea, Taiwan and Japan consultation handoff through Zalo
 - Inspiration image upload and database-backed order requests
-- Signed temporary admin session, product CRUD and order/request management
+- Individual admin accounts, revocable admin sessions, product CRUD and order/request management
 - Dynamic product metadata, sitemap and robots rules
 
 ## Local setup
@@ -43,7 +43,8 @@ Requirements: Node.js 20.9 or newer, npm, and PostgreSQL. Docker is optional.
    Copy-Item .env.example .env
    ```
 
-   Replace `ADMIN_PASSWORD` and `ADMIN_SESSION_SECRET` with strong values.
+   Set `ADMIN_BOOTSTRAP_EMAIL`, `ADMIN_BOOTSTRAP_PASSWORD`, and
+   `ADMIN_BOOTSTRAP_NAME` before seeding the first admin account.
 
 4. Generate Prisma Client and create the database:
 
@@ -72,8 +73,9 @@ Open `http://localhost:3000`. Admin sign-in is at
 | Variable | Purpose |
 | --- | --- |
 | `DATABASE_URL` | PostgreSQL connection string used by Prisma |
-| `ADMIN_PASSWORD` | Temporary admin login password |
-| `ADMIN_SESSION_SECRET` | Secret used to sign the HTTP-only admin session |
+| `ADMIN_BOOTSTRAP_EMAIL` | Optional email used by `npm run prisma:seed` to create the first admin |
+| `ADMIN_BOOTSTRAP_PASSWORD` | Optional one-time seed password for the first admin account |
+| `ADMIN_BOOTSTRAP_NAME` | Optional display name for the first admin account |
 | `NEXT_PUBLIC_SITE_URL` | Canonical origin for metadata and sitemap |
 | `UPLOAD_DRIVER` | Upload implementation; currently supports `local` |
 | `SEPAY_ENVIRONMENT` | `sandbox` for the signed local simulator or `production` for SePay |
@@ -102,9 +104,12 @@ server. For serverless deployment, implement the `UploadStorage` interface in
 
 ## Admin authentication
 
-The MVP compares `ADMIN_PASSWORD` using a timing-safe check, then stores an
-HMAC-signed HTTP-only cookie. Replace `src/lib/admin-auth.ts` with a real identity
-provider before adding multiple admins, roles, password recovery or audit logs.
+Admin sign-in uses individual `AdminUser` records with scrypt password hashes.
+Successful login creates a random HTTP-only session token and stores only its
+hash in `AdminSession`, where it can expire or be revoked. To bootstrap the
+first account, set `ADMIN_BOOTSTRAP_EMAIL` and `ADMIN_BOOTSTRAP_PASSWORD`, run
+`npm run prisma:seed`, then remove those bootstrap values from the deployment
+environment.
 
 ## Useful commands
 

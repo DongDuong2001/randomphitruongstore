@@ -19,8 +19,7 @@ export default async function AdminLoginPage() {
         <p className="eyebrow text-white/40">Protected workspace</p>
         <h1 className="mt-4 text-4xl font-black">Admin sign in</h1>
         <p className="mt-3 text-sm leading-6 text-white/50">
-          Temporary password authentication. Configure ADMIN_PASSWORD and
-          ADMIN_SESSION_SECRET before use.
+          Sign in with your assigned admin account.
         </p>
         <AdminLoginForm />
       </section>

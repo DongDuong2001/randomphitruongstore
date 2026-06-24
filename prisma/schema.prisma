@@ -139,8 +139,21 @@ model AdminUser {
   createdProducts    Product[]            @relation("ProductCreatedByAdmin")
   updatedOrders      Order[]              @relation("OrderUpdatedByAdmin")
   orderStatusHistory OrderStatusHistory[] @relation("OrderStatusHistoryCreatedByAdmin")
+  sessions           AdminSession[]
 
   @@index([role, isActive])
+}
+
+model AdminSession {
+  id          String    @id @default(uuid()) @db.Uuid
+  adminUserId String    @db.Uuid
+  tokenHash   String    @unique
+  expiresAt   DateTime
+  revokedAt   DateTime?
+  createdAt   DateTime  @default(now())
+  adminUser   AdminUser @relation(fields: [adminUserId], references: [id], onDelete: Cascade)
+
+  @@index([adminUserId, revokedAt, expiresAt])
 }
 
 model ShopSetting {

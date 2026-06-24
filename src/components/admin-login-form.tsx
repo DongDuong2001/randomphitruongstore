@@ -4,9 +4,13 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
+import { Mail, LockKeyhole } from "lucide-react";
 import { z } from "zod";
 
-const schema = z.object({ password: z.string().min(1) });
+const schema = z.object({
+  email: z.string().email(),
+  password: z.string().min(1)
+});
 type Values = z.infer<typeof schema>;
 
 export function AdminLoginForm() {
@@ -26,7 +30,7 @@ export function AdminLoginForm() {
       body: JSON.stringify(values)
     });
     if (!response.ok) {
-      setError("Invalid admin password.");
+      setError("Invalid admin credentials.");
       return;
     }
     router.replace("/admin");
@@ -36,13 +40,28 @@ export function AdminLoginForm() {
   return (
     <form className="mt-8 space-y-4" onSubmit={handleSubmit(login)}>
       <label className="block">
-        <span className="label text-white/60">Admin password</span>
-        <input
-          autoComplete="current-password"
-          className="field border-white/20 bg-white/5 text-white placeholder:text-white/30 focus:border-[#d64b3d] focus:shadow-[0_0_0_1px_#d64b3d]"
-          type="password"
-          {...register("password")}
-        />
+        <span className="label text-white/60">Admin email</span>
+        <div className="relative">
+          <Mail className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-white/35" />
+          <input
+            autoComplete="username"
+            className="field border-white/20 bg-white/5 pl-10 text-white placeholder:text-white/30 focus:border-[#d64b3d] focus:shadow-[0_0_0_1px_#d64b3d]"
+            type="email"
+            {...register("email")}
+          />
+        </div>
+      </label>
+      <label className="block">
+        <span className="label text-white/60">Password</span>
+        <div className="relative">
+          <LockKeyhole className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-white/35" />
+          <input
+            autoComplete="current-password"
+            className="field border-white/20 bg-white/5 pl-10 text-white placeholder:text-white/30 focus:border-[#d64b3d] focus:shadow-[0_0_0_1px_#d64b3d]"
+            type="password"
+            {...register("password")}
+          />
+        </div>
       </label>
       {error ? <p className="text-sm text-red-300">{error}</p> : null}
       <button
