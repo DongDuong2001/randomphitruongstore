@@ -14,6 +14,11 @@ const nextConfig: NextConfig = {
       {
         protocol: "https",
         hostname: "qr.sepay.vn"
+      },
+      {
+        protocol: "https",
+        hostname: "*.supabase.co",
+        pathname: "/storage/v1/object/public/**"
       }
     ]
   }
