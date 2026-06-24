@@ -340,6 +340,7 @@ export function AdminProductManager({
       for (const file of Array.from(files)) {
         const formData = new FormData();
         formData.append("file", file);
+        formData.append("purpose", "ADMIN_PRODUCT_IMAGE");
         const response = await fetch("/api/upload", {
           method: "POST",
           body: formData

@@ -41,6 +41,7 @@
     "typescript": "^5.9.2"
   },
   "overrides": {
+    "esbuild": "^0.28.1",
     "postcss": "^8.5.10"
   }
 }

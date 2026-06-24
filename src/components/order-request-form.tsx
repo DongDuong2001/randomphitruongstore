@@ -42,8 +42,21 @@ export function ProductInquiryForm({
       return;
     }
 
+    const intentResponse = await fetch("/api/upload/intent", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ purpose: "PRODUCT_INQUIRY_IMAGE" })
+    });
+    const intentResult = await intentResponse.json();
+    if (!intentResponse.ok) {
+      setError(intentResult.error ?? "Unable to prepare upload");
+      return;
+    }
+
     const uploadData = new FormData();
     uploadData.set("file", image);
+    uploadData.set("purpose", "PRODUCT_INQUIRY_IMAGE");
+    uploadData.set("intentToken", intentResult.data.token);
     const uploadResponse = await fetch("/api/upload", {
       method: "POST",
       body: uploadData

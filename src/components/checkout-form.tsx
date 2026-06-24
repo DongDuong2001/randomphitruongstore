@@ -37,7 +37,6 @@ type CheckoutValues = z.infer<typeof checkoutSchema>;
 type CreatedOrder = {
   id: string;
   orderNumber: string;
-  trackingToken: string;
   payments?: Array<{ amount: number }>;
   paymentMethod: CheckoutValues["paymentMethod"];
 };
@@ -148,8 +147,7 @@ export function CheckoutForm({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          orderId: order.id,
-          accessToken: order.trackingToken
+          orderId: order.id
         })
       });
       const paymentResult = await paymentResponse.json();

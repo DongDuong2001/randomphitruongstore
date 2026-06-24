@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { isSafeInquiryImageUrl } from "@/lib/inquiry-url";
 
 const phoneSchema = z
   .string()
@@ -102,7 +103,13 @@ export const productInquiryInputSchema = z.object({
   fullName: z.string().trim().min(2),
   phone: phoneSchema,
   socialContact: z.string().trim().min(2),
-  inspirationUrl: z.string().min(1),
+  inspirationUrl: z
+    .string()
+    .trim()
+    .refine(
+      isSafeInquiryImageUrl,
+      "Inspiration image must be a JPG, PNG or WebP uploaded through this site"
+    ),
   desiredSize: z.string().trim().min(1),
   desiredColor: z.string().trim().min(1),
   note: z.string().trim().max(1000).optional().or(z.literal(""))

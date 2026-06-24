@@ -1,10 +1,12 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
+  adminInquiryPresentationUrls,
   createProductInquiry,
   listAdminProductInquiries,
   updateProductInquiryStatus
 } from "../src/lib/product-inquiry";
+import { productInquiryInputSchema } from "../src/lib/validations";
 
 const inquiryInput = {
   fullName: "Nguyen Van A",
@@ -17,12 +19,72 @@ const inquiryInput = {
 };
 
 describe("product inquiry flow", () => {
+  it("rejects unsafe inspiration image URLs before storing inquiries", () => {
+    for (const inspirationUrl of [
+      "javascript:alert(1)",
+      "data:image/svg+xml;base64,PHN2Zy8+",
+      "international:KOREA:Jacket",
+      "/not-uploads/image.webp",
+      "/uploads/../secret.webp"
+    ]) {
+      assert.equal(
+        productInquiryInputSchema.safeParse({
+          ...inquiryInput,
+          inspirationUrl
+        }).success,
+        false,
+        `${inspirationUrl} should be rejected`
+      );
+    }
+
+    assert.equal(
+      productInquiryInputSchema.safeParse({
+        ...inquiryInput,
+        inspirationUrl: "/uploads/customer-inspiration.webp"
+      }).success,
+      true
+    );
+  });
+
+  it("selects only safe admin image and link URLs for historical inquiries", () => {
+    assert.deepEqual(
+      adminInquiryPresentationUrls({
+        images: [{ imageUrl: "javascript:alert(1)" }],
+        externalProductUrl: "international:KOREA:Jacket"
+      }),
+      { imageUrl: null, linkUrl: null }
+    );
+
+    assert.deepEqual(
+      adminInquiryPresentationUrls({
+        images: [{ imageUrl: "/uploads/customer-inspiration.png" }],
+        externalProductUrl: "international:KOREA:Jacket"
+      }),
+      {
+        imageUrl: "/uploads/customer-inspiration.png",
+        linkUrl: "/uploads/customer-inspiration.png"
+      }
+    );
+
+    assert.deepEqual(
+      adminInquiryPresentationUrls({
+        images: [],
+        externalProductUrl: "https://example.com/product"
+      }),
+      {
+        imageUrl: null,
+        linkUrl: "https://example.com/product"
+      }
+    );
+  });
+
   it("creates ProductInquiry without a legacy request mirror", async () => {
     let createdProductInquiry: unknown;
+    let customerLookupWhere: Record<string, unknown> | null = null;
     const prisma = {
       $transaction: async <T>(callback: (transaction: {
         customer: {
-          findFirst: () => Promise<{ id: string } | null>;
+          findFirst: (args: { where: Record<string, unknown> }) => Promise<{ id: string } | null>;
         };
         productInquiry: {
           create: (args: { data: unknown; include: unknown }) => Promise<Record<string, unknown>>;
@@ -30,7 +92,10 @@ describe("product inquiry flow", () => {
       }) => Promise<T>) =>
         callback({
           customer: {
-            findFirst: async () => ({ id: "customer-1" })
+            findFirst: async ({ where }) => {
+              customerLookupWhere = where;
+              return { id: "customer-1" };
+            }
           },
           productInquiry: {
             create: async ({ data }) => {
@@ -47,10 +112,12 @@ describe("product inquiry flow", () => {
     const inquiry = (await createProductInquiry({
       prisma: prisma as never,
       input: inquiryInput,
-      userEmail: "CUSTOMER@EXAMPLE.COM"
+      userEmail: "CUSTOMER@EXAMPLE.COM",
+      supabaseUserId: "auth-user-1"
     })) as { id: string };
 
     assert.equal(inquiry.id, "inquiry-1");
+    assert.deepEqual(customerLookupWhere, { supabaseUserId: "auth-user-1" });
     assert.deepEqual(createdProductInquiry, {
       customerId: "customer-1",
       fullName: "Nguyen Van A",

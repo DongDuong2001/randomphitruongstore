@@ -139,8 +139,43 @@ model AdminUser {
   createdProducts    Product[]            @relation("ProductCreatedByAdmin")
   updatedOrders      Order[]              @relation("OrderUpdatedByAdmin")
   orderStatusHistory OrderStatusHistory[] @relation("OrderStatusHistoryCreatedByAdmin")
+  sessions           AdminSession[]
 
   @@index([role, isActive])
+}
+
+model AdminSession {
+  id          String    @id @default(uuid()) @db.Uuid
+  adminUserId String    @db.Uuid
+  tokenHash   String    @unique
+  expiresAt   DateTime
+  revokedAt   DateTime?
+  createdAt   DateTime  @default(now())
+  adminUser   AdminUser @relation(fields: [adminUserId], references: [id], onDelete: Cascade)
+
+  @@index([adminUserId, revokedAt, expiresAt])
+}
+
+model RateLimitBucket {
+  id        String   @id @default(uuid()) @db.Uuid
+  key       String   @unique
+  count     Int      @default(0)
+  resetAt   DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([resetAt])
+}
+
+model UploadIntent {
+  id        String    @id @default(uuid()) @db.Uuid
+  tokenHash String    @unique
+  purpose   String
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([expiresAt, usedAt])
 }
 
 model ShopSetting {
@@ -303,6 +338,7 @@ model Customer {
   fullName           String
   phone              String
   email              String?
+  supabaseUserId     String?             @unique
   zaloPhone          String?
   instagramHandle    String?
   preferredLanguage  String              @default("vi")

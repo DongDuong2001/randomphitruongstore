@@ -1,7 +1,10 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
+  buildSePayCancelUrl,
   buildSePayCheckout,
+  buildSePayErrorUrl,
+  buildSePaySuccessUrl,
   parseSePayIpn,
   verifySePayIpnSecret
 } from "../src/lib/sepay";
@@ -109,5 +112,16 @@ describe("SePay Payment Gateway contract", () => {
       verifySePayIpnSecret(new Headers({ "X-Secret-Key": "ipn-secret" }), ""),
       false
     );
+  });
+
+  it("does not include guest access tokens in payment result URLs", () => {
+    for (const url of [
+      buildSePaySuccessUrl("RPT-0001"),
+      buildSePayErrorUrl("RPT-0001"),
+      buildSePayCancelUrl("RPT-0001")
+    ]) {
+      assert.doesNotMatch(url, /[?&]token=/);
+      assert.match(url, /[?&]orderId=RPT-0001/);
+    }
   });
 });

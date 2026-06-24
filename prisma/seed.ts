@@ -1,4 +1,5 @@
-import { PrismaClient, StockStatus } from "@prisma/client";
+import { AdminRole, PrismaClient, StockStatus } from "@prisma/client";
+import { hashAdminPassword } from "../src/lib/admin-password";
 
 const prisma = new PrismaClient();
 
@@ -333,6 +334,8 @@ const products = [
 ];
 
 async function main() {
+  await seedBootstrapAdmin();
+
   await prisma.shopSetting.upsert({
     where: { id: shopSetting.id },
     update: {
@@ -495,6 +498,28 @@ async function main() {
       });
     }
   }
+}
+
+async function seedBootstrapAdmin() {
+  const email = process.env.ADMIN_BOOTSTRAP_EMAIL?.trim().toLowerCase();
+  const password = process.env.ADMIN_BOOTSTRAP_PASSWORD;
+  if (!email || !password) return;
+
+  const existing = await prisma.adminUser.findUnique({
+    where: { email },
+    select: { id: true }
+  });
+  if (existing) return;
+
+  await prisma.adminUser.create({
+    data: {
+      email,
+      fullName: process.env.ADMIN_BOOTSTRAP_NAME?.trim() || email.split("@")[0],
+      passwordHash: hashAdminPassword(password),
+      role: AdminRole.OWNER,
+      isActive: true
+    }
+  });
 }
 
 main()

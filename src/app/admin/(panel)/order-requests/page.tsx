@@ -3,7 +3,10 @@ import { AdminStatusSelect } from "@/components/admin-status-select";
 import { AdminTable } from "@/components/admin-table";
 import { StatusBadge } from "@/components/status-badge";
 import { getPrisma } from "@/lib/prisma";
-import { listAdminProductInquiries } from "@/lib/product-inquiry";
+import {
+  adminInquiryPresentationUrls,
+  listAdminProductInquiries
+} from "@/lib/product-inquiry";
 
 export const dynamic = "force-dynamic";
 
@@ -23,23 +26,31 @@ export default async function AdminProductInquiriesPage() {
         headers={["Inspiration", "Customer", "Request", "Status", "Update"]}
       >
         {requests.map((request) => {
-          const inspirationUrl =
-            request.images[0]?.imageUrl ?? request.externalProductUrl ?? "";
+          const { imageUrl, linkUrl } = adminInquiryPresentationUrls(request);
           const socialContact =
             request.instagramHandle ?? request.zaloPhone ?? request.email ?? "-";
 
           return (
             <tr key={request.id}>
               <td className="px-4 py-4">
-                {inspirationUrl ? (
-                  <a href={inspirationUrl} rel="noreferrer" target="_blank">
+                {imageUrl ? (
+                  <a href={linkUrl ?? imageUrl} rel="noreferrer" target="_blank">
                     <Image
                       alt="Customer inspiration"
                       className="h-20 w-16 object-cover"
                       height={80}
-                      src={inspirationUrl}
+                      src={imageUrl}
                       width={64}
                     />
+                  </a>
+                ) : linkUrl ? (
+                  <a
+                    className="text-xs font-bold text-[#a72b1f] underline"
+                    href={linkUrl}
+                    rel="noreferrer"
+                    target="_blank"
+                  >
+                    Open link
                   </a>
                 ) : (
                   <span className="text-xs text-zinc-500">-</span>

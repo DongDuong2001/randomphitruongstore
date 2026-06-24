@@ -1,4 +1,8 @@
 import { normalizeEmail } from "@/lib/customer-account";
+import {
+  safeInquiryImageUrl,
+  safeInquiryLinkUrl
+} from "@/lib/inquiry-url";
 import type { ProductInquiryInput } from "@/lib/validations";
 
 type InquiryStatusInput = "NEW" | "CONTACTED" | "QUOTED" | "CLOSED";
@@ -20,7 +24,7 @@ type ProductInquiryStore = {
 type ProductInquiryTransaction = {
   customer: {
     findFirst(args: {
-      where: { email: string };
+      where: { supabaseUserId: string };
       orderBy: { updatedAt: "desc" };
       select: { id: true };
     }): Promise<{ id: string } | null>;
@@ -89,18 +93,25 @@ type ProductInquiryStatusStore = {
 export async function createProductInquiry({
   prisma,
   input,
-  userEmail
+  userEmail,
+  supabaseUserId
 }: {
   prisma: ProductInquiryStore;
   input: ProductInquiryInput;
   userEmail: string | null | undefined;
+  supabaseUserId?: string | null | undefined;
 }) {
   const email = normalizeEmail(userEmail);
+  const authUserId = normalizeSupabaseUserId(supabaseUserId);
+  const inspirationUrl = safeInquiryImageUrl(input.inspirationUrl);
+  if (!inspirationUrl) {
+    throw new Error("Invalid inspiration image URL");
+  }
 
   return prisma.$transaction(async (transaction) => {
-    const customer = email
+    const customer = authUserId
       ? await transaction.customer.findFirst({
-          where: { email },
+          where: { supabaseUserId: authUserId },
           orderBy: { updatedAt: "desc" },
           select: { id: true }
         })
@@ -113,13 +124,13 @@ export async function createProductInquiry({
         phone: input.phone,
         ...(email ? { email } : {}),
         instagramHandle: input.socialContact,
-        externalProductUrl: input.inspirationUrl,
+        externalProductUrl: inspirationUrl,
         customerMessage: input.note || null,
         preferredSize: input.desiredSize,
         preferredColor: input.desiredColor,
         images: {
           create: {
-            imageUrl: input.inspirationUrl
+            imageUrl: inspirationUrl
           }
         }
       },
@@ -135,6 +146,24 @@ export function listAdminProductInquiries(prisma: ProductInquiryListStore) {
   });
 }
 
+export function adminInquiryPresentationUrls({
+  images,
+  externalProductUrl
+}: {
+  images: Array<{ imageUrl: string | null }>;
+  externalProductUrl: string | null;
+}) {
+  const imageUrl =
+    images.map((image) => safeInquiryImageUrl(image.imageUrl)).find(Boolean) ??
+    safeInquiryImageUrl(externalProductUrl);
+  const linkUrl = safeInquiryLinkUrl(externalProductUrl) ?? imageUrl;
+
+  return {
+    imageUrl,
+    linkUrl
+  };
+}
+
 export function updateProductInquiryStatus(
   prisma: ProductInquiryStatusStore,
   id: string,
@@ -144,4 +173,9 @@ export function updateProductInquiryStatus(
     where: { id },
     data: { status }
   });
+}
+
+function normalizeSupabaseUserId(userId: string | null | undefined) {
+  const trimmed = userId?.trim();
+  return trimmed || null;
 }

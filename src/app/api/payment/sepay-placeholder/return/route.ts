@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { normalizeEmail } from "@/lib/customer-account";
+import { guestOrderAccessToken } from "@/lib/guest-order-cookie";
 import { canAccessOrder } from "@/lib/order-access";
 import { paymentResultResponse } from "@/lib/payment-placeholder";
 import { getPrisma } from "@/lib/prisma";
@@ -22,8 +22,8 @@ export async function POST(request: Request) {
 
   const formData = await request.formData();
   const orderNumber = String(formData.get("orderId") ?? "").trim();
-  const accessToken = String(formData.get("token") ?? "") || null;
   const proof = String(formData.get("proof") ?? "");
+  const accessToken = await guestOrderAccessToken(orderNumber);
   const order = await findAccessibleSandboxOrder(orderNumber, accessToken);
   const payment = order?.payments.find((item) => item.paymentType === "FULL_PAYMENT") ??
     order?.payments[0];
@@ -59,14 +59,13 @@ export async function POST(request: Request) {
   const resultUrl = new URL("/checkout/success", request.url);
   resultUrl.searchParams.set("orderId", order.orderNumber);
   resultUrl.searchParams.set("gateway", "sepay-sandbox");
-  if (accessToken) resultUrl.searchParams.set("token", accessToken);
   return NextResponse.redirect(resultUrl, 303);
 }
 
 export async function GET(request: Request) {
   const url = new URL(request.url);
   const orderNumber = url.searchParams.get("orderId")?.trim() ?? "";
-  const accessToken = url.searchParams.get("token");
+  const accessToken = await guestOrderAccessToken(orderNumber);
   const order = isLocalSePaySandbox()
     ? await findAccessibleSandboxOrder(orderNumber, accessToken)
     : null;
@@ -116,8 +115,8 @@ async function findAccessibleSandboxOrder(
   const supabase = await getSupabaseServerClient();
   const { data: { user } } = await supabase.auth.getUser();
   return canAccessOrder({
-    authenticatedEmail: normalizeEmail(user?.email),
-    customerEmail: order.customer.email,
+    authenticatedUserId: user?.id,
+    customerSupabaseUserId: order.customer.supabaseUserId,
     accessToken,
     storedTokenHash: order.trackingToken
   }) ? order : null;

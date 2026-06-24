@@ -106,10 +106,18 @@ export function verifySePayIpnSecret(
 }
 
 export function isLocalSePaySandbox() {
-  return process.env.SEPAY_ENVIRONMENT === "sandbox";
+  return process.env.NODE_ENV !== "production" &&
+    process.env.SEPAY_ENVIRONMENT === "sandbox";
 }
 
 export function sePayConfigFromEnvironment(): SePayConfig {
+  if (
+    process.env.NODE_ENV === "production" &&
+    process.env.SEPAY_ENVIRONMENT !== "production"
+  ) {
+    throw new Error("SEPAY_ENVIRONMENT=sandbox is not allowed in production");
+  }
+
   const environment = process.env.SEPAY_ENVIRONMENT === "production"
     ? "production"
     : "sandbox";
@@ -130,16 +138,16 @@ export function sePayIpnSecretFromEnvironment() {
   return process.env.SEPAY_IPN_SECRET_KEY ?? process.env.SEPAY_MERCHANT_SECRET_KEY ?? "";
 }
 
-export function buildSePaySuccessUrl(orderNumber: string, accessToken?: string): string {
-  return buildPaymentResultUrl("/checkout/success", orderNumber, accessToken);
+export function buildSePaySuccessUrl(orderNumber: string): string {
+  return buildPaymentResultUrl("/checkout/success", orderNumber);
 }
 
-export function buildSePayErrorUrl(orderNumber: string, accessToken?: string): string {
-  return buildPaymentResultUrl("/checkout/cancel", orderNumber, accessToken, "error");
+export function buildSePayErrorUrl(orderNumber: string): string {
+  return buildPaymentResultUrl("/checkout/cancel", orderNumber, "error");
 }
 
-export function buildSePayCancelUrl(orderNumber: string, accessToken?: string): string {
-  return buildPaymentResultUrl("/checkout/cancel", orderNumber, accessToken);
+export function buildSePayCancelUrl(orderNumber: string): string {
+  return buildPaymentResultUrl("/checkout/cancel", orderNumber);
 }
 
 export function buildSePayWebhookUrl(): string {
@@ -149,13 +157,11 @@ export function buildSePayWebhookUrl(): string {
 function buildPaymentResultUrl(
   pathname: string,
   orderNumber: string,
-  accessToken?: string,
   status?: string
 ) {
   const url = new URL(pathname, SITE_URL);
   url.searchParams.set("orderId", orderNumber);
   url.searchParams.set("gateway", "sepay");
-  if (accessToken) url.searchParams.set("token", accessToken);
   if (status) url.searchParams.set("status", status);
   return url.toString();
 }

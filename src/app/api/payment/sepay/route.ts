@@ -1,7 +1,7 @@
 import { err, handlePrismaError, ok, zodDetails } from "@/lib/api-response";
+import { guestOrderAccessToken } from "@/lib/guest-order-cookie";
 import { getPrisma } from "@/lib/prisma";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
-import { normalizeEmail } from "@/lib/customer-account";
 import { canAccessOrder } from "@/lib/order-access";
 import {
   buildSePayCancelUrl,
@@ -14,8 +14,7 @@ import { SITE_URL } from "@/lib/constants";
 import { z } from "zod";
 
 const createPaymentSchema = z.object({
-  orderId: z.string().uuid(),
-  accessToken: z.string().min(32).optional()
+  orderId: z.string().uuid()
 });
 
 export async function POST(request: Request) {
@@ -27,7 +26,6 @@ export async function POST(request: Request) {
   try {
     const supabase = await getSupabaseServerClient();
     const { data: { user } } = await supabase.auth.getUser();
-    const userEmail = normalizeEmail(user?.email);
 
     const order = await getPrisma().order.findUnique({
       where: { id: parsed.data.orderId },
@@ -38,10 +36,13 @@ export async function POST(request: Request) {
       return err("Order not found", 404);
     }
 
+    const accessToken =
+      await guestOrderAccessToken(order.id) ??
+      await guestOrderAccessToken(order.orderNumber);
     if (!canAccessOrder({
-      authenticatedEmail: userEmail,
-      customerEmail: order.customer.email,
-      accessToken: parsed.data.accessToken,
+      authenticatedUserId: user?.id,
+      customerSupabaseUserId: order.customer.supabaseUserId,
+      accessToken,
       storedTokenHash: order.trackingToken
     })) {
       return err("Order not found", 404);
@@ -76,7 +77,7 @@ export async function POST(request: Request) {
 
     if (isLocalSePaySandbox()) {
       return ok({
-        paymentUrl: `${SITE_URL}/api/payment/sepay-placeholder?orderId=${encodeURIComponent(order.orderNumber)}${parsed.data.accessToken ? `&token=${encodeURIComponent(parsed.data.accessToken)}` : ""}`
+        paymentUrl: `${SITE_URL}/api/payment/sepay-placeholder?orderId=${encodeURIComponent(order.orderNumber)}`
       });
     }
 
@@ -86,9 +87,9 @@ export async function POST(request: Request) {
         amount,
         description,
         customerId: order.customerId,
-        successUrl: buildSePaySuccessUrl(order.orderNumber, parsed.data.accessToken),
-        errorUrl: buildSePayErrorUrl(order.orderNumber, parsed.data.accessToken),
-        cancelUrl: buildSePayCancelUrl(order.orderNumber, parsed.data.accessToken)
+        successUrl: buildSePaySuccessUrl(order.orderNumber),
+        errorUrl: buildSePayErrorUrl(order.orderNumber),
+        cancelUrl: buildSePayCancelUrl(order.orderNumber)
       })
     });
   } catch (error) {

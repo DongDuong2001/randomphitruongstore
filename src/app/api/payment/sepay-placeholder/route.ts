@@ -1,6 +1,6 @@
 import { ZALO_URL } from "@/lib/constants";
-import { normalizeEmail } from "@/lib/customer-account";
 import { formatPrice } from "@/lib/format";
+import { guestOrderAccessToken } from "@/lib/guest-order-cookie";
 import { canAccessOrder } from "@/lib/order-access";
 import {
   paymentResultResponse,
@@ -17,7 +17,6 @@ import { getSupabaseServerClient } from "@/lib/supabase/server";
 export async function GET(request: Request) {
   const url = new URL(request.url);
   const orderNumber = url.searchParams.get("orderId")?.trim();
-  const accessToken = url.searchParams.get("token");
 
   if (!isLocalSePaySandbox() || !orderNumber) {
     return unavailable(orderNumber ?? "Unknown");
@@ -32,13 +31,14 @@ export async function GET(request: Request) {
   });
   const supabase = await getSupabaseServerClient();
   const { data: { user } } = await supabase.auth.getUser();
+  const accessToken = await guestOrderAccessToken(orderNumber);
 
   if (
     !order ||
     !isSePaySandboxMethod(order.paymentMethod) ||
     !canAccessOrder({
-      authenticatedEmail: normalizeEmail(user?.email),
-      customerEmail: order.customer.email,
+      authenticatedUserId: user?.id,
+      customerSupabaseUserId: order.customer.supabaseUserId,
       accessToken,
       storedTokenHash: order.trackingToken
     })
@@ -55,7 +55,6 @@ export async function GET(request: Request) {
   const cancelUrl = new URL("/api/payment/sepay-placeholder/return", url);
   cancelUrl.searchParams.set("orderId", order.orderNumber);
   cancelUrl.searchParams.set("status", "cancelled");
-  if (accessToken) cancelUrl.searchParams.set("token", accessToken);
 
   const contactUrl = new URL(ZALO_URL);
   contactUrl.searchParams.set(
@@ -70,7 +69,6 @@ export async function GET(request: Request) {
     successAction: successAction.toString(),
     successFields: {
       orderId: order.orderNumber,
-      token: accessToken ?? "",
       proof: createSePaySandboxProof({
         orderNumber: order.orderNumber,
         paymentId: payment.id,

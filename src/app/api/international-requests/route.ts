@@ -1,6 +1,7 @@
 import { err, handlePrismaError, ok, zodDetails } from "@/lib/api-response";
 import { normalizeEmail } from "@/lib/customer-account";
 import { getPrisma } from "@/lib/prisma";
+import { rateLimitPolicies, rateLimitRequest } from "@/lib/rate-limit";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 import { z } from "zod";
 
@@ -29,6 +30,12 @@ const internationalRequestSchema = z.object({
  * actual conversation.
  */
 export async function POST(request: Request) {
+  const limited = await rateLimitRequest(
+    request,
+    rateLimitPolicies.internationalRequestIp
+  );
+  if (limited) return limited;
+
   const parsed = internationalRequestSchema.safeParse(await request.json());
   if (!parsed.success) {
     return err("Invalid request data", 400, zodDetails(parsed.error));
@@ -54,9 +61,9 @@ export async function POST(request: Request) {
     // Find or create the customer record so the inquiry is linked to an account
     // when the user is signed in.
     let customerId: string | null = null;
-    if (email) {
+    if (user?.id) {
       const customer = await getPrisma().customer.findFirst({
-        where: { email },
+        where: { supabaseUserId: user.id },
         select: { id: true }
       });
       customerId = customer?.id ?? null;

@@ -6,12 +6,10 @@ import { navigateToPayment } from "@/lib/payment-navigation";
 
 interface PaymentButtonsProps {
   orderId: string;
-  accessToken?: string;
 }
 
 export function PaymentButtons({
-  orderId,
-  accessToken
+  orderId
 }: PaymentButtonsProps) {
   const [loading, setLoading] = useState<string | null>(null);
 
@@ -22,8 +20,7 @@ export function PaymentButtons({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          orderId,
-          ...(accessToken ? { accessToken } : {})
+          orderId
         })
       });
 
