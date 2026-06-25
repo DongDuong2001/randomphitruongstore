@@ -12,9 +12,17 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      # A dummy database URL is usually needed so Prisma schema can be evaluated
-      # and Next.js can build without failing on missing env vars
-      DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/randomphitruongstore?schema=public"
+      # Dummy URLs — no real DB is accessed during build or tests.
+      # All pages are force-dynamic; TypeScript checking needs a valid URL shape.
+      DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/randomphitruongstore"
+      DIRECT_URL: "postgresql://postgres:postgres@localhost:5432/randomphitruongstore"
+      # Dummy values for NEXT_PUBLIC_ vars baked into the client bundle at build time
+      NEXT_PUBLIC_SITE_URL: "http://localhost:3000"
+      NEXT_PUBLIC_SUPABASE_URL: "https://placeholder.supabase.co"
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: "placeholder-anon-key"
+      # Dummy server-side secrets (never used during build/test)
+      ADMIN_SESSION_SECRET: "ci-placeholder-secret-minimum-32-chars!!"
+      ADMIN_PASSWORD: "ci-placeholder"
 
     steps:
       - name: Checkout code
