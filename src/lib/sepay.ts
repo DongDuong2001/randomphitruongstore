@@ -2,6 +2,7 @@ import { timingSafeEqual } from "node:crypto";
 import { SePayPgClient } from "sepay-pg-node";
 import { z } from "zod";
 import { SITE_URL } from "@/lib/constants";
+import { assertProductionConfiguredValue } from "@/lib/env-validation";
 
 export type SePayEnvironment = "sandbox" | "production";
 
@@ -122,8 +123,16 @@ export function sePayConfigFromEnvironment(): SePayConfig {
     ? "production"
     : "sandbox";
   const merchantId = process.env.SEPAY_MERCHANT_ID;
-  const merchantSecretKey =
-    process.env.SEPAY_MERCHANT_SECRET_KEY ?? process.env.SEPAY_SECRET_KEY;
+  const merchantSecretKey = process.env.NODE_ENV === "production"
+    ? process.env.SEPAY_MERCHANT_SECRET_KEY
+    : process.env.SEPAY_MERCHANT_SECRET_KEY ?? process.env.SEPAY_SECRET_KEY;
+
+  assertProductionConfiguredValue("SEPAY_MERCHANT_ID", merchantId, {
+    minLength: 3
+  });
+  assertProductionConfiguredValue("SEPAY_MERCHANT_SECRET_KEY", merchantSecretKey, {
+    minLength: 24
+  });
 
   if (!merchantId || !merchantSecretKey) {
     throw new Error(
@@ -135,6 +144,15 @@ export function sePayConfigFromEnvironment(): SePayConfig {
 }
 
 export function sePayIpnSecretFromEnvironment() {
+  if (process.env.NODE_ENV === "production") {
+    assertProductionConfiguredValue(
+      "SEPAY_IPN_SECRET_KEY",
+      process.env.SEPAY_IPN_SECRET_KEY,
+      { minLength: 32 }
+    );
+    return process.env.SEPAY_IPN_SECRET_KEY ?? "";
+  }
+
   return process.env.SEPAY_IPN_SECRET_KEY ?? process.env.SEPAY_MERCHANT_SECRET_KEY ?? "";
 }
 

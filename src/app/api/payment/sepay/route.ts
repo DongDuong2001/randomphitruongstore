@@ -4,6 +4,11 @@ import { getPrisma } from "@/lib/prisma";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 import { canAccessOrder } from "@/lib/order-access";
 import {
+  rateLimitIdentifier,
+  rateLimitPolicies,
+  rateLimitRequest
+} from "@/lib/rate-limit";
+import {
   buildSePayCancelUrl,
   buildSePayCheckout,
   buildSePayErrorUrl,
@@ -18,10 +23,29 @@ const createPaymentSchema = z.object({
 });
 
 export async function POST(request: Request) {
-  const parsed = createPaymentSchema.safeParse(await request.json());
+  const ipLimit = await rateLimitRequest(
+    request,
+    rateLimitPolicies.paymentInitiationIp
+  );
+  if (ipLimit) return ipLimit;
+
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return err("Invalid JSON payload", 400);
+  }
+
+  const parsed = createPaymentSchema.safeParse(body);
   if (!parsed.success) {
     return err("Invalid payment data", 400, zodDetails(parsed.error));
   }
+
+  const orderLimit = await rateLimitIdentifier({
+    policy: rateLimitPolicies.paymentInitiationOrder,
+    identifier: parsed.data.orderId
+  });
+  if (orderLimit) return orderLimit;
 
   try {
     const supabase = await getSupabaseServerClient();

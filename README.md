@@ -44,7 +44,8 @@ Requirements: Node.js 20.9 or newer, npm, and PostgreSQL. Docker is optional.
    ```
 
    Set `ADMIN_BOOTSTRAP_EMAIL`, `ADMIN_BOOTSTRAP_PASSWORD`, and
-   `ADMIN_BOOTSTRAP_NAME` before seeding the first admin account.
+   `ADMIN_BOOTSTRAP_NAME` to non-placeholder values before seeding the first
+   admin account.
 
 4. Generate Prisma Client and create the database:
 
@@ -77,12 +78,20 @@ Open `http://localhost:3000`. Admin sign-in is at
 | `ADMIN_BOOTSTRAP_PASSWORD` | Optional one-time seed password for the first admin account |
 | `ADMIN_BOOTSTRAP_NAME` | Optional display name for the first admin account |
 | `NEXT_PUBLIC_SITE_URL` | Canonical origin for metadata and sitemap |
-| `UPLOAD_DRIVER` | Upload implementation; currently supports `local` |
+| `NEXT_PUBLIC_SUPABASE_URL` | Supabase project URL for customer auth and optional upload storage |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anon/public key for customer auth |
+| `UPLOAD_DRIVER` | Upload implementation; supports `local` and `supabase` |
+| `SUPABASE_SERVICE_ROLE_KEY` | Required when `UPLOAD_DRIVER=supabase`; keep server-side only |
 | `SEPAY_ENVIRONMENT` | `sandbox` for the signed local simulator or `production` for SePay |
 | `SEPAY_MERCHANT_ID` | SePay Payment Gateway merchant ID |
 | `SEPAY_MERCHANT_SECRET_KEY` | SePay merchant secret used to sign checkout forms |
 | `SEPAY_IPN_SECRET_KEY` | Secret configured for SePay's `X-Secret-Key` IPN authentication |
 | `SEPAY_SANDBOX_SECRET` | Optional dedicated secret for local simulator completion proofs |
+
+Production runtime validation rejects placeholder or weak values for the
+database URL, Supabase settings, SePay secrets, site URL, and any bootstrap
+admin password left in the environment. `SEPAY_ENVIRONMENT` must be
+`production` when `NODE_ENV=production`.
 
 ## Payment integration
 
@@ -107,9 +116,17 @@ server. For serverless deployment, implement the `UploadStorage` interface in
 Admin sign-in uses individual `AdminUser` records with scrypt password hashes.
 Successful login creates a random HTTP-only session token and stores only its
 hash in `AdminSession`, where it can expire or be revoked. To bootstrap the
-first account, set `ADMIN_BOOTSTRAP_EMAIL` and `ADMIN_BOOTSTRAP_PASSWORD`, run
-`npm run prisma:seed`, then remove those bootstrap values from the deployment
-environment.
+first account, set `ADMIN_BOOTSTRAP_EMAIL` and a strong
+`ADMIN_BOOTSTRAP_PASSWORD`, run `npm run prisma:seed`, then remove those
+bootstrap values from the deployment environment.
+
+## Customer authentication
+
+Customer login and registration use Supabase Auth through the server route
+handlers in `src/app/api/auth`. The old mock-auth naming has been removed from
+runtime imports; remaining provider work is operational configuration: enable
+the required Supabase sign-in providers, set email-confirmation policy, and keep
+Supabase JWT/session expiry aligned with the store's account UX.
 
 ## Useful commands
 
@@ -118,6 +135,8 @@ npm run dev
 npm run build
 npm run start
 npm run lint
+npm test
+npm audit --omit=dev
 npm run prisma:generate
 npm run prisma:migrate
 npm run prisma:seed

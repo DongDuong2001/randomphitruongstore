@@ -15,6 +15,18 @@ export interface UploadStorage {
   save(upload: ValidatedImageUpload): Promise<string>;
 }
 
+export type UploadFailureLogInput = {
+  error: unknown;
+  operation: string;
+  requestId: string;
+};
+
+export type UploadFailureLogMetadata = {
+  operation: string;
+  requestId: string;
+  errorCode: string;
+};
+
 export class UploadValidationError extends Error {
   constructor(
     message: string,
@@ -115,4 +127,44 @@ export function getUploadStorage(): UploadStorage {
     return new LocalUploadStorage();
   }
   throw new Error(`Unsupported upload driver: ${driver}`);
+}
+
+export function logUploadFailure(input: UploadFailureLogInput) {
+  console.error("[Upload] Upload failed", uploadFailureLogMetadata(input));
+}
+
+export function uploadFailureLogMetadata({
+  error,
+  operation,
+  requestId
+}: UploadFailureLogInput): UploadFailureLogMetadata {
+  return {
+    operation: safeLogIdentifier(operation) ?? "upload.unknown",
+    requestId: safeLogIdentifier(requestId) ?? "unknown",
+    errorCode: uploadFailureErrorCode(error)
+  };
+}
+
+function uploadFailureErrorCode(error: unknown) {
+  if (!error || typeof error !== "object") {
+    return "UPLOAD_STORAGE_ERROR";
+  }
+
+  const errorLike = error as { code?: unknown; status?: unknown };
+  const code = safeLogIdentifier(errorLike.code);
+  if (code) return code;
+
+  if (typeof errorLike.status === "number" && Number.isFinite(errorLike.status)) {
+    return `HTTP_${errorLike.status}`;
+  }
+
+  return "UPLOAD_STORAGE_ERROR";
+}
+
+function safeLogIdentifier(value: unknown) {
+  if (typeof value !== "string") return null;
+
+  const trimmed = value.trim();
+  if (!trimmed || trimmed.includes("://")) return null;
+  return /^[A-Za-z0-9._:-]{1,80}$/.test(trimmed) ? trimmed : null;
 }

@@ -5,7 +5,11 @@ import {
   createUploadIntent,
   hashUploadIntentToken
 } from "../src/lib/upload-intent";
-import { validateImageUpload } from "../src/lib/upload";
+import {
+  logUploadFailure,
+  uploadFailureLogMetadata,
+  validateImageUpload
+} from "../src/lib/upload";
 
 describe("secure upload flow", () => {
   it("detects image type from magic bytes instead of trusting file.type", async () => {
@@ -128,6 +132,48 @@ describe("secure upload flow", () => {
       false
     );
   });
+
+  it("logs storage failures with sanitized metadata only", () => {
+    const secretUrl = "postgresql://admin:super-secret-password@db.internal/store";
+    const error = new Error(`Supabase Storage upload failed for ${secretUrl}`);
+    Object.assign(error, {
+      code: "storage_unavailable",
+      stack: `stack includes ${secretUrl}`
+    });
+
+    assert.deepEqual(
+      uploadFailureLogMetadata({
+        error,
+        operation: "upload.save",
+        requestId: "req_123"
+      }),
+      {
+        operation: "upload.save",
+        requestId: "req_123",
+        errorCode: "storage_unavailable"
+      }
+    );
+
+    const { calls, restore } = captureConsoleError();
+    try {
+      logUploadFailure({
+        error,
+        operation: "upload.save",
+        requestId: "req_123"
+      });
+    } finally {
+      restore();
+    }
+
+    const serializedCalls = JSON.stringify(calls);
+    assert.match(serializedCalls, /upload.save/);
+    assert.match(serializedCalls, /req_123/);
+    assert.match(serializedCalls, /storage_unavailable/);
+    assert.equal(serializedCalls.includes(secretUrl), false);
+    assert.equal(serializedCalls.includes("Supabase Storage upload failed"), false);
+    assert.equal(serializedCalls.includes("stack"), false);
+    assert.equal(calls.some((call) => call.some((item) => item instanceof Error)), false);
+  });
 });
 
 type UploadIntentRecord = {
@@ -164,6 +210,21 @@ function fakeUploadIntentPrisma(intents: Map<string, UploadIntentRecord>) {
         intent.usedAt = data.usedAt;
         return intent;
       }
+    }
+  };
+}
+
+function captureConsoleError() {
+  const original = console.error;
+  const calls: unknown[][] = [];
+  console.error = (...args: unknown[]) => {
+    calls.push(args);
+  };
+
+  return {
+    calls,
+    restore() {
+      console.error = original;
     }
   };
 }

@@ -30,7 +30,9 @@ export function PaymentButtons({
         alert(result.error ?? "Failed to initiate SePay payment");
       }
     } catch (error) {
-      console.error(error);
+      console.error("SePay payment initiation failed", {
+        name: error instanceof Error ? error.name : typeof error
+      });
       alert("An error occurred");
     } finally {
       setLoading(null);

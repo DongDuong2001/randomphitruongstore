@@ -11,7 +11,6 @@ import {
 
 describe("admin authentication", () => {
   it("authenticates an active individual admin with their stored password hash", async () => {
-    process.env.ADMIN_PASSWORD = "shared-password";
     const passwordHash = hashAdminPassword("correct-password", "fixed-salt");
     const prisma = {
       adminUser: {

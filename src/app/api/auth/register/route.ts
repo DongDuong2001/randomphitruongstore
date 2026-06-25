@@ -5,6 +5,7 @@ import {
   rateLimitPolicies,
   rateLimitRequest
 } from "@/lib/rate-limit";
+import { logServerWarning } from "@/lib/error-logging";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 import { registerInputSchema } from "@/lib/validations";
 
@@ -35,10 +36,7 @@ export async function POST(request: Request) {
   });
 
   if (error) {
-    console.warn("[Auth Registration]", {
-      message: error.message,
-      status: error.status
-    });
+    logServerWarning("[Auth Registration]", error);
   }
 
   const result = registrationClientResult({

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { AuthForm } from "@/components/mock-auth-form";
+import { AuthForm } from "@/components/auth-form";
 
 export const metadata: Metadata = {
   title: "Customer register",

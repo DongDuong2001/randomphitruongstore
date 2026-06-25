@@ -71,6 +71,16 @@ export const rateLimitPolicies = {
     limit: 10,
     windowMs: 60 * 60_000
   },
+  paymentInitiationIp: {
+    scope: "payment-initiation:ip",
+    limit: 20,
+    windowMs: 60 * 60_000
+  },
+  paymentInitiationOrder: {
+    scope: "payment-initiation:order",
+    limit: 10,
+    windowMs: 60 * 60_000
+  },
   uploadIp: { scope: "upload:ip", limit: 20, windowMs: 60 * 60_000 }
 } satisfies Record<string, RateLimitPolicy>;
 

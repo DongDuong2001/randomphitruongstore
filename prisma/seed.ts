@@ -1,5 +1,7 @@
 import { AdminRole, PrismaClient, StockStatus } from "@prisma/client";
 import { hashAdminPassword } from "../src/lib/admin-password";
+import { assertValidAdminBootstrapPassword } from "../src/lib/env-validation";
+import { logServerError } from "../src/lib/error-logging";
 
 const prisma = new PrismaClient();
 
@@ -504,6 +506,7 @@ async function seedBootstrapAdmin() {
   const email = process.env.ADMIN_BOOTSTRAP_EMAIL?.trim().toLowerCase();
   const password = process.env.ADMIN_BOOTSTRAP_PASSWORD;
   if (!email || !password) return;
+  assertValidAdminBootstrapPassword(password);
 
   const existing = await prisma.adminUser.findUnique({
     where: { email },
@@ -527,7 +530,7 @@ main()
     await prisma.$disconnect();
   })
   .catch(async (error) => {
-    console.error(error);
+    logServerError("[Prisma Seed]", error);
     await prisma.$disconnect();
     process.exit(1);
   });
