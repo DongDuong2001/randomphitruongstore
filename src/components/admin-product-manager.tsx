@@ -215,11 +215,16 @@ export function AdminProductManager({
     getValues,
     reset,
     setValue,
+    watch,
     formState: { errors, isSubmitting }
   } = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: defaults
   });
+  const imageUrls = watch("images")
+    .split(/\r?\n/)
+    .map((u) => u.trim())
+    .filter(Boolean);
   const [isUploading, setIsUploading] = useState(false);
   const filteredProducts = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
@@ -657,7 +662,7 @@ export function AdminProductManager({
                       {isUploading ? "Uploading images..." : "Upload product images"}
                     </span>
                     <span className="mt-1 text-xs text-zinc-500">
-                      JPG, PNG or WebP. Max 5 MB per image.
+                      JPG, PNG or WebP. Max 5 MB per image. Select multiple at once.
                     </span>
                     <input
                       accept="image/jpeg,image/png,image/webp"
@@ -671,7 +676,31 @@ export function AdminProductManager({
                       type="file"
                     />
                   </label>
-                  <textarea className="field min-h-24" {...register("images")} />
+                  {imageUrls.length > 0 && (
+                    <div className="mb-3 grid grid-cols-4 gap-2">
+                      {imageUrls.map((url, index) => (
+                        <div className="relative aspect-square overflow-hidden border border-zinc-200 bg-zinc-100" key={`${url}-${index}`}>
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img alt={`Product preview ${index + 1}`} className="h-full w-full object-cover" src={url} />
+                          <button
+                            aria-label={`Remove image ${index + 1}`}
+                            className="absolute right-1 top-1 rounded-full bg-black/60 p-0.5 text-white hover:bg-black"
+                            onClick={() => {
+                              const next = imageUrls.filter((_, i) => i !== index);
+                              setValue("images", next.join("\n"), { shouldDirty: true, shouldValidate: true });
+                            }}
+                            type="button"
+                          >
+                            <X size={12} />
+                          </button>
+                          {index === 0 && (
+                            <span className="absolute bottom-1 left-1 rounded bg-black/60 px-1 py-0.5 text-[0.6rem] font-bold text-white">MAIN</span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  <textarea className="field min-h-12 text-xs text-zinc-400" placeholder="Image URLs (one per line) — or upload above" {...register("images")} />
                 </AdminField>
               </div>
               <div className="sm:col-span-2">
