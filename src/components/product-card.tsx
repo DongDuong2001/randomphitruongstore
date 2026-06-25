@@ -1,9 +1,9 @@
 import Image from "next/image";
 import Link from "next/link";
 import type { Locale } from "@/i18n/request";
-import { formatPrice, formatUSDPrice } from "@/lib/format";
 import { productBasePrice } from "@/lib/product-pricing";
 import type { ProductWithImages } from "@/types";
+import { Money } from "./money";
 import { OrderBadge } from "./order-badge";
 
 export function ProductCard({
@@ -77,12 +77,7 @@ export function ProductCard({
               {name}
             </h3>
             <p className="mt-2 text-xs font-bold sm:mt-0 sm:shrink-0 sm:text-sm">
-              {formatPrice(productBasePrice(product), locale)}
-              {locale === "en" && (
-                <span className="block text-[0.65rem] font-normal text-zinc-500">
-                  ~{formatUSDPrice(productBasePrice(product))}
-                </span>
-              )}
+              <Money amountVnd={productBasePrice(product)} />
             </p>
           </div>
           <span className="mt-3 hidden border-b border-black pb-0.5 text-xs font-bold uppercase tracking-[0.08em] group-hover:border-[#a72b1f] group-hover:text-[#a72b1f] sm:inline-block">

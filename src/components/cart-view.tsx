@@ -3,15 +3,12 @@
 import { Minus, Plus, Trash2, CreditCard } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { useLocale } from "next-intl";
-import type { Locale } from "@/i18n/request";
 import { useAuth } from "@/context/auth-context";
-import { formatPrice } from "@/lib/format";
 import { useCart } from "./cart-provider";
+import { Money } from "./money";
 import { useRouter } from "next/navigation";
 
 export function CartView() {
-  const locale = useLocale() as Locale;
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
   const { items, subtotal, updateQuantity, removeItem, itemKey, hydrated } = useCart();
@@ -71,7 +68,9 @@ export function CartView() {
                       <p className="mt-2 text-sm text-zinc-500">
                         Size: {item.size} · Color: {item.color}
                       </p>
-                      <p className="mt-3 font-bold">{formatPrice(item.price, locale)}</p>
+                      <p className="mt-3 font-bold">
+                        <Money amountVnd={item.price} />
+                      </p>
                     </div>
                     <div className="flex items-center gap-2 sm:flex-col sm:items-end">
                       <div className="flex items-center border border-zinc-300">
@@ -114,7 +113,7 @@ export function CartView() {
           <h2 className="text-xl font-black">Tóm tắt</h2>
           <div className="mt-5 flex justify-between border-t border-black pt-4 font-black">
             <span>Tạm tính</span>
-            <span>{formatPrice(subtotal, locale)}</span>
+            <span><Money amountVnd={subtotal} /></span>
           </div>
           <button
             onClick={handleCheckout}

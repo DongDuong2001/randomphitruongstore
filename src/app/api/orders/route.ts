@@ -1,8 +1,16 @@
 import { err, handlePrismaError, ok, zodDetails } from "@/lib/api-response";
 import { isAdminAuthenticated } from "@/lib/admin-auth";
+import {
+  orderCurrencySnapshotFor,
+  resolveEnabledCurrency
+} from "@/lib/currency";
 import { CheckoutOrderError, createCheckoutOrder } from "@/lib/checkout-order";
 import { orderNumber } from "@/lib/format";
 import { setGuestOrderAccessCookies } from "@/lib/guest-order-cookie";
+import {
+  getCurrencySettings,
+  resolveRequestCurrency
+} from "@/lib/currency-settings";
 import { getPrisma } from "@/lib/prisma";
 import { rateLimitPolicies, rateLimitRequest } from "@/lib/rate-limit";
 import { orderInputSchema } from "@/lib/validations";
@@ -36,6 +44,18 @@ export async function POST(request: Request) {
     }
 
     const input = parsed.data;
+    const currencySettings = await getCurrencySettings();
+    const requestCurrency =
+      input.selectedCurrency ??
+      (await resolveRequestCurrency(currencySettings));
+    const displayCurrency = resolveEnabledCurrency(
+      requestCurrency,
+      currencySettings
+    );
+    const currencySnapshot = orderCurrencySnapshotFor(
+      displayCurrency,
+      currencySettings
+    );
     const supabase = await getSupabaseServerClient();
     const {
       data: { user }
@@ -46,7 +66,8 @@ export async function POST(request: Request) {
       input,
       userEmail: user?.email,
       supabaseUserId: user?.id,
-      generateOrderNumber: orderNumber
+      generateOrderNumber: orderNumber,
+      currencySnapshot
     });
 
     const { trackingToken, ...responseOrder } = order as {
@@ -67,6 +88,12 @@ export async function POST(request: Request) {
     }
     if (error instanceof CheckoutOrderError) {
       return err(error.message, error.status);
+    }
+    if (
+      error instanceof Error &&
+      error.message.includes("USD display requires")
+    ) {
+      return err("USD pricing is not available", 409);
     }
     return handlePrismaError(error);
   }

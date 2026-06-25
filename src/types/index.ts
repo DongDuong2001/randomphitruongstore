@@ -108,6 +108,8 @@ export type OrderDTO = {
   remainingAmount: number;
   shippingFee: number;
   totalAmount: number;
+  displayCurrency?: "VND" | "USD" | null;
+  exchangeRateVndPerUsd?: number | string | null;
   note: string | null;
   createdAt: Date | string;
   updatedAt: Date | string;

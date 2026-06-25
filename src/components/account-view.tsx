@@ -6,6 +6,7 @@ import Image from "next/image";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/context/auth-context";
 import { StatusBadge } from "@/components/status-badge";
+import { formatOrderSnapshotPrice } from "@/lib/currency";
 import { formatPrice } from "@/lib/format";
 import type { ApiResponse } from "@/lib/api-response";
 import {
@@ -38,6 +39,8 @@ interface Order {
   orderNumber: string;
   status: string;
   totalAmount: number;
+  displayCurrency?: "VND" | "USD" | null;
+  exchangeRateVndPerUsd?: number | string | null;
   createdAt: string;
   items: OrderItem[];
   statusHistory: { status: string; createdAt: string }[];
@@ -259,7 +262,7 @@ function OrderRow({
               {date}
             </span>
             <span>
-              {t("total")}: {formatPrice(order.totalAmount, locale)}
+              {t("total")}: {formatOrderSnapshotPrice(order.totalAmount, order)}
             </span>
           </div>
         </div>
@@ -283,7 +286,7 @@ function OrderRow({
                   </p>
                 </div>
                 <span className="text-sm font-medium text-zinc-900 whitespace-nowrap">
-                  {formatPrice(item.unitPrice * item.quantity, locale)}
+                  {formatOrderSnapshotPrice(item.unitPrice * item.quantity, order)}
                 </span>
               </div>
             ))}

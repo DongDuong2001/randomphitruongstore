@@ -2,10 +2,10 @@ import type { Metadata } from "next";
 import { AlertTriangle } from "lucide-react";
 import { getLocale, getTranslations } from "next-intl/server";
 import { notFound } from "next/navigation";
+import { Money } from "@/components/money";
 import { ProductGallery } from "@/components/product-gallery";
 import { PurchasePanel } from "@/components/purchase-panel";
 import type { Locale } from "@/i18n/request";
-import { formatPrice, formatUSDPrice } from "@/lib/format";
 import { productVariantColors, productVariantSizes } from "@/lib/product-catalog";
 import { productBasePrice } from "@/lib/product-pricing";
 import { getPrisma } from "@/lib/prisma";
@@ -75,12 +75,7 @@ export default async function ProductPage({ params }: PageProps) {
           {name}
         </h1>
         <p className="mt-5 text-2xl font-bold">
-          {formatPrice(basePrice, locale)}
-          {locale === "en" && (
-            <span className="ml-2 text-base font-normal text-zinc-500">
-              (~{formatUSDPrice(basePrice)})
-            </span>
-          )}
+          <Money amountVnd={basePrice} />
         </p>
         <p className="mt-6 text-sm leading-7 text-zinc-600">{description}</p>
         <dl className="my-7 border-y border-zinc-300 py-5 text-sm">

@@ -9,12 +9,14 @@ import { useForm, useWatch } from "react-hook-form";
 import { z } from "zod";
 import type { Locale } from "@/i18n/request";
 import { ZALO_URL } from "@/lib/constants";
-import { formatPrice } from "@/lib/format";
+import { formatMoney } from "@/lib/currency";
 import { navigateToPayment } from "@/lib/payment-navigation";
 import type { ProductWithImages } from "@/types";
 import { BankTransferBox } from "./bank-transfer-box";
 import { InternationalShippingNotice } from "./international-shipping-notice";
 import { useCart } from "./cart-provider";
+import { useCurrency } from "./currency-provider";
+import { Money } from "./money";
 
 const checkoutSchema = z.object({
   fullName: z.string().trim().min(2, "Required"),
@@ -55,6 +57,7 @@ export function CheckoutForm({
   labels: Record<string, string>;
 }) {
   const locale = useLocale() as Locale;
+  const { currency } = useCurrency();
   const { items: cartItems, subtotal: cartSubtotal, clearCart } = useCart();
   const [createdOrder, setCreatedOrder] = useState<CreatedOrder | null>(null);
   const [serverError, setServerError] = useState("");
@@ -82,6 +85,10 @@ export function CheckoutForm({
     : 0;
 
   const finalSubtotal = product ? selectedUnitPrice : cartSubtotal;
+  const currentPaymentAmount =
+    paymentMethod === "DEPOSIT_50_BANK_ZALO"
+      ? Math.ceil(finalSubtotal / 2)
+      : finalSubtotal;
   const paymentAmount = createdOrder?.payments?.[0]?.amount;
 
   async function onSubmit(values: CheckoutValues) {
@@ -127,6 +134,7 @@ export function CheckoutForm({
       body: JSON.stringify({
         ...values,
         shippingRegion: "VIETNAM",
+        selectedCurrency: currency,
         items: orderItems
       })
     });
@@ -306,7 +314,9 @@ export function CheckoutForm({
               </p>
               <p className="mt-2 text-zinc-500">Size: {selectedSize}</p>
               <p className="text-zinc-500">Color: {selectedColor}</p>
-              <p className="mt-2 font-bold">{formatPrice(selectedUnitPrice, locale)}</p>
+              <p className="mt-2 font-bold">
+                <Money amountVnd={selectedUnitPrice} />
+              </p>
             </div>
           </div>
         ) : (
@@ -329,7 +339,9 @@ export function CheckoutForm({
                   <p className="text-xs text-zinc-500">
                     {item.size} · {item.color} · x{item.quantity}
                   </p>
-                  <p className="mt-1 font-bold">{formatPrice(item.price, locale)}</p>
+                  <p className="mt-1 font-bold">
+                    <Money amountVnd={item.price} />
+                  </p>
                 </div>
               </div>
             ))}
@@ -337,8 +349,16 @@ export function CheckoutForm({
         )}
         <div className="mt-5 flex justify-between border-t border-black pt-4 font-black">
           <span>{labels.total}</span>
-          <span>{formatPrice(finalSubtotal, locale)}</span>
+          <span><Money amountVnd={finalSubtotal} /></span>
         </div>
+        {currency === "USD" ? (
+          <p className="mt-3 text-xs leading-5 text-zinc-500">
+            Payment amount:{" "}
+            <span className="font-bold text-zinc-800">
+              {formatMoney(currentPaymentAmount, "VND")}
+            </span>
+          </p>
+        ) : null}
         <label className="mt-5 flex cursor-pointer gap-2 bg-amber-50 p-3 text-xs leading-5 text-amber-900">
           <input
             className="mt-1 accent-black"

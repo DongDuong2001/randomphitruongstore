@@ -3,6 +3,7 @@ import {
   generateOrderAccessToken,
   hashOrderAccessToken
 } from "@/lib/order-access";
+import type { Currency } from "@/lib/currency";
 import type { OrderInput } from "@/lib/validations";
 
 type CatalogProduct = {
@@ -90,6 +91,8 @@ type CheckoutOrderCreateData = {
   remainingAmount: number;
   shippingFee: number;
   totalAmount: number;
+  displayCurrency: Currency;
+  exchangeRateVndPerUsd: number | null;
   note: string | null;
   customerId: string;
   sizeColorLocked: true;
@@ -140,6 +143,10 @@ export async function createCheckoutOrder({
   supabaseUserId,
   generateOrderNumber,
   generateTrackingToken = generateOrderAccessToken,
+  currencySnapshot = {
+    displayCurrency: "VND",
+    exchangeRateVndPerUsd: null
+  },
   now = () => new Date()
 }: {
   prisma: CheckoutOrderStore;
@@ -148,6 +155,10 @@ export async function createCheckoutOrder({
   supabaseUserId?: string | null | undefined;
   generateOrderNumber: () => string;
   generateTrackingToken?: () => string;
+  currencySnapshot?: {
+    displayCurrency: Currency;
+    exchangeRateVndPerUsd: number | null;
+  };
   now?: () => Date;
 }) {
   const productIds = [...new Set(input.items.map((item) => item.productId))];
@@ -262,6 +273,8 @@ export async function createCheckoutOrder({
         remainingAmount,
         shippingFee,
         totalAmount,
+        displayCurrency: currencySnapshot.displayCurrency,
+        exchangeRateVndPerUsd: currencySnapshot.exchangeRateVndPerUsd,
         note: input.note || null,
         customerId: customer.id,
         sizeColorLocked: true,

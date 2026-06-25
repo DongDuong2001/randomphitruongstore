@@ -1,6 +1,6 @@
 "use client";
 
-import { ClipboardList, LayoutDashboard, LogOut, Package, Shirt } from "lucide-react";
+import { ClipboardList, LayoutDashboard, LogOut, Package, Settings, Shirt } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
@@ -9,7 +9,8 @@ const links = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
   { href: "/admin/products", label: "Products", icon: Shirt },
   { href: "/admin/orders", label: "Orders", icon: Package },
-  { href: "/admin/order-requests", label: "Order requests", icon: ClipboardList }
+  { href: "/admin/order-requests", label: "Order requests", icon: ClipboardList },
+  { href: "/admin/settings", label: "Settings", icon: Settings }
 ];
 
 export function AdminSidebar() {

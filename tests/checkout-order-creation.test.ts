@@ -135,6 +135,8 @@ describe("checkout ERD order creation", () => {
       remainingAmount: 2490000,
       shippingFee: 0,
       totalAmount: 4980000,
+      displayCurrency: "VND",
+      exchangeRateVndPerUsd: null,
       note: null,
       customerId: "customer-1",
       sizeColorLocked: true,
@@ -360,6 +362,91 @@ describe("checkout ERD order creation", () => {
       supabaseUserId: "auth-user-1"
     });
     assert.equal(order.customerId, "auth-customer");
+  });
+
+  it("stores a trusted display currency snapshot without changing VND totals", async () => {
+    let createdOrderData: Record<string, unknown> | null = null;
+    const prisma = {
+      product: {
+        findMany: async () => [
+          {
+            id: catalogProductId,
+            nameVi: "Sukajan Hac Song",
+            nameEn: "Crane Sukajan",
+            basePrice: 2400000
+          }
+        ]
+      },
+      productVariant: {
+        findMany: async () => [
+          {
+            id: selectedVariantId,
+            productId: catalogProductId,
+            size: "M",
+            colorVi: "Black",
+            colorEn: "Black",
+            priceAdjustment: 90000,
+            isAvailable: true
+          }
+        ]
+      },
+      $transaction: async <T>(callback: (transaction: {
+        customer: {
+          findFirst: () => Promise<{ id: string } | null>;
+          create: (args: { data: Record<string, unknown> }) => Promise<{ id: string }>;
+          update: () => Promise<{ id: string }>;
+        };
+        order: {
+          create: (args: { data: Record<string, unknown> }) => Promise<Record<string, unknown>>;
+        };
+      }) => Promise<T>) => callback({
+        customer: {
+          findFirst: async () => null,
+          create: async () => ({ id: "customer-1" }),
+          update: async () => {
+            assert.fail("Expected new customer");
+          }
+        },
+        order: {
+          create: async ({ data }) => {
+            createdOrderData = data;
+            return {
+              id: "order-1",
+              orderNumber: data.orderNumber,
+              subtotalAmount: data.subtotalAmount,
+              totalAmount: data.totalAmount,
+              displayCurrency: data.displayCurrency,
+              exchangeRateVndPerUsd: data.exchangeRateVndPerUsd
+            };
+          }
+        }
+      })
+    };
+
+    const order = await createCheckoutOrder({
+      prisma,
+      input: {
+        ...validOrderInput,
+        selectedCurrency: "USD"
+      },
+      userEmail: null,
+      generateOrderNumber: () => "RPT-0005",
+      generateTrackingToken: () => "guest-secret-token",
+      currencySnapshot: {
+        displayCurrency: "USD",
+        exchangeRateVndPerUsd: 25500
+      },
+      now: () => new Date("2026-06-18T00:00:00.000Z")
+    });
+
+    assert.equal((order as Record<string, unknown>).subtotalAmount, 4980000);
+    assert.equal((order as Record<string, unknown>).displayCurrency, "USD");
+    assert.equal((order as Record<string, unknown>).exchangeRateVndPerUsd, 25500);
+    assert.ok(createdOrderData);
+    const created = createdOrderData as Record<string, unknown>;
+    assert.equal(created.displayCurrency, "USD");
+    assert.equal(created.exchangeRateVndPerUsd, 25500);
+    assert.equal(created.totalAmount, 4980000);
   });
 
   it("rejects a product variant that does not belong to the selected product", async () => {

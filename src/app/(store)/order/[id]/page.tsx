@@ -5,7 +5,7 @@ import { getPrisma } from "@/lib/prisma";
 import { getTranslations } from "next-intl/server";
 import Link from "next/link";
 import { BankTransferBox } from "@/components/bank-transfer-box";
-import { formatPrice } from "@/lib/format";
+import { formatOrderSnapshotPrice } from "@/lib/currency";
 import { guestOrderAccessToken } from "@/lib/guest-order-cookie";
 import { PaymentButtons } from "@/components/payment-buttons";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
@@ -56,8 +56,6 @@ export default async function OrderPage({ params }: PageProps) {
 
   const isDeposit = order.paymentMethod === "DEPOSIT_50_BANK_ZALO";
   const payment = order.payments[0];
-  const locale = "vi" as const;
-
   return (
     <div className="container-shell py-10 sm:py-16">
       <header className="mb-10">
@@ -107,13 +105,15 @@ export default async function OrderPage({ params }: PageProps) {
                       Size: {item.productVariant?.size ?? item.size} · Màu: {item.productVariant?.colorVi ?? item.color} · SL: {item.quantity}
                     </p>
                   </div>
-                  <p className="font-bold whitespace-nowrap">{formatPrice(item.unitPrice * item.quantity, locale)}</p>
+                  <p className="font-bold whitespace-nowrap">
+                    {formatOrderSnapshotPrice(item.unitPrice * item.quantity, order)}
+                  </p>
                 </div>
               ))}
             </div>
             <div className="p-4 border-t border-black/5 flex justify-between font-black">
               <span>{t("total")}</span>
-              <span>{formatPrice(order.totalAmount, locale)}</span>
+              <span>{formatOrderSnapshotPrice(order.totalAmount, order)}</span>
             </div>
           </div>
         </section>

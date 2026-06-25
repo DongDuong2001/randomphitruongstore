@@ -45,6 +45,11 @@ enum AdminRole {
   STAFF
 }
 
+enum Currency {
+  VND
+  USD
+}
+
 enum InquiryStatus {
   NEW
   CONTACTED
@@ -179,17 +184,22 @@ model UploadIntent {
 }
 
 model ShopSetting {
-  id                String          @id @default(uuid()) @db.Uuid
-  brandName         String
-  defaultLanguage   String          @default("vi")
-  zaloPhone         String
-  zaloQrCodeUrl     String?
-  orderLeadTimeText String          @default("7-10 ngày")
-  createdAt         DateTime        @default(now())
-  updatedAt         DateTime        @default(now()) @updatedAt
-  socialLinks       SocialLink[]
-  bankAccounts      BankAccount[]
-  zaloCommunities   ZaloCommunity[]
+  id                    String          @id @default(uuid()) @db.Uuid
+  brandName             String
+  defaultLanguage       String          @default("vi")
+  defaultCurrency       Currency        @default(VND)
+  vndEnabled            Boolean         @default(true)
+  usdEnabled            Boolean         @default(true)
+  vndPerUsd             Decimal?        @default(25000) @db.Decimal(12, 4)
+  exchangeRateUpdatedAt DateTime?
+  zaloPhone             String
+  zaloQrCodeUrl         String?
+  orderLeadTimeText     String          @default("7-10 ngày")
+  createdAt             DateTime        @default(now())
+  updatedAt             DateTime        @default(now()) @updatedAt
+  socialLinks           SocialLink[]
+  bankAccounts          BankAccount[]
+  zaloCommunities       ZaloCommunity[]
 }
 
 model SocialLink {
@@ -428,6 +438,8 @@ model Order {
   remainingAmount             Int
   shippingFee                 Int                          @default(0)
   totalAmount                 Int
+  displayCurrency             Currency                     @default(VND)
+  exchangeRateVndPerUsd       Decimal?                     @db.Decimal(12, 4)
   sizeColorLocked             Boolean                      @default(false)
   noChangePolicyAck           Boolean                      @default(false)
   noChangePolicyAckAt         DateTime?

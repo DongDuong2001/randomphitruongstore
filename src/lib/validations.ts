@@ -77,6 +77,7 @@ export const orderInputSchema = z.object({
     "DEPOSIT_50_BANK_ZALO",
     "ONLINE_100_SEPAY"
   ]),
+  selectedCurrency: z.enum(["VND", "USD"]).optional(),
   noChangePolicyAck: z.boolean().refine((value) => value === true),
   items: z
     .array(

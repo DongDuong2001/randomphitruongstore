@@ -10,6 +10,7 @@ import {
 } from "@/lib/product-catalog";
 import { productBasePrice } from "@/lib/product-pricing";
 import type { ProductWithImages } from "@/types";
+import { Money } from "./money";
 import { ProductGrid } from "./product-grid";
 
 const maximumPrice = 5000000;
@@ -137,7 +138,7 @@ export function ProductFilters({
                 value={maxPrice}
               />
               <span className="mt-2 block text-xs font-bold">
-                ≤ {new Intl.NumberFormat("vi-VN").format(maxPrice)} VND
+                ≤ <Money amountVnd={maxPrice} />
               </span>
             </label>
           </div>

@@ -17,7 +17,7 @@ export function AdminTable({
   emptyMessage = "No records found."
 }: {
   headers: string[];
-  children: ReactNode;
+  children?: ReactNode;
   emptyMessage?: string;
 }) {
   const isEmpty = !hasRenderableChildren(children);
