@@ -151,17 +151,14 @@ export default async function HomePage() {
       </section>
 
       <section className="border-b border-black/15 bg-[#a72b1f] text-white">
-        <div className="container-shell grid grid-cols-2 md:grid-cols-4 xl:grid-cols-4 divide-x divide-y divide-white/20 md:divide-x-0 md:divide-y-0">
+        <div className="container-shell grid grid-cols-2 md:grid-cols-4 xl:grid-cols-4">
           {[
             ["4+", t("yearsLabel")],
             ["98K", t("instagramLabel")],
             ["43K", t("tiktokLabel")],
             ["7–10", t("deliveryLabel")]
-          ].map(([value, label], index) => (
-            <div
-              className={`min-w-0 px-4 py-6 sm:px-6 ${index % 2 === 1 ? "md:border-l md:border-white/20" : ""} ${index > 1 ? "md:border-t md:border-white/20" : ""}`}
-              key={label}
-            >
+          ].map(([value, label]) => (
+            <div className="min-w-0 px-4 py-6 sm:px-6" key={label}>
               <p className="text-3xl font-black tracking-[-0.05em] sm:text-4xl">
                 {value}
               </p>

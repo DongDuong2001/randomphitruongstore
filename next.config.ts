@@ -3,6 +3,8 @@ import createNextIntlPlugin from "next-intl/plugin";
 
 const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
 
+const isProduction = process.env.NODE_ENV === "production";
+
 const contentSecurityPolicy = [
   "default-src 'self'",
   "base-uri 'self'",
@@ -14,8 +16,17 @@ const contentSecurityPolicy = [
   "img-src 'self' data: blob: https://images.unsplash.com https://qr.sepay.vn",
   "font-src 'self' data:",
   "connect-src 'self' https://*.supabase.co",
-  "upgrade-insecure-requests"
+  ...(isProduction ? ["upgrade-insecure-requests"] : [])
 ].join("; ");
+
+const productionHeaders = isProduction
+  ? [
+      {
+        key: "Strict-Transport-Security",
+        value: "max-age=63072000; includeSubDomains; preload"
+      }
+    ]
+  : [];
 
 const nextConfig: NextConfig = {
   allowedDevOrigins: ["26.247.105.175"],
@@ -24,10 +35,7 @@ const nextConfig: NextConfig = {
       {
         source: "/:path*",
         headers: [
-          {
-            key: "Strict-Transport-Security",
-            value: "max-age=63072000; includeSubDomains; preload"
-          },
+          ...productionHeaders,
           {
             key: "Content-Security-Policy",
             value: contentSecurityPolicy
