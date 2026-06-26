@@ -20,7 +20,7 @@ export default async function ShopPage() {
     where: { isActive: true, stockStatus: "IN_STOCK" },
     include: {
       categoryRecord: true,
-      images: { orderBy: { sortOrder: "asc" } },
+      images: { orderBy: { sortOrder: "asc" }, take: 1 },
       variants: { orderBy: [{ size: "asc" }, { colorVi: "asc" }] }
     },
     orderBy: [{ isFeatured: "desc" }, { createdAt: "desc" }]

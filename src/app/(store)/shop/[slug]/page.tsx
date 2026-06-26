@@ -20,7 +20,7 @@ export async function generateMetadata({
   const { slug } = await params;
   const product = await getPrisma().product.findUnique({
     where: { slug },
-    include: { images: { orderBy: { sortOrder: "asc" } } }
+    include: { images: { orderBy: { sortOrder: "asc" }, take: 1 } }
   });
   if (!product) {
     return { title: "Product not found" };
