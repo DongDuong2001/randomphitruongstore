@@ -69,7 +69,6 @@ export default async function CheckoutPage({ searchParams }: PageProps) {
     "payment",
     "deposit",
     "sepay",
-    "paymentSandboxNote",
     "summary",
     "total",
     "placeOrder",

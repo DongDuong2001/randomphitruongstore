@@ -153,7 +153,6 @@ export default async function OrderPage({ params }: PageProps) {
               <PaymentButtons
                 orderId={order.id}
                 labels={{
-                  note: t("paymentSandboxEnvironment"),
                   pay: t("payWithSePay"),
                   error: t("paymentError"),
                   genericError: t("paymentGenericError")
