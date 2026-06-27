@@ -7,7 +7,6 @@ import { navigateToPayment } from "@/lib/payment-navigation";
 interface PaymentButtonsProps {
   orderId: string;
   labels: {
-    note: string;
     pay: string;
     error: string;
     genericError: string;
@@ -48,8 +47,6 @@ export function PaymentButtons({
 
   return (
     <div className="space-y-3">
-      <p className="text-sm text-zinc-600">{labels.note}</p>
-
       <button
         onClick={handleSePay}
         disabled={!!loading}
