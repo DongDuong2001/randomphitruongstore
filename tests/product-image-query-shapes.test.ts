@@ -2,7 +2,6 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { describe, it } from "node:test";
 
-const primaryImageQuery = 'images: { orderBy: { sortOrder: "asc" }, take: 1 }';
 const fullGalleryQuery = 'images: { orderBy: { sortOrder: "asc" } }';
 
 async function readSource(path: string) {
@@ -12,22 +11,26 @@ async function readSource(path: string) {
 describe("product image query shapes", () => {
   it("fetches only the ordered primary image for product listing contexts", async () => {
     const sources = await Promise.all([
-      readSource("../src/app/(store)/shop/page.tsx"),
+      readSource("../src/lib/public-catalog.ts"),
       readSource("../src/app/api/products/route.ts"),
-      readSource("../src/app/(store)/checkout/page.tsx"),
-      readSource("../src/app/(store)/shop/[slug]/page.tsx")
+      readSource("../src/app/(store)/checkout/page.tsx")
     ]);
 
     for (const source of sources) {
-      assert.match(source, new RegExp(escapeRegExp(primaryImageQuery)));
+      assert.match(source, /take: 1/);
+      assert.match(source, /images: \{/);
     }
+
+    assert.match(sources[0], /getPublicShopProducts/);
   });
 
   it("keeps the product detail gallery query as the complete ordered image list", async () => {
-    const source = await readSource("../src/app/(store)/shop/[slug]/page.tsx");
+    const querySource = await readSource("../src/lib/public-catalog.ts");
+    const pageSource = await readSource("../src/app/(store)/shop/[slug]/page.tsx");
 
-    assert.match(source, new RegExp(escapeRegExp(fullGalleryQuery)));
-    assert.match(source, /<ProductGallery/);
+    assert.match(querySource, new RegExp(escapeRegExp(fullGalleryQuery)));
+    assert.match(querySource, /getPublicProductBySlug/);
+    assert.match(pageSource, /<ProductGallery/);
   });
 });
 

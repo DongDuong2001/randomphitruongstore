@@ -27,7 +27,7 @@ export default async function ProductInquiryPage() {
   return (
     <div className="container-shell py-12 sm:py-20">
       <header className="mb-10 max-w-3xl">
-        <p className="eyebrow text-zinc-500">Custom sourcing</p>
+        <p className="eyebrow text-zinc-500">{t("eyebrow")}</p>
         <h1 className="mt-4 text-5xl font-black tracking-[-0.05em] sm:text-7xl">
           {t("title")}
         </h1>

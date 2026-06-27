@@ -7,6 +7,11 @@ import {
 } from "@/lib/admin-auth";
 import { getPrisma } from "@/lib/prisma";
 import {
+  attachRequestId,
+  createPerfContext,
+  withPerfTiming
+} from "@/lib/perf-diagnostics";
+import {
   rateLimitIdentifier,
   rateLimitPolicies,
   rateLimitRequest
@@ -18,27 +23,46 @@ const loginSchema = z.object({
 });
 
 export async function POST(request: Request) {
-  const ipLimit = await rateLimitRequest(request, rateLimitPolicies.adminLoginIp);
-  if (ipLimit) return ipLimit;
+  const perf = createPerfContext(
+    "api.admin.session",
+    request.headers.get("x-request-id")
+  );
+  const ipLimit = await withPerfTiming(
+    perf,
+    "admin.login.rate-limit-ip",
+    () => rateLimitRequest(request, rateLimitPolicies.adminLoginIp)
+  );
+  if (ipLimit) return attachRequestId(ipLimit, perf);
 
   const parsed = loginSchema.safeParse(await request.json());
   if (!parsed.success) {
-    return err("Invalid credentials", 401);
+    return attachRequestId(err("Invalid credentials", 401), perf);
   }
 
-  const accountLimit = await rateLimitIdentifier({
-    policy: rateLimitPolicies.adminLoginAccount,
-    identifier: parsed.data.email.trim().toLowerCase()
-  });
-  if (accountLimit) return accountLimit;
+  const accountLimit = await withPerfTiming(
+    perf,
+    "admin.login.rate-limit-account",
+    () =>
+      rateLimitIdentifier({
+        policy: rateLimitPolicies.adminLoginAccount,
+        identifier: parsed.data.email.trim().toLowerCase()
+      })
+  );
+  if (accountLimit) return attachRequestId(accountLimit, perf);
 
-  const admin = await authenticateAdminUser(getPrisma(), parsed.data);
+  const admin = await withPerfTiming(
+    perf,
+    "admin.login.authenticate",
+    () => authenticateAdminUser(getPrisma(), parsed.data)
+  );
   if (!admin) {
-    return err("Invalid credentials", 401);
+    return attachRequestId(err("Invalid credentials", 401), perf);
   }
 
-  await createAdminSession(admin.id);
-  return ok({ ok: true });
+  await withPerfTiming(perf, "admin.session.create", () =>
+    createAdminSession(admin.id)
+  );
+  return attachRequestId(ok({ ok: true }), perf);
 }
 
 export async function DELETE() {

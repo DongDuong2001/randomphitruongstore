@@ -137,7 +137,7 @@ export default async function ContactPage() {
           <header className="max-w-4xl">
             <div className="flex items-center gap-3">
               <span className="h-px w-10 bg-[#a72b1f]" />
-              <p className="eyebrow text-[#a72b1f]">Direct support · 24/7</p>
+              <p className="eyebrow text-[#a72b1f]">{t("supportEyebrow")}</p>
             </div>
             <h1 className="mt-5 text-[clamp(2.8rem,8vw,6.8rem)] font-black leading-[0.9] tracking-[-0.065em]">
               {t("title")}

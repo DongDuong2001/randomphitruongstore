@@ -2,7 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import type { Locale } from "@/i18n/request";
 import { productBasePrice } from "@/lib/product-pricing";
-import type { ProductWithImages } from "@/types";
+import type { CatalogProductDTO } from "@/types";
 import { Money } from "./money";
 import { OrderBadge } from "./order-badge";
 
@@ -10,12 +10,16 @@ export function ProductCard({
   product,
   locale,
   orderLabel,
-  detailsLabel
+  detailsLabel,
+  noImageLabel,
+  outOfStockLabel
 }: {
-  product: ProductWithImages;
+  product: CatalogProductDTO;
   locale: Locale;
   orderLabel: string;
   detailsLabel: string;
+  noImageLabel: string;
+  outOfStockLabel: string;
 }) {
   const image = product.images[0];
   const name = locale === "vi" ? product.nameVi : product.nameEn;
@@ -48,7 +52,7 @@ export function ProductCard({
             />
           ) : (
             <div className="flex h-full items-center justify-center text-xs uppercase tracking-widest text-zinc-500">
-              No image
+              {noImageLabel}
             </div>
           )}
           <div className="absolute left-2 top-2 origin-top-left scale-90 sm:left-3 sm:top-3 sm:scale-100">
@@ -57,7 +61,7 @@ export function ProductCard({
           {isOutOfStock && (
             <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
               <span className="bg-[#a72b1f] px-3 py-1 text-xs font-bold uppercase tracking-[0.1em] text-white">
-                {locale === "vi" ? "Hết hàng" : "Out of stock"}
+                {outOfStockLabel}
               </span>
             </div>
           )}

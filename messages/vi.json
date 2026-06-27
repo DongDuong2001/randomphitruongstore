@@ -67,6 +67,7 @@
     "socialBody": "Video hàng thực tế, lookbook, hàng mới về và các mẫu seasonal order được cập nhật thường xuyên trên Instagram và TikTok."
   },
   "shop": {
+    "eyebrow": "Bộ sưu tập random.phitruong",
     "title": "Sukajan Order",
     "subtitle": "Những form áo có cá tính rõ ràng, được tuyển chọn theo từng mùa.",
     "all": "Tất cả",
@@ -75,7 +76,9 @@
     "color": "Màu sắc",
     "price": "Khoảng giá",
     "noResults": "Không có sản phẩm phù hợp bộ lọc.",
-    "filters": "Bộ lọc"
+    "filters": "Bộ lọc",
+    "noImage": "Chưa có ảnh",
+    "outOfStock": "Hết hàng"
   },
   "product": {
     "material": "Chất liệu",
@@ -86,7 +89,49 @@
     "changeWarning": "Sau khi chốt size/màu, không thể thay đổi.",
     "selectOptions": "Vui lòng chọn size và màu.",
     "internationalTitle": "Đơn hàng quốc tế",
-    "internationalBody": "Đơn đi Hàn Quốc, Đài Loan hoặc Nhật Bản sẽ được tư vấn trực tiếp qua Zalo để xác nhận phí vận chuyển và thông tin hải quan."
+    "internationalBody": "Đơn đi Hàn Quốc, Đài Loan hoặc Nhật Bản sẽ được tư vấn trực tiếp qua Zalo để xác nhận phí vận chuyển và thông tin hải quan.",
+    "sizeChart": "Bảng size",
+    "measurementSize": "Size",
+    "shoulder": "Vai",
+    "chest": "Ngực",
+    "length": "Dài áo",
+    "sleeve": "Tay áo"
+  },
+  "auth": {
+    "eyebrow": "Tài khoản khách hàng",
+    "loginTitle": "Đăng nhập",
+    "registerTitle": "Đăng ký",
+    "loginSwitch": "Chưa có tài khoản? Đăng ký",
+    "registerSwitch": "Đã có tài khoản? Đăng nhập",
+    "email": "Email",
+    "password": "Mật khẩu",
+    "fullName": "Họ và tên",
+    "invalidEmail": "Email chưa hợp lệ",
+    "passwordHint": "Mật khẩu tối thiểu 6 ký tự",
+    "loginAction": "Đăng nhập",
+    "registerAction": "Tạo tài khoản",
+    "rememberMe": "Ghi nhớ đăng nhập"
+  },
+  "cart": {
+    "eyebrow": "Xem trước giỏ hàng",
+    "title": "Giỏ hàng",
+    "loading": "Đang tải giỏ hàng...",
+    "empty": "Giỏ hàng đang trống.",
+    "viewProducts": "Xem sản phẩm",
+    "size": "Size",
+    "color": "Màu",
+    "summary": "Tóm tắt",
+    "subtotal": "Tạm tính",
+    "checkoutAction": "Thanh toán ({count} sản phẩm)",
+    "myAccount": "Tài khoản của tôi",
+    "continueShopping": "Tiếp tục mua hàng",
+    "loginToCheckout": "Đăng nhập để mua hàng",
+    "createAccount": "Tạo tài khoản",
+    "decreaseQuantity": "Giảm số lượng",
+    "increaseQuantity": "Tăng số lượng",
+    "removeItem": "Xóa sản phẩm",
+    "ariaCart": "Giỏ hàng",
+    "ariaCartWithCount": "Giỏ hàng có {count} sản phẩm"
   },
   "checkout": {
     "title": "Xác nhận đơn hàng",
@@ -122,9 +167,22 @@
     "paymentCancelledBody": "Quá trình thanh toán cho đơn hàng {orderId} đã bị hủy. Bạn có thể thử lại hoặc chọn phương thức khác.",
     "gatewayProcessed": "Đã xử lý qua {gateway}",
     "gatewayCancelled": "Đã hủy qua {gateway}",
-    "viewAccount": "Xem tài khoản"
+    "viewAccount": "Xem tài khoản",
+    "orderNumber": "Mã đơn",
+    "size": "Size",
+    "color": "Màu",
+    "quantity": "SL",
+    "statusLabel": "Trạng thái",
+    "myOrders": "Xem đơn hàng của tôi",
+    "secureEyebrow": "Yêu cầu đặt hàng bảo mật",
+    "paymentAmount": "Số tiền thanh toán",
+    "paymentSandboxEnvironment": "Lưu ý: Đây là môi trường thử nghiệm.",
+    "payWithSePay": "Thanh toán qua SePay",
+    "paymentError": "Không thể bắt đầu thanh toán SePay",
+    "paymentGenericError": "Đã xảy ra lỗi"
   },
   "request": {
+    "eyebrow": "Tìm mẫu theo yêu cầu",
     "title": "Gửi mẫu bạn đang tìm",
     "subtitle": "Tải ảnh cảm hứng, shop sẽ tìm nguồn và báo giá trực tiếp.",
     "fullName": "Họ và tên",
@@ -156,6 +214,7 @@
     "subtitle": "Nhắn trực tiếp để kiểm tra hàng, chọn size, xem ảnh thực tế hoặc tư vấn đơn quốc tế. Hỗ trợ 24/7 qua các kênh chính thức.",
     "faq": "Câu hỏi thường gặp",
     "policyEyebrow": "Chính sách cửa hàng",
+    "supportEyebrow": "Hỗ trợ trực tiếp · 24/7",
     "policyTitle": "Rõ ràng trước khi bạn đặt cọc.",
     "depositPolicy": "Chính sách đặt cọc",
     "depositPolicyBody": "Cọc 50% khi xác nhận. Cọc không hoàn lại nếu khách hủy sau khi shop đã đặt hàng. Shop hoàn 100% nếu hết hàng hoặc hàng lỗi từ nhà cung cấp.",

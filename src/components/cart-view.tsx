@@ -3,12 +3,14 @@
 import { Minus, Plus, Trash2, CreditCard } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
+import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/auth-context";
 import { useCart } from "./cart-provider";
 import { Money } from "./money";
-import { useRouter } from "next/navigation";
 
 export function CartView() {
+  const t = useTranslations("cart");
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
   const { items, subtotal, updateQuantity, removeItem, itemKey, hydrated } = useCart();
@@ -22,20 +24,20 @@ export function CartView() {
     <div className="container-shell py-10 sm:py-16">
       <div className="grid gap-10 lg:grid-cols-[1fr_360px] xl:grid-cols-[1fr_380px] lg:gap-10 xl:gap-12">
         <section>
-          <p className="eyebrow text-[#a72b1f]">Cart preview</p>
+          <p className="eyebrow text-[#a72b1f]">{t("eyebrow")}</p>
           <h1 className="mt-3 text-4xl font-black tracking-[-0.04em] sm:text-6xl">
-            Giỏ hàng
+            {t("title")}
           </h1>
 
           {!hydrated ? (
             <div className="mt-10 border border-dashed border-zinc-300 bg-white p-10 text-center">
-              <p className="font-bold">Đang tải giỏ hàng...</p>
+              <p className="font-bold">{t("loading")}</p>
             </div>
           ) : items.length === 0 ? (
             <div className="mt-10 border border-dashed border-zinc-300 bg-white p-10 text-center">
-              <p className="font-bold">Giỏ hàng đang trống.</p>
+              <p className="font-bold">{t("empty")}</p>
               <Link className="button-primary mt-6" href="/shop">
-                Xem sản phẩm
+                {t("viewProducts")}
               </Link>
             </div>
           ) : (
@@ -66,7 +68,7 @@ export function CartView() {
                         {item.name}
                       </Link>
                       <p className="mt-2 text-sm text-zinc-500">
-                        Size: {item.size} · Color: {item.color}
+                        {t("size")}: {item.size} · {t("color")}: {item.color}
                       </p>
                       <p className="mt-3 font-bold">
                         <Money amountVnd={item.price} />
@@ -75,7 +77,7 @@ export function CartView() {
                     <div className="flex items-center gap-2 sm:flex-col sm:items-end">
                       <div className="flex items-center border border-zinc-300">
                         <button
-                          aria-label="Decrease quantity"
+                          aria-label={t("decreaseQuantity")}
                           className="grid size-9 place-items-center hover:bg-zinc-100"
                           onClick={() => updateQuantity(key, item.quantity - 1)}
                           type="button"
@@ -86,7 +88,7 @@ export function CartView() {
                           {item.quantity}
                         </span>
                         <button
-                          aria-label="Increase quantity"
+                          aria-label={t("increaseQuantity")}
                           className="grid size-9 place-items-center hover:bg-zinc-100"
                           onClick={() => updateQuantity(key, item.quantity + 1)}
                           type="button"
@@ -95,6 +97,7 @@ export function CartView() {
                         </button>
                       </div>
                       <button
+                        aria-label={t("removeItem")}
                         className="grid size-9 place-items-center text-red-700 hover:bg-red-50"
                         onClick={() => removeItem(key)}
                         type="button"
@@ -110,9 +113,9 @@ export function CartView() {
         </section>
 
         <aside className="h-fit border border-black bg-white p-5 lg:sticky lg:top-24">
-          <h2 className="text-xl font-black">Tóm tắt</h2>
+          <h2 className="text-xl font-black">{t("summary")}</h2>
           <div className="mt-5 flex justify-between border-t border-black pt-4 font-black">
-            <span>Tạm tính</span>
+            <span>{t("subtotal")}</span>
             <span><Money amountVnd={subtotal} /></span>
           </div>
           <button
@@ -121,25 +124,25 @@ export function CartView() {
             className="mt-5 button-primary w-full"
           >
             <CreditCard size={17} className="mr-2" />
-            Thanh toán ({items.length} sản phẩm)
+            {t("checkoutAction", { count: items.length })}
           </button>
           <div className="mt-5 grid gap-3">
             {!authLoading && user ? (
               <>
                 <Link className="button-primary w-full" href="/account">
-                  Tài khoản của tôi
+                  {t("myAccount")}
                 </Link>
                 <Link className="button-secondary w-full" href="/shop">
-                  Tiếp tục mua hàng
+                  {t("continueShopping")}
                 </Link>
               </>
             ) : (
               <>
                 <Link className="button-primary w-full" href="/login">
-                  Đăng nhập để mua hàng
+                  {t("loginToCheckout")}
                 </Link>
                 <Link className="button-secondary w-full" href="/register">
-                  Tạo tài khoản
+                  {t("createAccount")}
                 </Link>
               </>
             )}

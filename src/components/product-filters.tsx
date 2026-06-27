@@ -9,7 +9,7 @@ import {
   productVariantSizes
 } from "@/lib/product-catalog";
 import { productBasePrice } from "@/lib/product-pricing";
-import type { ProductWithImages } from "@/types";
+import type { CatalogProductDTO } from "@/types";
 import { Money } from "./money";
 import { ProductGrid } from "./product-grid";
 
@@ -20,7 +20,7 @@ export function ProductFilters({
   locale,
   labels
 }: {
-  products: ProductWithImages[];
+  products: CatalogProductDTO[];
   locale: Locale;
   labels: {
     filters: string;
@@ -30,6 +30,8 @@ export function ProductFilters({
     color: string;
     price: string;
     noResults: string;
+    noImage: string;
+    outOfStock: string;
     order: string;
     details: string;
   };
@@ -160,7 +162,9 @@ export function ProductFilters({
           <ProductGrid
             detailsLabel={labels.details}
             locale={locale}
+            noImageLabel={labels.noImage}
             orderLabel={labels.order}
+            outOfStockLabel={labels.outOfStock}
             products={filtered}
           />
         ) : (
@@ -173,8 +177,8 @@ export function ProductFilters({
   );
 }
 
-function uniqueCategories(products: ProductWithImages[]) {
-  const categories = new Map<string, NonNullable<ProductWithImages["categoryRecord"]>>();
+function uniqueCategories(products: CatalogProductDTO[]) {
+  const categories = new Map<string, NonNullable<CatalogProductDTO["categoryRecord"]>>();
   for (const product of products) {
     if (product.categoryRecord) {
       categories.set(product.categoryRecord.id, product.categoryRecord);

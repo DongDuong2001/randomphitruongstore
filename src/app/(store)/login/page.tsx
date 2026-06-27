@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 import { AuthForm } from "@/components/auth-form";
 
 export const metadata: Metadata = {
@@ -7,26 +8,28 @@ export const metadata: Metadata = {
   description: "Frontend preview login for customer checkout."
 };
 
-export default function LoginPage() {
+export default async function LoginPage() {
+  const t = await getTranslations("auth");
+
   return (
     <AuthShell
-      eyebrow="Customer account"
-      title="Đăng nhập"
+      eyebrow={t("eyebrow")}
+      title={t("loginTitle")}
       subtitle=""
       switchHref="/register"
-      switchText="Chưa có tài khoản? Đăng ký"
+      switchText={t("loginSwitch")}
     >
       <AuthForm
         mode="login"
         labels={{
-          email: "Email",
-          password: "Mật khẩu",
-          fullName: "Họ và tên",
-          invalidEmail: "Email chưa hợp lệ",
-          passwordHint: "Mật khẩu tối thiểu 6 ký tự",
-          loginAction: "Đăng nhập",
-          registerAction: "Tạo tài khoản",
-          rememberMe: "Ghi nhớ đăng nhập"
+          email: t("email"),
+          password: t("password"),
+          fullName: t("fullName"),
+          invalidEmail: t("invalidEmail"),
+          passwordHint: t("passwordHint"),
+          loginAction: t("loginAction"),
+          registerAction: t("registerAction"),
+          rememberMe: t("rememberMe")
         }}
       />
     </AuthShell>

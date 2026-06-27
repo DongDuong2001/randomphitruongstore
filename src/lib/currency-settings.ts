@@ -1,5 +1,5 @@
 import { cookies, headers } from "next/headers";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag, unstable_cache } from "next/cache";
 import { BRAND_NAME, ZALO_PHONE } from "@/lib/constants";
 import {
   currencyCookieName,
@@ -80,8 +80,20 @@ const currencySelect = {
   exchangeRateUpdatedAt: true
 } as const;
 
+export const currencySettingsCacheTag = "currency-settings";
+
 export async function getCurrencySettings(
-  prisma: CurrencySettingsStore = getPrisma()
+  prisma?: CurrencySettingsStore
+): Promise<CurrencySettings> {
+  if (prisma) {
+    return readCurrencySettings(prisma);
+  }
+
+  return getCachedCurrencySettings();
+}
+
+async function readCurrencySettings(
+  prisma: CurrencySettingsStore
 ): Promise<CurrencySettings> {
   const row = await prisma.shopSetting.findFirst({
     orderBy: { createdAt: "asc" },
@@ -90,6 +102,15 @@ export async function getCurrencySettings(
 
   return normalizeCurrencySettings(row ?? defaultCurrencySettings);
 }
+
+const getCachedCurrencySettings = unstable_cache(
+  async () => readCurrencySettings(getPrisma()),
+  ["currency-settings-v1"],
+  {
+    revalidate: 300,
+    tags: [currencySettingsCacheTag]
+  }
+);
 
 export async function updateCurrencySettings({
   prisma = getPrisma(),
@@ -167,6 +188,7 @@ export function countryCodeFromHeaders(headerStore: Headers): string | null {
 }
 
 export function revalidateCurrencyPaths() {
+  revalidateTag(currencySettingsCacheTag, "max");
   revalidatePath("/", "layout");
   revalidatePath("/shop");
   revalidatePath("/checkout");

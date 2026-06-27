@@ -6,10 +6,17 @@ import { navigateToPayment } from "@/lib/payment-navigation";
 
 interface PaymentButtonsProps {
   orderId: string;
+  labels: {
+    note: string;
+    pay: string;
+    error: string;
+    genericError: string;
+  };
 }
 
 export function PaymentButtons({
-  orderId
+  orderId,
+  labels
 }: PaymentButtonsProps) {
   const [loading, setLoading] = useState<string | null>(null);
 
@@ -27,13 +34,13 @@ export function PaymentButtons({
       const result = await response.json();
       if (result.success && navigateToPayment(result.data)) {
       } else {
-        alert(result.error ?? "Failed to initiate SePay payment");
+        alert(result.error ?? labels.error);
       }
     } catch (error) {
       console.error("SePay payment initiation failed", {
         name: error instanceof Error ? error.name : typeof error
       });
-      alert("An error occurred");
+      alert(labels.genericError);
     } finally {
       setLoading(null);
     }
@@ -41,7 +48,7 @@ export function PaymentButtons({
 
   return (
     <div className="space-y-3">
-      <p className="text-sm text-zinc-600">Lưu ý: Đây là môi trường thử nghiệm.</p>
+      <p className="text-sm text-zinc-600">{labels.note}</p>
 
       <button
         onClick={handleSePay}
@@ -53,7 +60,7 @@ export function PaymentButtons({
         ) : (
           <CreditCard className="size-4" />
         )}
-        Thanh toán qua SePay
+        {labels.pay}
       </button>
     </div>
   );

@@ -5,6 +5,7 @@ import {
   buildProductVariantSyncPlan
 } from "@/lib/product-catalog";
 import { getPrisma } from "@/lib/prisma";
+import { revalidatePublicCatalog } from "@/lib/public-catalog";
 import { productInputSchema } from "@/lib/validations";
 
 type RouteContext = { params: Promise<{ id: string }> };
@@ -21,8 +22,14 @@ export async function PATCH(request: Request, context: RouteContext) {
 
   const { id } = await context.params;
   const catalog = buildProductCatalogWrite(parsed.data);
+  let previousSlug: string | null = null;
   try {
     const product = await getPrisma().$transaction(async (prisma) => {
+      const existingProduct = await prisma.product.findUnique({
+        where: { id },
+        select: { slug: true }
+      });
+      previousSlug = existingProduct?.slug ?? null;
       const existingVariants = await prisma.productVariant.findMany({
         where: { productId: id },
         select: {
@@ -85,6 +92,10 @@ export async function PATCH(request: Request, context: RouteContext) {
         }
       });
     }, { timeout: 30000 });
+    revalidatePublicCatalog(product.slug);
+    if (previousSlug && previousSlug !== product.slug) {
+      revalidatePublicCatalog(previousSlug);
+    }
     return ok(product);
   } catch (error) {
     return handlePrismaError(error);
@@ -98,6 +109,10 @@ export async function DELETE(_: Request, context: RouteContext) {
 
   const { id } = await context.params;
   try {
+    const existingProduct = await getPrisma().product.findUnique({
+      where: { id },
+      select: { slug: true }
+    });
     const orderItemCount = await getPrisma().orderItem.count({
       where: { productId: id }
     });
@@ -107,10 +122,12 @@ export async function DELETE(_: Request, context: RouteContext) {
         where: { id },
         data: { isActive: false }
       });
+      revalidatePublicCatalog(product.slug);
       return ok({ product, archived: true });
     }
 
     await getPrisma().product.delete({ where: { id } });
+    revalidatePublicCatalog(existingProduct?.slug);
     return ok({ archived: false });
   } catch (error) {
     return handlePrismaError(error);

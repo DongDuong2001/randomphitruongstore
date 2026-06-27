@@ -81,6 +81,20 @@ export type ProductDTO = {
   sizeCharts?: SizeChartDTO[];
 };
 
+export type CatalogProductDTO = Pick<
+  ProductDTO,
+  | "id"
+  | "nameVi"
+  | "nameEn"
+  | "slug"
+  | "categoryId"
+  | "categoryRecord"
+  | "basePrice"
+  | "stockStatus"
+  | "images"
+  | "variants"
+>;
+
 export type CustomerDTO = {
   id: string;
   fullName: string;

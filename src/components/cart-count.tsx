@@ -2,17 +2,19 @@
 
 import { ShoppingBag } from "lucide-react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { useCart } from "./cart-provider";
 
 export function CartCount() {
+  const t = useTranslations("cart");
   const { count, hydrated } = useCart();
 
   return (
     <Link
       aria-label={
         hydrated
-          ? `Cart with ${count} item${count === 1 ? "" : "s"}`
-          : "Cart"
+          ? t("ariaCartWithCount", { count })
+          : t("ariaCart")
       }
       className="relative grid size-10 place-items-center text-white/75 transition hover:text-white"
       href="/cart"

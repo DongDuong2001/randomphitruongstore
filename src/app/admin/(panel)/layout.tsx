@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { AdminSidebar } from "@/components/admin-sidebar";
 import { isAdminAuthenticated } from "@/lib/admin-auth";
+import { createPerfContext, withPerfTiming } from "@/lib/perf-diagnostics";
 
 export const metadata: Metadata = {
   title: "Admin",
@@ -13,7 +14,14 @@ export default async function AdminPanelLayout({
 }: {
   children: React.ReactNode;
 }) {
-  if (!(await isAdminAuthenticated())) {
+  const perf = createPerfContext("admin.layout");
+  const authenticated = await withPerfTiming(
+    perf,
+    "admin.session.validate",
+    () => isAdminAuthenticated()
+  );
+
+  if (!authenticated) {
     redirect("/admin/login");
   }
 

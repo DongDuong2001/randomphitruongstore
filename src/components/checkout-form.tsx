@@ -353,7 +353,7 @@ export function CheckoutForm({
         </div>
         {currency === "USD" ? (
           <p className="mt-3 text-xs leading-5 text-zinc-500">
-            Payment amount:{" "}
+            {labels.paymentAmount}:{" "}
             <span className="font-bold text-zinc-800">
               {formatMoney(currentPaymentAmount, "VND")}
             </span>

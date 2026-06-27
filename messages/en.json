@@ -67,6 +67,7 @@
     "socialBody": "Real product videos, lookbooks, new arrivals and seasonal orders are updated regularly on Instagram and TikTok."
   },
   "shop": {
+    "eyebrow": "random.phitruong collection",
     "title": "Sukajan Order",
     "subtitle": "Distinct silhouettes curated for each season.",
     "all": "All",
@@ -75,7 +76,9 @@
     "color": "Color",
     "price": "Price range",
     "noResults": "No products match these filters.",
-    "filters": "Filters"
+    "filters": "Filters",
+    "noImage": "No image",
+    "outOfStock": "Out of stock"
   },
   "product": {
     "material": "Material",
@@ -86,7 +89,49 @@
     "changeWarning": "Size and color cannot be changed after confirmation.",
     "selectOptions": "Please select a size and color.",
     "internationalTitle": "International orders",
-    "internationalBody": "Orders to Korea, Taiwan or Japan are handled through Zalo so shipping fees and customs details can be confirmed directly."
+    "internationalBody": "Orders to Korea, Taiwan or Japan are handled through Zalo so shipping fees and customs details can be confirmed directly.",
+    "sizeChart": "Size chart",
+    "measurementSize": "Size",
+    "shoulder": "Shoulder",
+    "chest": "Chest",
+    "length": "Length",
+    "sleeve": "Sleeve"
+  },
+  "auth": {
+    "eyebrow": "Customer account",
+    "loginTitle": "Sign in",
+    "registerTitle": "Create account",
+    "loginSwitch": "No account yet? Register",
+    "registerSwitch": "Already have an account? Sign in",
+    "email": "Email",
+    "password": "Password",
+    "fullName": "Full name",
+    "invalidEmail": "Invalid email",
+    "passwordHint": "Password must be at least 6 characters",
+    "loginAction": "Sign in",
+    "registerAction": "Create account",
+    "rememberMe": "Remember me"
+  },
+  "cart": {
+    "eyebrow": "Cart preview",
+    "title": "Cart",
+    "loading": "Loading cart...",
+    "empty": "Your cart is empty.",
+    "viewProducts": "View products",
+    "size": "Size",
+    "color": "Color",
+    "summary": "Summary",
+    "subtotal": "Subtotal",
+    "checkoutAction": "Checkout ({count, plural, one {# item} other {# items}})",
+    "myAccount": "My account",
+    "continueShopping": "Continue shopping",
+    "loginToCheckout": "Log in to checkout",
+    "createAccount": "Create account",
+    "decreaseQuantity": "Decrease quantity",
+    "increaseQuantity": "Increase quantity",
+    "removeItem": "Remove item",
+    "ariaCart": "Cart",
+    "ariaCartWithCount": "Cart with {count, plural, one {# item} other {# items}}"
   },
   "checkout": {
     "title": "Confirm your order",
@@ -122,9 +167,22 @@
     "paymentCancelledBody": "Payment for order {orderId} was cancelled. You can try again or choose a different method.",
     "gatewayProcessed": "Processed via {gateway}",
     "gatewayCancelled": "Cancelled via {gateway}",
-    "viewAccount": "View Account"
+    "viewAccount": "View Account",
+    "orderNumber": "Order #",
+    "size": "Size",
+    "color": "Color",
+    "quantity": "Qty",
+    "statusLabel": "Status",
+    "myOrders": "View my orders",
+    "secureEyebrow": "Secure order request",
+    "paymentAmount": "Payment amount",
+    "paymentSandboxEnvironment": "Note: This is a test environment.",
+    "payWithSePay": "Pay with SePay",
+    "paymentError": "Failed to initiate SePay payment",
+    "paymentGenericError": "An error occurred"
   },
   "request": {
+    "eyebrow": "Custom sourcing",
     "title": "Send the piece you are looking for",
     "subtitle": "Upload an inspiration image and the shop will source it and provide a quote.",
     "fullName": "Full name",
@@ -156,6 +214,7 @@
     "subtitle": "Message directly to check availability, choose a size, request real photos or discuss international shipping. Support is available 24/7 through official channels.",
     "faq": "Frequently asked questions",
     "policyEyebrow": "Store policies",
+    "supportEyebrow": "Direct support · 24/7",
     "policyTitle": "Clear terms before you place a deposit.",
     "depositPolicy": "Deposit policy",
     "depositPolicyBody": "A 50% deposit is required after confirmation. It is non-refundable once the supplier order is placed. The shop refunds 100% if the item is unavailable or supplier-defective.",

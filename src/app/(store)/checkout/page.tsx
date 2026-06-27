@@ -78,13 +78,14 @@ export default async function CheckoutPage({ searchParams }: PageProps) {
     "bankTitle",
     "bankInstruction",
     "internationalCustoms",
-    "warning"
+    "warning",
+    "paymentAmount"
   ] as const;
   const labels = Object.fromEntries(labelKeys.map((key) => [key, t(key)]));
 
   return (
     <div className="container-shell py-10 sm:py-16">
-      <p className="eyebrow text-zinc-500">Secure order request</p>
+      <p className="eyebrow text-zinc-500">{t("secureEyebrow")}</p>
       <h1 className="mt-3 mb-10 text-4xl font-black tracking-[-0.04em] sm:text-6xl">
         {t("title")}
       </h1>

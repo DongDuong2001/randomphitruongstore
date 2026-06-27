@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Image from "next/image";
 import { getPrisma } from "@/lib/prisma";
-import { getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import Link from "next/link";
 import { BankTransferBox } from "@/components/bank-transfer-box";
 import { formatOrderSnapshotPrice } from "@/lib/currency";
@@ -10,6 +10,7 @@ import { guestOrderAccessToken } from "@/lib/guest-order-cookie";
 import { PaymentButtons } from "@/components/payment-buttons";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 import { canAccessOrder } from "@/lib/order-access";
+import type { Locale } from "@/i18n/request";
 
 export const dynamic = "force-dynamic";
 
@@ -24,6 +25,7 @@ export const metadata: Metadata = {
 
 export default async function OrderPage({ params }: PageProps) {
   const { id } = await params;
+  const locale = (await getLocale()) as Locale;
   const t = await getTranslations("checkout");
   const supabase = await getSupabaseServerClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -59,7 +61,9 @@ export default async function OrderPage({ params }: PageProps) {
   return (
     <div className="container-shell py-10 sm:py-16">
       <header className="mb-10">
-        <p className="eyebrow text-[#a72b1f]">{t("orderNumber")}{order.orderNumber}</p>
+        <p className="eyebrow text-[#a72b1f]">
+          {t("orderNumber")} {order.orderNumber}
+        </p>
         <h1 className="mt-2 text-4xl font-black tracking-[-0.04em] sm:text-5xl">{t("title")}</h1>
       </header>
 
@@ -86,30 +90,44 @@ export default async function OrderPage({ params }: PageProps) {
           <h2 className="mt-10 text-xl font-black mb-4">{t("summary")}</h2>
           <div className="border border-black/10 bg-white rounded-xl overflow-hidden">
             <div className="divide-y divide-black/5">
-              {order.items.map((item) => (
-                <div key={item.id} className="p-4 flex gap-4">
-                  {item.product?.images[0] && (
-                    <div className="relative h-20 w-16 shrink-0 overflow-hidden bg-zinc-200 rounded">
-                      <Image
-                        src={item.product.images[0].url}
-                        alt={item.product?.nameVi ?? item.productName}
-                        fill
-                        sizes="64px"
-                        className="object-cover"
-                      />
+              {order.items.map((item) => {
+                const productName = item.product
+                  ? locale === "vi"
+                    ? item.product.nameVi
+                    : item.product.nameEn
+                  : item.productName;
+                const color = item.productVariant
+                  ? locale === "vi"
+                    ? item.productVariant.colorVi
+                    : item.productVariant.colorEn
+                  : item.color;
+
+                return (
+                  <div key={item.id} className="p-4 flex gap-4">
+                    {item.product?.images[0] && (
+                      <div className="relative h-20 w-16 shrink-0 overflow-hidden bg-zinc-200 rounded">
+                        <Image
+                          src={item.product.images[0].url}
+                          alt={productName}
+                          fill
+                          sizes="64px"
+                          className="object-cover"
+                        />
+                      </div>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <p className="font-bold truncate">{productName}</p>
+                      <p className="text-sm text-zinc-500">
+                        {t("size")}: {item.productVariant?.size ?? item.size} ·{" "}
+                        {t("color")}: {color} · {t("quantity")}: {item.quantity}
+                      </p>
                     </div>
-                  )}
-                  <div className="flex-1 min-w-0">
-                    <p className="font-bold truncate">{item.product?.nameVi ?? item.productName}</p>
-                    <p className="text-sm text-zinc-500">
-                      Size: {item.productVariant?.size ?? item.size} · Màu: {item.productVariant?.colorVi ?? item.color} · SL: {item.quantity}
+                    <p className="font-bold whitespace-nowrap">
+                      {formatOrderSnapshotPrice(item.unitPrice * item.quantity, order)}
                     </p>
                   </div>
-                  <p className="font-bold whitespace-nowrap">
-                    {formatOrderSnapshotPrice(item.unitPrice * item.quantity, order)}
-                  </p>
-                </div>
-              ))}
+                );
+              })}
             </div>
             <div className="p-4 border-t border-black/5 flex justify-between font-black">
               <span>{t("total")}</span>
@@ -134,13 +152,19 @@ export default async function OrderPage({ params }: PageProps) {
             ) : (
               <PaymentButtons
                 orderId={order.id}
+                labels={{
+                  note: t("paymentSandboxEnvironment"),
+                  pay: t("payWithSePay"),
+                  error: t("paymentError"),
+                  genericError: t("paymentGenericError")
+                }}
               />
             )}
             <p className="mt-4 text-xs text-zinc-500">
-              Trạng thái: <span className="font-bold">{order.status}</span>
+              {t("statusLabel")}: <span className="font-bold">{order.status}</span>
             </p>
             <Link className="button-secondary mt-4 block text-center" href="/account">
-              Xem đơn hàng của tôi
+              {t("myOrders")}
             </Link>
           </div>
         </aside>

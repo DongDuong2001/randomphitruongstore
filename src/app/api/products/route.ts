@@ -2,6 +2,7 @@ import { err, handlePrismaError, ok, zodDetails } from "@/lib/api-response";
 import { isAdminAuthenticated } from "@/lib/admin-auth";
 import { buildProductCatalogWrite } from "@/lib/product-catalog";
 import { getPrisma } from "@/lib/prisma";
+import { revalidatePublicCatalog } from "@/lib/public-catalog";
 import { productInputSchema } from "@/lib/validations";
 
 export async function GET() {
@@ -48,6 +49,7 @@ export async function POST(request: Request) {
         sizeCharts: { orderBy: { size: "asc" } }
       }
     });
+    revalidatePublicCatalog(product.slug);
     return ok(product, 201);
   } catch (error) {
     return handlePrismaError(error);
