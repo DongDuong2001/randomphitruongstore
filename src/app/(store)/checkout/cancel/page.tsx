@@ -37,6 +37,15 @@ export default async function CancelPage({ searchParams }: PageProps) {
     include: { customer: true }
   });
 
+  // Update order status to CANCELLED before auth check —
+  // safe because cancellation is idempotent and SePay already cancelled the payment at gateway level.
+  if (order?.status === "PENDING_ONLINE_PAYMENT") {
+    await getPrisma().order.update({
+      where: { id: order.id },
+      data: { status: "CANCELLED" }
+    });
+  }
+
   const supabase = await getSupabaseServerClient();
   const { data: { user } } = await supabase.auth.getUser();
   const accessToken = order ? await guestOrderAccessToken(order.orderNumber) : null;

@@ -6,11 +6,13 @@ import { useState } from "react";
 export function AdminStatusSelect({
   endpoint,
   value,
-  statuses
+  statuses,
+  statusLabels = {}
 }: {
   endpoint: string;
   value: string;
   statuses: string[];
+  statusLabels?: Record<string, string>;
 }) {
   const router = useRouter();
   const [pending, setPending] = useState(false);
@@ -37,7 +39,7 @@ export function AdminStatusSelect({
     >
       {statuses.map((status) => (
         <option key={status} value={status}>
-          {status.replaceAll("_", " ")}
+          {statusLabels[status] ?? status.replaceAll("_", " ")}
         </option>
       ))}
     </select>
