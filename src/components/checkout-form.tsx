@@ -265,7 +265,6 @@ export function CheckoutForm({
                 value="DEPOSIT_50_BANK_ZALO"
               />
               <PaymentOption
-                description={labels.paymentSandboxNote}
                 label={labels.sepay}
                 registration={register("paymentMethod")}
                 value="ONLINE_100_SEPAY"
