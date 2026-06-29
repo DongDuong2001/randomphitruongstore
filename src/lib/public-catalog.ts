@@ -57,22 +57,23 @@ export const getPublicShopProducts = unstable_cache(
   }
 );
 
-export const getPublicProductBySlug = unstable_cache(
-  async (slug: string) =>
-    getPrisma().product.findFirst({
-      where: { slug, isActive: true, stockStatus: "IN_STOCK" },
-      include: {
-        images: { orderBy: { sortOrder: "asc" } },
-        variants: { orderBy: [{ size: "asc" }, { colorVi: "asc" }] },
-        sizeCharts: { orderBy: { size: "asc" } }
-      }
-    }),
-  ["public-product-by-slug-v1"],
-  {
-    revalidate: catalogRevalidateSeconds,
-    tags: [publicCatalogCacheTag]
-  }
-);
+export const getPublicProductBySlug = (slug: string) =>
+  unstable_cache(
+    async () =>
+      getPrisma().product.findFirst({
+        where: { slug, isActive: true, stockStatus: "IN_STOCK" },
+        include: {
+          images: { orderBy: { sortOrder: "asc" } },
+          variants: { orderBy: [{ size: "asc" }, { colorVi: "asc" }] },
+          sizeCharts: { orderBy: { size: "asc" } }
+        }
+      }),
+    ["public-product-by-slug-v1", slug],
+    {
+      revalidate: catalogRevalidateSeconds,
+      tags: [publicCatalogCacheTag]
+    }
+  )();
 
 export function revalidatePublicCatalog(productSlug?: string | null) {
   revalidateTag(publicCatalogCacheTag, "max");

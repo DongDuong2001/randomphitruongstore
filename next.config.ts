@@ -13,7 +13,7 @@ const contentSecurityPolicy = [
   "form-action 'self' https://pay.sepay.vn",
   "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
   "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' data: blob: https://images.unsplash.com https://qr.sepay.vn",
+  "img-src 'self' data: blob: https://images.unsplash.com https://qr.sepay.vn https://*.supabase.co https://res.cloudinary.com",
   "font-src 'self' data:",
   "connect-src 'self' https://*.supabase.co",
   ...(isProduction ? ["upgrade-insecure-requests"] : [])
@@ -74,6 +74,10 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "*.supabase.co",
         pathname: "/storage/v1/object/public/**"
+      },
+      {
+        protocol: "https",
+        hostname: "res.cloudinary.com"
       }
     ]
   }

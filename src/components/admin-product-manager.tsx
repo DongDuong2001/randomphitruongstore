@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
-import { useForm, useWatch } from "react-hook-form";
+import { useForm, useWatch, useFieldArray } from "react-hook-form";
 import { z } from "zod";
 import {
   duplicateProductImageUrlIndex,
@@ -34,27 +34,12 @@ type CategoryOption = {
   slug: string;
 };
 
-type ParsedVariant = {
-  size: string;
-  colorVi: string;
-  colorEn: string;
-  priceAdjustment: number;
-  isAvailable: boolean;
-};
-
-type ParsedSizeChart = {
-  size: string;
-  shoulder?: number;
-  chest?: number;
-  length?: number;
-  sleeve?: number;
-  unit: string;
-};
+const optionalMeasurementSchema = z.number().positive().optional();
 
 const formSchema = z.object({
   nameVi: z.string().trim().min(2),
   nameEn: z.string().trim().min(2),
-  slug: z.string().trim().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
+  slug: z.string().trim().regex(/^[a-z0-9àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễđìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹ]+(?:-[a-z0-9àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễđìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹ]+)*$/),
   descriptionVi: z.string().trim().min(10),
   descriptionEn: z.string().trim().min(10),
   categoryId: z.string().uuid(),
@@ -96,8 +81,21 @@ const formSchema = z.object({
       });
     }
   }),
-  variants: z.string().trim(),
-  sizeCharts: z.string().trim().optional(),
+  variants: z.array(z.object({
+    size: z.string().trim().min(1, "Size is required"),
+    colorVi: z.string().trim().min(1, "Color (VI) is required"),
+    colorEn: z.string().trim().optional(),
+    priceAdjustment: z.number().int(),
+    isAvailable: z.boolean()
+  })).min(1, "At least one variant is required"),
+  sizeCharts: z.array(z.object({
+    size: z.string().trim().min(1, "Size is required"),
+    shoulder: optionalMeasurementSchema,
+    chest: optionalMeasurementSchema,
+    length: optionalMeasurementSchema,
+    sleeve: optionalMeasurementSchema,
+    unit: z.string().trim().min(1)
+  })),
   materialVi: z.string().trim().min(2),
   materialEn: z.string().trim().min(2),
   stockStatus: z.enum(["IN_STOCK", "OUT_OF_STOCK"]),
@@ -118,8 +116,12 @@ const defaults: FormValues = {
   orderLeadTimeMinDays: 7,
   orderLeadTimeMaxDays: 10,
   images: "",
-  variants: "M | Black | Black | 0 | true\nL | Black | Black | 0 | true\nXL | Black | Black | 0 | true",
-  sizeCharts: "",
+  variants: [
+    { size: "M", colorVi: "Black", colorEn: "Black", priceAdjustment: 0, isAvailable: true },
+    { size: "L", colorVi: "Black", colorEn: "Black", priceAdjustment: 0, isAvailable: true },
+    { size: "XL", colorVi: "Black", colorEn: "Black", priceAdjustment: 0, isAvailable: true }
+  ],
+  sizeCharts: [],
   materialVi: "",
   materialEn: "",
   stockStatus: "IN_STOCK",
@@ -128,113 +130,6 @@ const defaults: FormValues = {
 };
 
 const pageSize = 10;
-
-function parseBoolean(value: string) {
-  return !["0", "false", "no", "out", "unavailable"].includes(
-    value.trim().toLowerCase()
-  );
-}
-
-function parseVariantRows(value: string): ParsedVariant[] {
-  const variants = value
-    .split(/\r?\n/)
-    .map((line) => line.trim())
-    .filter(Boolean)
-    .map((line) => {
-      const delimiter = line.includes("|") ? "|" : ",";
-      const [size = "", colorVi = "", colorEn = "", priceAdjustment = "0", isAvailable = "true"] =
-        line.split(delimiter).map((part) => part.trim());
-      const parsedAdjustment = Number.parseInt(priceAdjustment, 10);
-
-      return {
-        size,
-        colorVi,
-        colorEn: colorEn || colorVi,
-        priceAdjustment: Number.isFinite(parsedAdjustment) ? parsedAdjustment : 0,
-        isAvailable: parseBoolean(isAvailable)
-      };
-    })
-    .filter((variant) => variant.size && variant.colorVi);
-
-  const seen = new Set<string>();
-  return variants.filter((variant) => {
-    const key = `${variant.size.toLowerCase()}::${variant.colorVi.toLowerCase()}`;
-    if (seen.has(key)) {
-      return false;
-    }
-    seen.add(key);
-    return true;
-  });
-}
-
-function parseMeasurement(value: string) {
-  if (!value) {
-    return undefined;
-  }
-
-  const parsed = Number.parseFloat(value);
-  return Number.isFinite(parsed) && parsed > 0 ? parsed : undefined;
-}
-
-function parseSizeChartRows(value: string | undefined): ParsedSizeChart[] {
-  const sizeCharts = (value ?? "")
-    .split(/\r?\n/)
-    .map((line) => line.trim())
-    .filter(Boolean)
-    .map((line) => {
-      const delimiter = line.includes("|") ? "|" : ",";
-      const [size = "", shoulder = "", chest = "", length = "", sleeve = "", unit = "cm"] =
-        line.split(delimiter).map((part) => part.trim());
-
-      return {
-        size,
-        shoulder: parseMeasurement(shoulder),
-        chest: parseMeasurement(chest),
-        length: parseMeasurement(length),
-        sleeve: parseMeasurement(sleeve),
-        unit: unit || "cm"
-      };
-    })
-    .filter((sizeChart) => sizeChart.size);
-
-  const seen = new Set<string>();
-  return sizeCharts.filter((sizeChart) => {
-    const key = sizeChart.size.toLowerCase();
-    if (seen.has(key)) {
-      return false;
-    }
-    seen.add(key);
-    return true;
-  });
-}
-
-function formatVariantRows(product: ProductWithImages) {
-  return product.variants
-    .map(
-      (variant) =>
-        `${variant.size} | ${variant.colorVi} | ${variant.colorEn} | ${variant.priceAdjustment} | ${
-          variant.isAvailable ? "true" : "false"
-        }`
-    )
-    .join("\n");
-}
-
-function formatMeasurement(value: number | string | null | undefined) {
-  return value === null || value === undefined ? "" : String(value);
-}
-
-function formatSizeChartRows(product: ProductWithImages) {
-  return (product.sizeCharts ?? [])
-    .map(
-      (sizeChart) =>
-        `${sizeChart.size} | ${formatMeasurement(sizeChart.shoulder)} | ${formatMeasurement(
-          sizeChart.chest
-        )} | ${formatMeasurement(sizeChart.length)} | ${formatMeasurement(
-          sizeChart.sleeve
-        )} | ${sizeChart.unit}`
-    )
-    .join("\n");
-}
 
 export function AdminProductManager({
   categories: categoryOptions,
@@ -249,7 +144,7 @@ export function AdminProductManager({
   const [serverError, setServerError] = useState("");
   const [query, setQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("ALL");
-  const [visibilityFilter, setVisibilityFilter] = useState("ALL");
+  const [visibilityFilter, setVisibilityFilter] = useState("ACTIVE");
   const [stockFilter, setStockFilter] = useState("ALL");
   const [page, setPage] = useState(1);
   const {
@@ -263,6 +158,14 @@ export function AdminProductManager({
   } = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: defaults
+  });
+  const { fields: variantFields, append: appendVariant, remove: removeVariant } = useFieldArray({
+    control,
+    name: "variants"
+  });
+  const { fields: sizeChartFields, append: appendSizeChart, remove: removeSizeChart } = useFieldArray({
+    control,
+    name: "sizeCharts"
   });
   const imageText = useWatch({ control, name: "images" });
   const imageUrls = splitProductImageUrls(imageText);
@@ -336,8 +239,21 @@ export function AdminProductManager({
       orderLeadTimeMinDays: product.orderLeadTimeMinDays ?? 7,
       orderLeadTimeMaxDays: product.orderLeadTimeMaxDays ?? 10,
       images: product.images.map((image) => image.url).join("\n"),
-      variants: formatVariantRows(product),
-      sizeCharts: formatSizeChartRows(product),
+      variants: product.variants.map((v) => ({
+        size: v.size,
+        colorVi: v.colorVi,
+        colorEn: v.colorEn || v.colorVi,
+        priceAdjustment: v.priceAdjustment,
+        isAvailable: v.isAvailable
+      })),
+      sizeCharts: (product.sizeCharts ?? []).map((s) => ({
+        size: s.size,
+        shoulder: s.shoulder !== null && s.shoulder !== undefined ? Number(s.shoulder) : undefined,
+        chest: s.chest !== null && s.chest !== undefined ? Number(s.chest) : undefined,
+        length: s.length !== null && s.length !== undefined ? Number(s.length) : undefined,
+        sleeve: s.sleeve !== null && s.sleeve !== undefined ? Number(s.sleeve) : undefined,
+        unit: s.unit || "cm"
+      })),
       materialVi: product.materialVi,
       materialEn: product.materialEn,
       stockStatus: product.stockStatus,
@@ -356,8 +272,6 @@ export function AdminProductManager({
 
   async function save(values: FormValues) {
     setServerError("");
-    const variants = parseVariantRows(values.variants);
-    const sizeCharts = parseSizeChartRows(values.sizeCharts);
     const endpoint = editingId ? `/api/products/${editingId}` : "/api/products";
     const response = await fetch(endpoint, {
       method: editingId ? "PATCH" : "POST",
@@ -365,9 +279,7 @@ export function AdminProductManager({
       body: JSON.stringify({
         ...values,
         categoryId: values.categoryId,
-        images: splitProductImageUrls(values.images),
-        variants,
-        sizeCharts
+        images: splitProductImageUrls(values.images)
       })
     });
     const result = await response.json();
@@ -464,10 +376,10 @@ export function AdminProductManager({
           onChange={(event) => updateCategory(event.target.value)}
           value={categoryFilter}
         >
-          <option value="ALL">All categories</option>
+          <option value="ALL">All categories / Tất cả danh mục</option>
           {categoryOptions.map((category) => (
             <option key={category.id} value={category.id}>
-              {category.nameEn}
+              {category.nameEn} / {category.nameVi}
             </option>
           ))}
         </select>
@@ -477,10 +389,10 @@ export function AdminProductManager({
           onChange={(event) => updateVisibility(event.target.value)}
           value={visibilityFilter}
         >
-          <option value="ALL">All status</option>
-          <option value="ACTIVE">Active</option>
-          <option value="INACTIVE">Inactive</option>
-          <option value="FEATURED">Featured</option>
+          <option value="ACTIVE">Active / Hoạt động</option>
+          <option value="ALL">All status / Tất cả trạng thái</option>
+          <option value="INACTIVE">Inactive / Không hoạt động (Lưu trữ)</option>
+          <option value="FEATURED">Featured / Nổi bật</option>
         </select>
         <select
           aria-label="Filter by stock"
@@ -488,9 +400,9 @@ export function AdminProductManager({
           onChange={(event) => updateStock(event.target.value)}
           value={stockFilter}
         >
-          <option value="ALL">All stock</option>
-          <option value="IN_STOCK">In stock</option>
-          <option value="OUT_OF_STOCK">Out of stock</option>
+          <option value="ALL">All stock / Tất cả tồn kho</option>
+          <option value="IN_STOCK">In stock / Còn hàng</option>
+          <option value="OUT_OF_STOCK">Out of stock / Hết hàng</option>
         </select>
         <button
           className="inline-flex min-h-11 items-center justify-center gap-2 bg-[#171715] px-5 text-xs font-bold uppercase tracking-[0.1em] text-white transition-colors hover:bg-[#a72b1f] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#a72b1f]"
@@ -648,17 +560,17 @@ export function AdminProductManager({
               className="mt-6 grid gap-5 sm:grid-cols-2"
               onSubmit={handleSubmit(save)}
             >
-              <AdminField label="Name (VI)" error={errors.nameVi?.message}>
+              <AdminField label="Name (VI) / Tên (Tiếng Việt)" error={errors.nameVi?.message}>
                 <input className="field" {...register("nameVi")} />
               </AdminField>
-              <AdminField label="Name (EN)" error={errors.nameEn?.message}>
+              <AdminField label="Name (EN) / Tên (Tiếng Anh)" error={errors.nameEn?.message}>
                 <input className="field" {...register("nameEn")} />
               </AdminField>
-              <AdminField label="Slug" error={errors.slug?.message}>
+              <AdminField label="Slug / Đường dẫn tĩnh (vd: sukajan-hac-song)" error={errors.slug?.message}>
                 <input className="field" {...register("slug")} />
               </AdminField>
               <AdminField
-                label="Catalog category"
+                label="Catalog category / Danh mục sản phẩm"
                 error={errors.categoryId?.message}
               >
                 <select className="field" {...register("categoryId")}>
@@ -670,7 +582,7 @@ export function AdminProductManager({
                 </select>
               </AdminField>
               <AdminField
-                label="Base price (VND)"
+                label="Base price (VND) / Giá gốc (VND)"
                 error={errors.basePrice?.message}
               >
                 <input
@@ -680,7 +592,7 @@ export function AdminProductManager({
                 />
               </AdminField>
               <AdminField
-                label="Lead time min days"
+                label="Lead time min days / Hẹn giao tối thiểu (ngày)"
                 error={errors.orderLeadTimeMinDays?.message}
               >
                 <input
@@ -690,7 +602,7 @@ export function AdminProductManager({
                 />
               </AdminField>
               <AdminField
-                label="Lead time max days"
+                label="Lead time max days / Hẹn giao tối đa (ngày)"
                 error={errors.orderLeadTimeMaxDays?.message}
               >
                 <input
@@ -699,42 +611,451 @@ export function AdminProductManager({
                   {...register("orderLeadTimeMaxDays", { valueAsNumber: true })}
                 />
               </AdminField>
-              <div className="sm:col-span-2">
-                <AdminField label="Variants" error={errors.variants?.message}>
-                  <textarea
-                    className="field min-h-28"
-                    placeholder="M | Black | Black | 0 | true"
-                    {...register("variants")}
-                  />
-                </AdminField>
+              {/* Bilingual Guidance Box */}
+              <div className="sm:col-span-2 border-l-4 border-amber-500 bg-amber-50 p-4 text-amber-900 text-xs space-y-3 rounded-r-md">
+                <h4 className="font-bold text-sm uppercase tracking-wide flex items-center gap-1.5">
+                  💡 Guide & Instructions / Hướng dẫn nhập liệu
+                </h4>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-1">
+                    <p className="font-bold text-[#a72b1f]">🇺🇸 ENGLISH GUIDE</p>
+                    <ul className="list-disc list-inside space-y-1 text-zinc-700">
+                      <li><strong>Price Adjustment:</strong> Value added to base price. E.g. base is 1,500,000 and adjustment is 100,000 &rarr; final variant price is 1,600,000 VND. Set <code className="bg-zinc-200 px-1 rounded">0</code> for no adjustment.</li>
+                      <li><strong>Color (EN):</strong> Color name shown to English storefront users (e.g., &quot;Black&quot;, &quot;Navy&quot;).</li>
+                      <li><strong>Size Chart:</strong> Enter measurements (Shoulder, Chest, etc.) for each size. Select unit (<code className="bg-zinc-200 px-1 rounded">cm</code> / <code className="bg-zinc-200 px-1 rounded">inch</code>). Leave empty if not applicable.</li>
+                    </ul>
+                  </div>
+                  <div className="space-y-1 border-t sm:border-t-0 sm:border-l border-amber-200 pt-3 sm:pt-0 sm:pl-4">
+                    <p className="font-bold text-[#a72b1f]">🇻🇳 HƯỚNG DẪN TIẾNG VIỆT</p>
+                    <ul className="list-disc list-inside space-y-1 text-zinc-700">
+                      <li><strong>Điều chỉnh giá:</strong> Số tiền cộng thêm vào giá gốc. VD: Giá gốc 1.500.000đ, điều chỉnh giá là 100.000đ &rarr; giá biến thể này là 1.600.000đ. Nhập <code className="bg-zinc-200 px-1 rounded">0</code> nếu không đổi.</li>
+                      <li><strong>Màu (VI):</strong> Tên màu hiển thị ở giao diện tiếng Việt (vd: &quot;Đen&quot;, &quot;Xanh Navy&quot;).</li>
+                      <li><strong>Bảng Size:</strong> Nhập kích thước vai, ngực, dài áo, tay áo tương ứng từng size. Chọn đơn vị <code className="bg-zinc-200 px-1 rounded">cm</code> / <code className="bg-zinc-200 px-1 rounded">inch</code>. Bỏ trống nếu không có.</li>
+                    </ul>
+                  </div>
+                </div>
               </div>
-              <div className="sm:col-span-2">
-                <AdminField
-                  label="Size chart"
-                  error={errors.sizeCharts?.message}
-                >
-                  <textarea
-                    className="field min-h-24"
-                    placeholder="M | 44 | 54 | 65 | 60 | cm"
-                    {...register("sizeCharts")}
-                  />
-                </AdminField>
+
+              {/* Variants Section */}
+              <div className="sm:col-span-2 border border-zinc-200 p-4 bg-zinc-50/50">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+                  <div>
+                    <h3 className="text-sm font-bold text-zinc-950">Product Variants / Biến thể sản phẩm</h3>
+                    <p className="text-xs text-zinc-500 mt-0.5">Manage product sizing, colors, pricing adjustments, and availability. / Quản lý kích thước, màu sắc, điều chỉnh giá và trạng thái còn hàng.</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => appendVariant({ size: "", colorVi: "", colorEn: "", priceAdjustment: 0, isAvailable: true })}
+                    className="inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-bold uppercase tracking-wider bg-zinc-900 text-white hover:bg-[#a72b1f] transition-colors"
+                  >
+                    <Plus size={14} /> Add Variant / Thêm biến thể
+                  </button>
+                </div>
+
+                {errors.variants?.message && (
+                  <p className="text-xs font-bold text-red-600 mb-3">{errors.variants.message}</p>
+                )}
+
+                {/* Desktop View */}
+                <div className="hidden md:block overflow-x-auto border border-zinc-200">
+                  <table className="w-full text-left text-xs bg-white min-w-[500px]">
+                    <thead className="bg-zinc-100 uppercase tracking-wider text-zinc-700 font-bold border-b border-zinc-200">
+                      <tr>
+                        <th className="px-3 py-2.5 w-[90px]">Size / Size *</th>
+                        <th className="px-3 py-2.5">Color (VI) / Màu (VI) *</th>
+                        <th className="px-3 py-2.5">Color (EN) / Màu (EN)</th>
+                        <th className="px-3 py-2.5 w-[160px]">Price Adj / Chênh giá (VND)</th>
+                        <th className="px-3 py-2.5 w-[100px] text-center">Available / Có sẵn</th>
+                        <th className="px-3 py-2.5 w-[70px] text-center">Remove / Xóa</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-zinc-200">
+                      {variantFields.map((field, index) => (
+                        <tr key={field.id} className="hover:bg-zinc-50/50">
+                          <td className="p-2">
+                            <input
+                              className="field py-1 px-2 text-xs w-full"
+                              placeholder="e.g. M"
+                              {...register(`variants.${index}.size` as const)}
+                            />
+                            {errors.variants?.[index]?.size?.message && (
+                              <p className="text-[10px] text-red-600 mt-0.5">{errors.variants[index].size.message}</p>
+                            )}
+                          </td>
+                          <td className="p-2">
+                            <input
+                              className="field py-1 px-2 text-xs w-full"
+                              placeholder="e.g. Đen"
+                              {...register(`variants.${index}.colorVi` as const)}
+                            />
+                            {errors.variants?.[index]?.colorVi?.message && (
+                              <p className="text-[10px] text-red-600 mt-0.5">{errors.variants[index].colorVi.message}</p>
+                            )}
+                          </td>
+                          <td className="p-2">
+                            <input
+                              className="field py-1 px-2 text-xs w-full"
+                              placeholder="e.g. Black"
+                              {...register(`variants.${index}.colorEn` as const)}
+                            />
+                          </td>
+                          <td className="p-2">
+                            <input
+                              type="number"
+                              className="field py-1 px-2 text-xs w-full"
+                              {...register(`variants.${index}.priceAdjustment` as const, { valueAsNumber: true })}
+                            />
+                          </td>
+                          <td className="p-2 text-center">
+                            <input
+                              type="checkbox"
+                              className="size-4 rounded border-zinc-300 text-[#a72b1f] focus:ring-[#a72b1f] cursor-pointer"
+                              {...register(`variants.${index}.isAvailable` as const)}
+                            />
+                          </td>
+                          <td className="p-2 text-center">
+                            <button
+                              type="button"
+                              onClick={() => removeVariant(index)}
+                              className="text-zinc-400 hover:text-red-600 p-1 transition-colors inline-flex items-center justify-center"
+                              title="Remove variant"
+                            >
+                              <Trash2 size={15} />
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  {variantFields.length === 0 && (
+                    <div className="p-6 text-center text-zinc-500 bg-white">
+                      No variants added. Click &quot;Add Variant&quot; to create one.
+                    </div>
+                  )}
+                </div>
+
+                {/* Mobile View */}
+                <div className="block md:hidden space-y-3">
+                  {variantFields.map((field, index) => (
+                    <div key={field.id} className="bg-white border border-zinc-200 p-4 rounded-md shadow-sm relative space-y-3">
+                      <div className="absolute top-2 right-2">
+                        <button
+                          type="button"
+                          onClick={() => removeVariant(index)}
+                          className="text-zinc-400 hover:text-red-600 p-2 transition-colors inline-flex items-center justify-center bg-zinc-50 hover:bg-red-50 rounded-full"
+                          title="Remove variant"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                      
+                      <div className="pr-10 grid grid-cols-2 gap-3">
+                        <label className="block">
+                          <span className="text-[10px] uppercase font-bold text-zinc-500">Size / Kích thước *</span>
+                          <input
+                            className="field mt-1 py-1.5 px-2 text-xs w-full font-bold"
+                            placeholder="e.g. M"
+                            {...register(`variants.${index}.size` as const)}
+                          />
+                          {errors.variants?.[index]?.size?.message && (
+                            <p className="text-[10px] text-red-600 mt-0.5">{errors.variants[index].size.message}</p>
+                          )}
+                        </label>
+                        <label className="block">
+                          <span className="text-[10px] uppercase font-bold text-zinc-500">Price Adj / Chênh giá (VND)</span>
+                          <input
+                            type="number"
+                            className="field mt-1 py-1.5 px-2 text-xs w-full font-bold text-[#a72b1f]"
+                            placeholder="0"
+                            {...register(`variants.${index}.priceAdjustment` as const, { valueAsNumber: true })}
+                          />
+                        </label>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-3">
+                        <label className="block">
+                          <span className="text-[10px] uppercase font-bold text-zinc-500">Color (VI) / Màu (VI) *</span>
+                          <input
+                            className="field mt-1 py-1.5 px-2 text-xs w-full"
+                            placeholder="e.g. Đen"
+                            {...register(`variants.${index}.colorVi` as const)}
+                          />
+                          {errors.variants?.[index]?.colorVi?.message && (
+                            <p className="text-[10px] text-red-600 mt-0.5">{errors.variants[index].colorVi.message}</p>
+                          )}
+                        </label>
+                        <label className="block">
+                          <span className="text-[10px] uppercase font-bold text-zinc-500">Color (EN) / Màu (EN)</span>
+                          <input
+                            className="field mt-1 py-1.5 px-2 text-xs w-full"
+                            placeholder="e.g. Black"
+                            {...register(`variants.${index}.colorEn` as const)}
+                          />
+                        </label>
+                      </div>
+
+                      <div className="flex items-center justify-between border-t border-zinc-100 pt-3">
+                        <label className="flex items-center gap-2 text-xs font-bold cursor-pointer">
+                          <input
+                            type="checkbox"
+                            className="size-4 rounded border-zinc-300 text-[#a72b1f] focus:ring-[#a72b1f] accent-black"
+                            {...register(`variants.${index}.isAvailable` as const)}
+                          />
+                          Available / Có sẵn
+                        </label>
+                        <span className="text-[10px] text-zinc-400 font-bold">Variant #{index + 1}</span>
+                      </div>
+                    </div>
+                  ))}
+                  {variantFields.length === 0 && (
+                    <div className="p-6 text-center text-zinc-500 bg-white border border-dashed border-zinc-300 rounded-md">
+                      No variants added. Click &quot;Add Variant / Thêm biến thể&quot; to create one.
+                    </div>
+                  )}
+                </div>
               </div>
-              <AdminField label="Material (VI)" error={errors.materialVi?.message}>
+
+              {/* Size Chart Section */}
+              <div className="sm:col-span-2 border border-zinc-200 p-4 bg-zinc-50/50">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+                  <div>
+                    <h3 className="text-sm font-bold text-zinc-950">Product Size Chart / Bảng Size sản phẩm</h3>
+                    <p className="text-xs text-zinc-500 mt-0.5">Define detailed measurements for each size size chart reference. / Định nghĩa số đo chi tiết cho từng kích thước của sản phẩm.</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => appendSizeChart({ size: "", shoulder: undefined, chest: undefined, length: undefined, sleeve: undefined, unit: "cm" })}
+                    className="inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-bold uppercase tracking-wider bg-zinc-900 text-white hover:bg-[#a72b1f] transition-colors"
+                  >
+                    <Plus size={14} /> Add Size Row / Thêm hàng kích thước
+                  </button>
+                </div>
+
+                {errors.sizeCharts?.message && (
+                  <p className="text-xs font-bold text-red-600 mb-3">{errors.sizeCharts.message}</p>
+                )}
+
+                {/* Desktop View */}
+                <div className="hidden md:block overflow-x-auto border border-zinc-200">
+                  <table className="w-full text-left text-xs bg-white min-w-[500px]">
+                    <thead className="bg-zinc-100 uppercase tracking-wider text-zinc-700 font-bold border-b border-zinc-200">
+                      <tr>
+                        <th className="px-3 py-2.5 w-[90px]">Size / Size *</th>
+                        <th className="px-3 py-2.5">Shoulder / Vai</th>
+                        <th className="px-3 py-2.5">Chest / Ngực</th>
+                        <th className="px-3 py-2.5">Length / Dài</th>
+                        <th className="px-3 py-2.5">Sleeve / Tay</th>
+                        <th className="px-3 py-2.5 w-[95px]">Unit / Đơn vị</th>
+                        <th className="px-3 py-2.5 w-[70px] text-center">Remove / Xóa</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-zinc-200">
+                      {sizeChartFields.map((field, index) => (
+                        <tr key={field.id} className="hover:bg-zinc-50/50">
+                          <td className="p-2">
+                            <input
+                              className="field py-1 px-2 text-xs w-full"
+                              placeholder="e.g. M"
+                              {...register(`sizeCharts.${index}.size` as const)}
+                            />
+                            {errors.sizeCharts?.[index]?.size?.message && (
+                              <p className="text-[10px] text-red-600 mt-0.5">{errors.sizeCharts[index].size.message}</p>
+                            )}
+                          </td>
+                          <td className="p-2">
+                            <input
+                              type="number"
+                              step="any"
+                              className="field py-1 px-2 text-xs w-full"
+                              placeholder="cm / in"
+                              {...register(`sizeCharts.${index}.shoulder` as const, {
+                                setValueAs: (value) => (value === "" || value === null || value === undefined ? undefined : Number(value))
+                              })}
+                            />
+                          </td>
+                          <td className="p-2">
+                            <input
+                              type="number"
+                              step="any"
+                              className="field py-1 px-2 text-xs w-full"
+                              placeholder="cm / in"
+                              {...register(`sizeCharts.${index}.chest` as const, {
+                                setValueAs: (value) => (value === "" || value === null || value === undefined ? undefined : Number(value))
+                              })}
+                            />
+                          </td>
+                          <td className="p-2">
+                            <input
+                              type="number"
+                              step="any"
+                              className="field py-1 px-2 text-xs w-full"
+                              placeholder="cm / in"
+                              {...register(`sizeCharts.${index}.length` as const, {
+                                setValueAs: (value) => (value === "" || value === null || value === undefined ? undefined : Number(value))
+                              })}
+                            />
+                          </td>
+                          <td className="p-2">
+                            <input
+                              type="number"
+                              step="any"
+                              className="field py-1 px-2 text-xs w-full"
+                              placeholder="cm / in"
+                              {...register(`sizeCharts.${index}.sleeve` as const, {
+                                setValueAs: (value) => (value === "" || value === null || value === undefined ? undefined : Number(value))
+                              })}
+                            />
+                          </td>
+                          <td className="p-2">
+                            <select
+                              className="field py-1 px-2 text-xs w-full font-bold"
+                              {...register(`sizeCharts.${index}.unit` as const)}
+                            >
+                              <option value="cm">cm</option>
+                              <option value="inch">inch</option>
+                            </select>
+                          </td>
+                          <td className="p-2 text-center">
+                            <button
+                              type="button"
+                              onClick={() => removeSizeChart(index)}
+                              className="text-zinc-400 hover:text-red-600 p-1 transition-colors inline-flex items-center justify-center"
+                              title="Remove row"
+                            >
+                              <Trash2 size={15} />
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  {sizeChartFields.length === 0 && (
+                    <div className="p-6 text-center text-zinc-500 bg-white">
+                      No size chart measurements added. Click &quot;Add Size Row&quot; to create one.
+                    </div>
+                  )}
+                </div>
+
+                {/* Mobile View */}
+                <div className="block md:hidden space-y-3">
+                  {sizeChartFields.map((field, index) => (
+                    <div key={field.id} className="bg-white border border-zinc-200 p-4 rounded-md shadow-sm relative space-y-3">
+                      <div className="absolute top-2 right-2">
+                        <button
+                          type="button"
+                          onClick={() => removeSizeChart(index)}
+                          className="text-zinc-400 hover:text-red-600 p-2 transition-colors inline-flex items-center justify-center bg-zinc-50 hover:bg-red-50 rounded-full"
+                          title="Remove row"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                      
+                      <div className="pr-10 grid grid-cols-2 gap-3">
+                        <label className="block">
+                          <span className="text-[10px] uppercase font-bold text-zinc-500">Size / Size *</span>
+                          <input
+                            className="field mt-1 py-1.5 px-2 text-xs w-full font-bold"
+                            placeholder="e.g. M"
+                            {...register(`sizeCharts.${index}.size` as const)}
+                          />
+                          {errors.sizeCharts?.[index]?.size?.message && (
+                            <p className="text-[10px] text-red-600 mt-0.5">{errors.sizeCharts[index].size.message}</p>
+                          )}
+                        </label>
+                        <label className="block">
+                          <span className="text-[10px] uppercase font-bold text-zinc-500">Unit / Đơn vị</span>
+                          <select
+                            className="field mt-1 py-1.5 px-2 text-xs w-full font-bold"
+                            {...register(`sizeCharts.${index}.unit` as const)}
+                          >
+                            <option value="cm">cm</option>
+                            <option value="inch">inch</option>
+                          </select>
+                        </label>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-3">
+                        <label className="block">
+                          <span className="text-[10px] uppercase font-bold text-zinc-500">Shoulder / Vai</span>
+                          <input
+                            type="number"
+                            step="any"
+                            className="field mt-1 py-1.5 px-2 text-xs w-full"
+                            placeholder="-"
+                            {...register(`sizeCharts.${index}.shoulder` as const, {
+                              setValueAs: (value) => (value === "" || value === null || value === undefined ? undefined : Number(value))
+                            })}
+                          />
+                        </label>
+                        <label className="block">
+                          <span className="text-[10px] uppercase font-bold text-zinc-500">Chest / Ngực</span>
+                          <input
+                            type="number"
+                            step="any"
+                            className="field mt-1 py-1.5 px-2 text-xs w-full"
+                            placeholder="-"
+                            {...register(`sizeCharts.${index}.chest` as const, {
+                              setValueAs: (value) => (value === "" || value === null || value === undefined ? undefined : Number(value))
+                            })}
+                          />
+                        </label>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-3">
+                        <label className="block">
+                          <span className="text-[10px] uppercase font-bold text-zinc-500">Length / Dài</span>
+                          <input
+                            type="number"
+                            step="any"
+                            className="field mt-1 py-1.5 px-2 text-xs w-full"
+                            placeholder="-"
+                            {...register(`sizeCharts.${index}.length` as const, {
+                              setValueAs: (value) => (value === "" || value === null || value === undefined ? undefined : Number(value))
+                            })}
+                          />
+                        </label>
+                        <label className="block">
+                          <span className="text-[10px] uppercase font-bold text-zinc-500">Sleeve / Tay</span>
+                          <input
+                            type="number"
+                            step="any"
+                            className="field mt-1 py-1.5 px-2 text-xs w-full"
+                            placeholder="-"
+                            {...register(`sizeCharts.${index}.sleeve` as const, {
+                              setValueAs: (value) => (value === "" || value === null || value === undefined ? undefined : Number(value))
+                            })}
+                          />
+                        </label>
+                      </div>
+                      
+                      <div className="flex justify-end border-t border-zinc-100 pt-2">
+                        <span className="text-[10px] text-zinc-400 font-bold">Size Chart #{index + 1}</span>
+                      </div>
+                    </div>
+                  ))}
+                  {sizeChartFields.length === 0 && (
+                    <div className="p-6 text-center text-zinc-500 bg-white border border-dashed border-zinc-300 rounded-md">
+                      No size chart measurements added. Click &quot;Add Size Row / Thêm hàng kích thước&quot; to create one.
+                    </div>
+                  )}
+                </div>
+              </div>
+              <AdminField label="Material (VI) / Chất liệu (Tiếng Việt)" error={errors.materialVi?.message}>
                 <input className="field" {...register("materialVi")} />
               </AdminField>
-              <AdminField label="Material (EN)" error={errors.materialEn?.message}>
+              <AdminField label="Material (EN) / Chất liệu (Tiếng Anh)" error={errors.materialEn?.message}>
                 <input className="field" {...register("materialEn")} />
               </AdminField>
-              <AdminField label="Stock status" error={errors.stockStatus?.message}>
+              <AdminField label="Stock status / Trạng thái kho hàng" error={errors.stockStatus?.message}>
                 <select className="field" {...register("stockStatus")}>
-                  <option value="IN_STOCK">In stock</option>
-                  <option value="OUT_OF_STOCK">Out of stock</option>
+                  <option value="IN_STOCK">In stock / Còn hàng</option>
+                  <option value="OUT_OF_STOCK">Out of stock / Hết hàng</option>
                 </select>
               </AdminField>
               <div className="sm:col-span-2">
                 <AdminField
-                  label="Image URLs (one per line)"
+                  label="Image URLs / Link hình ảnh (mỗi dòng một link hoặc upload phía dưới)"
                   error={errors.images?.message}
                 >
                   <label
@@ -748,14 +1069,14 @@ export function AdminProductManager({
                     <ImagePlus className="text-[#a72b1f]" size={28} />
                     <span className="mt-3 text-sm font-bold">
                       {isUploading
-                        ? "Uploading images..."
+                        ? "Uploading images... / Đang tải ảnh lên..."
                         : imageUploadLimitReached
-                          ? "Image limit reached"
-                          : "Upload product images"}
+                          ? "Image limit reached / Đã đạt giới hạn ảnh"
+                          : "Upload product images / Tải ảnh sản phẩm"}
                     </span>
                     <span className="mt-1 text-xs text-zinc-500">
                       JPG, PNG or WebP. Max 5 MB per image. {imageUrls.length}/
-                      {MAX_PRODUCT_IMAGES} images.
+                      {MAX_PRODUCT_IMAGES} images. / Định dạng JPG, PNG hoặc WebP. Tối đa 5 MB mỗi ảnh. {imageUrls.length}/{MAX_PRODUCT_IMAGES} ảnh.
                     </span>
                     <input
                       accept="image/jpeg,image/png,image/webp"
@@ -875,7 +1196,7 @@ export function AdminProductManager({
               </div>
               <div className="sm:col-span-2">
                 <AdminField
-                  label="Description (VI)"
+                  label="Description (VI) / Mô tả sản phẩm (Tiếng Việt)"
                   error={errors.descriptionVi?.message}
                 >
                   <textarea
@@ -886,7 +1207,7 @@ export function AdminProductManager({
               </div>
               <div className="sm:col-span-2">
                 <AdminField
-                  label="Description (EN)"
+                  label="Description (EN) / Mô tả sản phẩm (Tiếng Anh)"
                   error={errors.descriptionEn?.message}
                 >
                   <textarea
@@ -895,13 +1216,13 @@ export function AdminProductManager({
                   />
                 </AdminField>
               </div>
-              <label className="flex items-center gap-2 text-sm font-bold">
+              <label className="flex items-center gap-2 text-sm font-bold cursor-pointer">
                 <input type="checkbox" {...register("isFeatured")} />
-                Featured
+                Featured / Nổi bật
               </label>
-              <label className="flex items-center gap-2 text-sm font-bold">
+              <label className="flex items-center gap-2 text-sm font-bold cursor-pointer">
                 <input type="checkbox" {...register("isActive")} />
-                Active
+                Active / Hoạt động
               </label>
               {serverError ? (
                 <p className="error-text sm:col-span-2">{serverError}</p>
@@ -911,7 +1232,7 @@ export function AdminProductManager({
                 disabled={isSubmitting}
                 type="submit"
               >
-                {isSubmitting ? "Saving..." : "Save product"}
+                {isSubmitting ? "Saving... / Đang lưu..." : "Save product / Lưu sản phẩm"}
               </button>
             </form>
           </div>

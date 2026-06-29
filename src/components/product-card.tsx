@@ -43,13 +43,30 @@ export function ProductCard({
       >
         <div className="relative aspect-[4/5] overflow-hidden bg-[#d8d3c9]">
           {image ? (
-            <Image
-              alt={locale === "vi" ? image.altVi : image.altEn}
-              className="object-cover transition duration-700 ease-out group-hover:scale-[1.04]"
-              fill
-              sizes="(max-width: 640px) 50vw, (max-width: 1024px) 50vw, 33vw"
-              src={image.url}
-            />
+            <>
+              <Image
+                alt={locale === "vi" ? image.altVi : image.altEn}
+                className={`object-cover transition duration-700 ease-out group-hover:scale-[1.04] ${
+                  product.images[1] ? "group-hover:opacity-0" : ""
+                }`}
+                fill
+                sizes="(max-width: 640px) 50vw, (max-width: 1024px) 50vw, 33vw"
+                src={image.url}
+              />
+              {product.images[1] ? (
+                <Image
+                  alt={
+                    locale === "vi"
+                      ? product.images[1].altVi
+                      : product.images[1].altEn
+                  }
+                  className="object-cover transition duration-700 ease-out absolute inset-0 opacity-0 group-hover:opacity-100 group-hover:scale-[1.04]"
+                  fill
+                  sizes="(max-width: 640px) 50vw, (max-width: 1024px) 50vw, 33vw"
+                  src={product.images[1].url}
+                />
+              ) : null}
+            </>
           ) : (
             <div className="flex h-full items-center justify-center text-xs uppercase tracking-widest text-zinc-500">
               {noImageLabel}

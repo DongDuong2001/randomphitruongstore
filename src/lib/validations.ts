@@ -41,7 +41,7 @@ export const productInputSchema = z.object({
     .string()
     .trim()
     .min(2)
-    .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
+    .regex(/^[a-z0-9àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễđìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹ]+(?:-[a-z0-9àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễđìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹ]+)*$/),
   descriptionVi: z.string().trim().min(10),
   descriptionEn: z.string().trim().min(10),
   categoryId: z.string().trim().uuid(),

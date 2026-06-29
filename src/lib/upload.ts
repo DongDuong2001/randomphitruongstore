@@ -118,10 +118,58 @@ class SupabaseUploadStorage implements UploadStorage {
   }
 }
 
+class CloudinaryUploadStorage implements UploadStorage {
+  async save(upload: ValidatedImageUpload) {
+    const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
+    const apiKey = process.env.CLOUDINARY_API_KEY;
+    const apiSecret = process.env.CLOUDINARY_API_SECRET;
+
+    if (!cloudName || !apiKey || !apiSecret) {
+      throw new Error(
+        "CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET are required for Cloudinary upload driver"
+      );
+    }
+
+    const timestamp = Math.round(new Date().getTime() / 1000);
+    const stringToSign = `timestamp=${timestamp}${apiSecret}`;
+    
+    const { createHash } = await import("node:crypto");
+    const signature = createHash("sha1").update(stringToSign).digest("hex");
+
+    const formData = new FormData();
+    const base64Data = upload.bytes.toString("base64");
+    const dataUri = `data:${upload.mimeType};base64,${base64Data}`;
+    
+    formData.append("file", dataUri);
+    formData.append("api_key", apiKey);
+    formData.append("timestamp", String(timestamp));
+    formData.append("signature", signature);
+
+    const response = await fetch(
+      `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
+      {
+        method: "POST",
+        body: formData
+      }
+    );
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Cloudinary Storage upload failed: ${response.statusText} - ${errorText}`);
+    }
+
+    const result = await response.json();
+    return result.secure_url;
+  }
+}
+
 export function getUploadStorage(): UploadStorage {
   const driver = process.env.UPLOAD_DRIVER ?? "local";
   if (driver === "supabase") {
     return new SupabaseUploadStorage();
+  }
+  if (driver === "cloudinary") {
+    return new CloudinaryUploadStorage();
   }
   if (driver === "local") {
     return new LocalUploadStorage();
