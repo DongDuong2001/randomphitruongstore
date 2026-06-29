@@ -87,6 +87,30 @@ describe("production environment validation", () => {
     })));
   });
 
+  it("validates the Cloudinary credentials when driver is set to cloudinary", () => {
+    assert.throws(
+      () => validateRuntimeEnvironment(validProductionEnv({
+        UPLOAD_DRIVER: "cloudinary"
+      })),
+      /CLOUDINARY_CLOUD_NAME is required/
+    );
+
+    assert.throws(
+      () => validateRuntimeEnvironment(validProductionEnv({
+        UPLOAD_DRIVER: "cloudinary",
+        CLOUDINARY_CLOUD_NAME: "test-cloud"
+      })),
+      /CLOUDINARY_API_KEY is required/
+    );
+
+    assert.doesNotThrow(() => validateRuntimeEnvironment(validProductionEnv({
+      UPLOAD_DRIVER: "cloudinary",
+      CLOUDINARY_CLOUD_NAME: "test-cloud",
+      CLOUDINARY_API_KEY: "test-key",
+      CLOUDINARY_API_SECRET: "cloudinary-live-api-secret-key-string"
+    })));
+  });
+
   it("is exposed through the startup validation entry point used by instrumentation", () => {
     withEnv(
       {
