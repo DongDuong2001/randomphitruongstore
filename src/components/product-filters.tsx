@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronDown, SlidersHorizontal, X } from "lucide-react";
+import { ChevronDown, SlidersHorizontal, X, ChevronLeft, ChevronRight } from "lucide-react";
 import { useMemo, useState } from "react";
 import type { Locale } from "@/i18n/request";
 import {
@@ -41,6 +41,9 @@ export function ProductFilters({
   const [color, setColor] = useState("ALL");
   const [maxPrice, setMaxPrice] = useState(maximumPrice);
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 12;
+
   const categories = uniqueCategories(products);
   const sizes = [...new Set(products.flatMap((product) => productVariantSizes(product.variants)))];
   const colors = [...new Set(products.flatMap((product) => productVariantColors(product.variants)))];
@@ -63,11 +66,28 @@ export function ProductFilters({
     [category, color, maxPrice, products, size]
   );
 
+  const pageCount = Math.ceil(filtered.length / pageSize);
+  const activePage = Math.min(currentPage, Math.max(1, pageCount));
+
+  const paginated = useMemo(
+    () => {
+      const start = (activePage - 1) * pageSize;
+      return filtered.slice(start, start + pageSize);
+    },
+    [filtered, activePage, pageSize]
+  );
+
+  const handlePageChange = (newPage: number) => {
+    setCurrentPage(newPage);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
   function resetFilters() {
     setCategory("ALL");
     setSize("ALL");
     setColor("ALL");
     setMaxPrice(maximumPrice);
+    setCurrentPage(1);
   }
 
   return (
@@ -107,7 +127,10 @@ export function ProductFilters({
             <FilterSelect
               allLabel={labels.all}
               label={labels.category}
-              onChange={setCategory}
+              onChange={(value) => {
+                setCategory(value);
+                setCurrentPage(1);
+              }}
               options={categories.map((item) => ({
                 value: item.id,
                 label: locale === "vi" ? item.nameVi : item.nameEn
@@ -117,14 +140,20 @@ export function ProductFilters({
             <FilterSelect
               allLabel={labels.all}
               label={labels.size}
-              onChange={setSize}
+              onChange={(value) => {
+                setSize(value);
+                setCurrentPage(1);
+              }}
               options={sizes.map((item) => ({ value: item, label: item }))}
               value={size}
             />
             <FilterSelect
               allLabel={labels.all}
               label={labels.color}
-              onChange={setColor}
+              onChange={(value) => {
+                setColor(value);
+                setCurrentPage(1);
+              }}
               options={colors.map((item) => ({ value: item, label: item }))}
               value={color}
             />
@@ -134,7 +163,10 @@ export function ProductFilters({
                 className="w-full accent-black"
                 max={maximumPrice}
                 min="500000"
-                onChange={(event) => setMaxPrice(Number(event.target.value))}
+                onChange={(event) => {
+                  setMaxPrice(Number(event.target.value));
+                  setCurrentPage(1);
+                }}
                 step="100000"
                 type="range"
                 value={maxPrice}
@@ -158,15 +190,51 @@ export function ProductFilters({
       </aside>
 
       <section className="min-w-0">
-        {filtered.length ? (
-          <ProductGrid
-            detailsLabel={labels.details}
-            locale={locale}
-            noImageLabel={labels.noImage}
-            orderLabel={labels.order}
-            outOfStockLabel={labels.outOfStock}
-            products={filtered}
-          />
+        {paginated.length ? (
+          <>
+            <ProductGrid
+              detailsLabel={labels.details}
+              locale={locale}
+              noImageLabel={labels.noImage}
+              orderLabel={labels.order}
+              outOfStockLabel={labels.outOfStock}
+              products={paginated}
+            />
+            {pageCount > 1 ? (
+              <div className="mt-12 flex flex-col gap-4 border-t border-black/10 pt-6 sm:flex-row sm:items-center sm:justify-between">
+                <p className="text-xs font-bold uppercase tracking-wider text-zinc-500">
+                  {locale === "vi"
+                    ? `Hiển thị ${(activePage - 1) * pageSize + 1}–${Math.min(activePage * pageSize, filtered.length)} trên tổng số ${filtered.length} sản phẩm`
+                    : `Showing ${(activePage - 1) * pageSize + 1}–${Math.min(activePage * pageSize, filtered.length)} of ${filtered.length} products`}
+                </p>
+                <div className="flex items-center gap-2">
+                  <button
+                    aria-label="Previous page"
+                    className="grid size-9 place-items-center border border-zinc-300 bg-white text-zinc-800 transition-colors hover:bg-zinc-900 hover:text-white disabled:cursor-not-allowed disabled:bg-zinc-50 disabled:text-zinc-300"
+                    disabled={activePage === 1}
+                    onClick={() => handlePageChange(activePage - 1)}
+                    type="button"
+                  >
+                    <ChevronLeft size={16} />
+                  </button>
+                  <span className="min-w-24 text-center text-xs font-bold text-zinc-700">
+                    {locale === "vi"
+                      ? `Trang ${activePage} / ${pageCount}`
+                      : `Page ${activePage} / ${pageCount}`}
+                  </span>
+                  <button
+                    aria-label="Next page"
+                    className="grid size-9 place-items-center border border-zinc-300 bg-white text-zinc-800 transition-colors hover:bg-zinc-900 hover:text-white disabled:cursor-not-allowed disabled:bg-zinc-50 disabled:text-zinc-300"
+                    disabled={activePage === pageCount}
+                    onClick={() => handlePageChange(activePage + 1)}
+                    type="button"
+                  >
+                    <ChevronRight size={16} />
+                  </button>
+                </div>
+              </div>
+            ) : null}
+          </>
         ) : (
           <div className="border border-dashed border-zinc-400 p-12 text-center text-sm text-zinc-600">
             {labels.noResults}
