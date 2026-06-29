@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
-import { useForm, useWatch } from "react-hook-form";
+import { useForm, useWatch, useFieldArray } from "react-hook-form";
 import { z } from "zod";
 import {
   duplicateProductImageUrlIndex,
@@ -34,27 +34,12 @@ type CategoryOption = {
   slug: string;
 };
 
-type ParsedVariant = {
-  size: string;
-  colorVi: string;
-  colorEn: string;
-  priceAdjustment: number;
-  isAvailable: boolean;
-};
-
-type ParsedSizeChart = {
-  size: string;
-  shoulder?: number;
-  chest?: number;
-  length?: number;
-  sleeve?: number;
-  unit: string;
-};
+const optionalMeasurementSchema = z.number().positive().optional();
 
 const formSchema = z.object({
   nameVi: z.string().trim().min(2),
   nameEn: z.string().trim().min(2),
-  slug: z.string().trim().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
+  slug: z.string().trim().regex(/^[a-z0-9àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễđìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹ]+(?:-[a-z0-9àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễđìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹ]+)*$/),
   descriptionVi: z.string().trim().min(10),
   descriptionEn: z.string().trim().min(10),
   categoryId: z.string().uuid(),
@@ -96,8 +81,21 @@ const formSchema = z.object({
       });
     }
   }),
-  variants: z.string().trim(),
-  sizeCharts: z.string().trim().optional(),
+  variants: z.array(z.object({
+    size: z.string().trim().min(1, "Size is required"),
+    colorVi: z.string().trim().min(1, "Color (VI) is required"),
+    colorEn: z.string().trim().optional(),
+    priceAdjustment: z.number().int(),
+    isAvailable: z.boolean()
+  })).min(1, "At least one variant is required"),
+  sizeCharts: z.array(z.object({
+    size: z.string().trim().min(1, "Size is required"),
+    shoulder: optionalMeasurementSchema,
+    chest: optionalMeasurementSchema,
+    length: optionalMeasurementSchema,
+    sleeve: optionalMeasurementSchema,
+    unit: z.string().trim().min(1)
+  })),
   materialVi: z.string().trim().min(2),
   materialEn: z.string().trim().min(2),
   stockStatus: z.enum(["IN_STOCK", "OUT_OF_STOCK"]),
@@ -118,8 +116,12 @@ const defaults: FormValues = {
   orderLeadTimeMinDays: 7,
   orderLeadTimeMaxDays: 10,
   images: "",
-  variants: "M | Black | Black | 0 | true\nL | Black | Black | 0 | true\nXL | Black | Black | 0 | true",
-  sizeCharts: "",
+  variants: [
+    { size: "M", colorVi: "Black", colorEn: "Black", priceAdjustment: 0, isAvailable: true },
+    { size: "L", colorVi: "Black", colorEn: "Black", priceAdjustment: 0, isAvailable: true },
+    { size: "XL", colorVi: "Black", colorEn: "Black", priceAdjustment: 0, isAvailable: true }
+  ],
+  sizeCharts: [],
   materialVi: "",
   materialEn: "",
   stockStatus: "IN_STOCK",
@@ -128,113 +130,6 @@ const defaults: FormValues = {
 };
 
 const pageSize = 10;
-
-function parseBoolean(value: string) {
-  return !["0", "false", "no", "out", "unavailable"].includes(
-    value.trim().toLowerCase()
-  );
-}
-
-function parseVariantRows(value: string): ParsedVariant[] {
-  const variants = value
-    .split(/\r?\n/)
-    .map((line) => line.trim())
-    .filter(Boolean)
-    .map((line) => {
-      const delimiter = line.includes("|") ? "|" : ",";
-      const [size = "", colorVi = "", colorEn = "", priceAdjustment = "0", isAvailable = "true"] =
-        line.split(delimiter).map((part) => part.trim());
-      const parsedAdjustment = Number.parseInt(priceAdjustment, 10);
-
-      return {
-        size,
-        colorVi,
-        colorEn: colorEn || colorVi,
-        priceAdjustment: Number.isFinite(parsedAdjustment) ? parsedAdjustment : 0,
-        isAvailable: parseBoolean(isAvailable)
-      };
-    })
-    .filter((variant) => variant.size && variant.colorVi);
-
-  const seen = new Set<string>();
-  return variants.filter((variant) => {
-    const key = `${variant.size.toLowerCase()}::${variant.colorVi.toLowerCase()}`;
-    if (seen.has(key)) {
-      return false;
-    }
-    seen.add(key);
-    return true;
-  });
-}
-
-function parseMeasurement(value: string) {
-  if (!value) {
-    return undefined;
-  }
-
-  const parsed = Number.parseFloat(value);
-  return Number.isFinite(parsed) && parsed > 0 ? parsed : undefined;
-}
-
-function parseSizeChartRows(value: string | undefined): ParsedSizeChart[] {
-  const sizeCharts = (value ?? "")
-    .split(/\r?\n/)
-    .map((line) => line.trim())
-    .filter(Boolean)
-    .map((line) => {
-      const delimiter = line.includes("|") ? "|" : ",";
-      const [size = "", shoulder = "", chest = "", length = "", sleeve = "", unit = "cm"] =
-        line.split(delimiter).map((part) => part.trim());
-
-      return {
-        size,
-        shoulder: parseMeasurement(shoulder),
-        chest: parseMeasurement(chest),
-        length: parseMeasurement(length),
-        sleeve: parseMeasurement(sleeve),
-        unit: unit || "cm"
-      };
-    })
-    .filter((sizeChart) => sizeChart.size);
-
-  const seen = new Set<string>();
-  return sizeCharts.filter((sizeChart) => {
-    const key = sizeChart.size.toLowerCase();
-    if (seen.has(key)) {
-      return false;
-    }
-    seen.add(key);
-    return true;
-  });
-}
-
-function formatVariantRows(product: ProductWithImages) {
-  return product.variants
-    .map(
-      (variant) =>
-        `${variant.size} | ${variant.colorVi} | ${variant.colorEn} | ${variant.priceAdjustment} | ${
-          variant.isAvailable ? "true" : "false"
-        }`
-    )
-    .join("\n");
-}
-
-function formatMeasurement(value: number | string | null | undefined) {
-  return value === null || value === undefined ? "" : String(value);
-}
-
-function formatSizeChartRows(product: ProductWithImages) {
-  return (product.sizeCharts ?? [])
-    .map(
-      (sizeChart) =>
-        `${sizeChart.size} | ${formatMeasurement(sizeChart.shoulder)} | ${formatMeasurement(
-          sizeChart.chest
-        )} | ${formatMeasurement(sizeChart.length)} | ${formatMeasurement(
-          sizeChart.sleeve
-        )} | ${sizeChart.unit}`
-    )
-    .join("\n");
-}
 
 export function AdminProductManager({
   categories: categoryOptions,
@@ -263,6 +158,14 @@ export function AdminProductManager({
   } = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: defaults
+  });
+  const { fields: variantFields, append: appendVariant, remove: removeVariant } = useFieldArray({
+    control,
+    name: "variants"
+  });
+  const { fields: sizeChartFields, append: appendSizeChart, remove: removeSizeChart } = useFieldArray({
+    control,
+    name: "sizeCharts"
   });
   const imageText = useWatch({ control, name: "images" });
   const imageUrls = splitProductImageUrls(imageText);
@@ -336,8 +239,21 @@ export function AdminProductManager({
       orderLeadTimeMinDays: product.orderLeadTimeMinDays ?? 7,
       orderLeadTimeMaxDays: product.orderLeadTimeMaxDays ?? 10,
       images: product.images.map((image) => image.url).join("\n"),
-      variants: formatVariantRows(product),
-      sizeCharts: formatSizeChartRows(product),
+      variants: product.variants.map((v) => ({
+        size: v.size,
+        colorVi: v.colorVi,
+        colorEn: v.colorEn || v.colorVi,
+        priceAdjustment: v.priceAdjustment,
+        isAvailable: v.isAvailable
+      })),
+      sizeCharts: (product.sizeCharts ?? []).map((s) => ({
+        size: s.size,
+        shoulder: s.shoulder !== null && s.shoulder !== undefined ? Number(s.shoulder) : undefined,
+        chest: s.chest !== null && s.chest !== undefined ? Number(s.chest) : undefined,
+        length: s.length !== null && s.length !== undefined ? Number(s.length) : undefined,
+        sleeve: s.sleeve !== null && s.sleeve !== undefined ? Number(s.sleeve) : undefined,
+        unit: s.unit || "cm"
+      })),
       materialVi: product.materialVi,
       materialEn: product.materialEn,
       stockStatus: product.stockStatus,
@@ -356,8 +272,6 @@ export function AdminProductManager({
 
   async function save(values: FormValues) {
     setServerError("");
-    const variants = parseVariantRows(values.variants);
-    const sizeCharts = parseSizeChartRows(values.sizeCharts);
     const endpoint = editingId ? `/api/products/${editingId}` : "/api/products";
     const response = await fetch(endpoint, {
       method: editingId ? "PATCH" : "POST",
@@ -365,9 +279,7 @@ export function AdminProductManager({
       body: JSON.stringify({
         ...values,
         categoryId: values.categoryId,
-        images: splitProductImageUrls(values.images),
-        variants,
-        sizeCharts
+        images: splitProductImageUrls(values.images)
       })
     });
     const result = await response.json();
@@ -699,26 +611,223 @@ export function AdminProductManager({
                   {...register("orderLeadTimeMaxDays", { valueAsNumber: true })}
                 />
               </AdminField>
-              <div className="sm:col-span-2">
-                <AdminField label="Variants" error={errors.variants?.message}>
-                  <textarea
-                    className="field min-h-28"
-                    placeholder="M | Black | Black | 0 | true"
-                    {...register("variants")}
-                  />
-                </AdminField>
+              {/* Variants Section */}
+              <div className="sm:col-span-2 border border-zinc-200 p-4 bg-zinc-50/50">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+                  <div>
+                    <h3 className="text-sm font-bold text-zinc-950">Product Variants</h3>
+                    <p className="text-xs text-zinc-500 mt-0.5">Manage product sizing, colors, pricing adjustments, and availability.</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => appendVariant({ size: "", colorVi: "", colorEn: "", priceAdjustment: 0, isAvailable: true })}
+                    className="inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-bold uppercase tracking-wider bg-zinc-900 text-white hover:bg-[#a72b1f] transition-colors"
+                  >
+                    <Plus size={14} /> Add Variant
+                  </button>
+                </div>
+
+                {errors.variants?.message && (
+                  <p className="text-xs font-bold text-red-600 mb-3">{errors.variants.message}</p>
+                )}
+
+                <div className="overflow-x-auto border border-zinc-200">
+                  <table className="w-full text-left text-xs bg-white min-w-[500px]">
+                    <thead className="bg-zinc-100 uppercase tracking-wider text-zinc-700 font-bold border-b border-zinc-200">
+                      <tr>
+                        <th className="px-3 py-2.5 w-[80px]">Size *</th>
+                        <th className="px-3 py-2.5">Color (VI) *</th>
+                        <th className="px-3 py-2.5">Color (EN)</th>
+                        <th className="px-3 py-2.5 w-[140px]">Price Adj (VND)</th>
+                        <th className="px-3 py-2.5 w-[80px] text-center">Available</th>
+                        <th className="px-3 py-2.5 w-[60px] text-center">Remove</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-zinc-200">
+                      {variantFields.map((field, index) => (
+                        <tr key={field.id} className="hover:bg-zinc-50/50">
+                          <td className="p-2">
+                            <input
+                              className="field py-1 px-2 text-xs w-full"
+                              placeholder="e.g. M"
+                              {...register(`variants.${index}.size` as const)}
+                            />
+                            {errors.variants?.[index]?.size?.message && (
+                              <p className="text-[10px] text-red-600 mt-0.5">{errors.variants[index].size.message}</p>
+                            )}
+                          </td>
+                          <td className="p-2">
+                            <input
+                              className="field py-1 px-2 text-xs w-full"
+                              placeholder="e.g. Đen"
+                              {...register(`variants.${index}.colorVi` as const)}
+                            />
+                            {errors.variants?.[index]?.colorVi?.message && (
+                              <p className="text-[10px] text-red-600 mt-0.5">{errors.variants[index].colorVi.message}</p>
+                            )}
+                          </td>
+                          <td className="p-2">
+                            <input
+                              className="field py-1 px-2 text-xs w-full"
+                              placeholder="e.g. Black"
+                              {...register(`variants.${index}.colorEn` as const)}
+                            />
+                          </td>
+                          <td className="p-2">
+                            <input
+                              type="number"
+                              className="field py-1 px-2 text-xs w-full"
+                              {...register(`variants.${index}.priceAdjustment` as const, { valueAsNumber: true })}
+                            />
+                          </td>
+                          <td className="p-2 text-center">
+                            <input
+                              type="checkbox"
+                              className="size-4 rounded border-zinc-300 text-[#a72b1f] focus:ring-[#a72b1f] cursor-pointer"
+                              {...register(`variants.${index}.isAvailable` as const)}
+                            />
+                          </td>
+                          <td className="p-2 text-center">
+                            <button
+                              type="button"
+                              onClick={() => removeVariant(index)}
+                              className="text-zinc-400 hover:text-red-600 p-1 transition-colors inline-flex items-center justify-center"
+                              title="Remove variant"
+                            >
+                              <Trash2 size={15} />
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  {variantFields.length === 0 && (
+                    <div className="p-6 text-center text-zinc-500 bg-white">
+                      No variants added. Click "Add Variant" to create one.
+                    </div>
+                  )}
+                </div>
               </div>
-              <div className="sm:col-span-2">
-                <AdminField
-                  label="Size chart"
-                  error={errors.sizeCharts?.message}
-                >
-                  <textarea
-                    className="field min-h-24"
-                    placeholder="M | 44 | 54 | 65 | 60 | cm"
-                    {...register("sizeCharts")}
-                  />
-                </AdminField>
+
+              {/* Size Chart Section */}
+              <div className="sm:col-span-2 border border-zinc-200 p-4 bg-zinc-50/50">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+                  <div>
+                    <h3 className="text-sm font-bold text-zinc-950">Product Size Chart</h3>
+                    <p className="text-xs text-zinc-500 mt-0.5">Define detailed measurements for each size size chart reference.</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => appendSizeChart({ size: "", shoulder: undefined, chest: undefined, length: undefined, sleeve: undefined, unit: "cm" })}
+                    className="inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-bold uppercase tracking-wider bg-zinc-900 text-white hover:bg-[#a72b1f] transition-colors"
+                  >
+                    <Plus size={14} /> Add Size Row
+                  </button>
+                </div>
+
+                {errors.sizeCharts?.message && (
+                  <p className="text-xs font-bold text-red-600 mb-3">{errors.sizeCharts.message}</p>
+                )}
+
+                <div className="overflow-x-auto border border-zinc-200">
+                  <table className="w-full text-left text-xs bg-white min-w-[500px]">
+                    <thead className="bg-zinc-100 uppercase tracking-wider text-zinc-700 font-bold border-b border-zinc-200">
+                      <tr>
+                        <th className="px-3 py-2.5 w-[80px]">Size *</th>
+                        <th className="px-3 py-2.5">Shoulder</th>
+                        <th className="px-3 py-2.5">Chest</th>
+                        <th className="px-3 py-2.5">Length</th>
+                        <th className="px-3 py-2.5">Sleeve</th>
+                        <th className="px-3 py-2.5 w-[80px]">Unit</th>
+                        <th className="px-3 py-2.5 w-[60px] text-center">Remove</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-zinc-200">
+                      {sizeChartFields.map((field, index) => (
+                        <tr key={field.id} className="hover:bg-zinc-50/50">
+                          <td className="p-2">
+                            <input
+                              className="field py-1 px-2 text-xs w-full"
+                              placeholder="e.g. M"
+                              {...register(`sizeCharts.${index}.size` as const)}
+                            />
+                            {errors.sizeCharts?.[index]?.size?.message && (
+                              <p className="text-[10px] text-red-600 mt-0.5">{errors.sizeCharts[index].size.message}</p>
+                            )}
+                          </td>
+                          <td className="p-2">
+                            <input
+                              type="number"
+                              step="any"
+                              className="field py-1 px-2 text-xs w-full"
+                              placeholder="cm / in"
+                              {...register(`sizeCharts.${index}.shoulder` as const, {
+                                setValueAs: (value) => (value === "" || value === null || value === undefined ? undefined : Number(value))
+                              })}
+                            />
+                          </td>
+                          <td className="p-2">
+                            <input
+                              type="number"
+                              step="any"
+                              className="field py-1 px-2 text-xs w-full"
+                              placeholder="cm / in"
+                              {...register(`sizeCharts.${index}.chest` as const, {
+                                setValueAs: (value) => (value === "" || value === null || value === undefined ? undefined : Number(value))
+                              })}
+                            />
+                          </td>
+                          <td className="p-2">
+                            <input
+                              type="number"
+                              step="any"
+                              className="field py-1 px-2 text-xs w-full"
+                              placeholder="cm / in"
+                              {...register(`sizeCharts.${index}.length` as const, {
+                                setValueAs: (value) => (value === "" || value === null || value === undefined ? undefined : Number(value))
+                              })}
+                            />
+                          </td>
+                          <td className="p-2">
+                            <input
+                              type="number"
+                              step="any"
+                              className="field py-1 px-2 text-xs w-full"
+                              placeholder="cm / in"
+                              {...register(`sizeCharts.${index}.sleeve` as const, {
+                                setValueAs: (value) => (value === "" || value === null || value === undefined ? undefined : Number(value))
+                              })}
+                            />
+                          </td>
+                          <td className="p-2">
+                            <select
+                              className="field py-1 px-2 text-xs w-full font-bold"
+                              {...register(`sizeCharts.${index}.unit` as const)}
+                            >
+                              <option value="cm">cm</option>
+                              <option value="inch">inch</option>
+                            </select>
+                          </td>
+                          <td className="p-2 text-center">
+                            <button
+                              type="button"
+                              onClick={() => removeSizeChart(index)}
+                              className="text-zinc-400 hover:text-red-600 p-1 transition-colors inline-flex items-center justify-center"
+                              title="Remove row"
+                            >
+                              <Trash2 size={15} />
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  {sizeChartFields.length === 0 && (
+                    <div className="p-6 text-center text-zinc-500 bg-white">
+                      No size chart measurements added. Click "Add Size Row" to create one.
+                    </div>
+                  )}
+                </div>
               </div>
               <AdminField label="Material (VI)" error={errors.materialVi?.message}>
                 <input className="field" {...register("materialVi")} />
