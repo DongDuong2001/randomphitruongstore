@@ -621,7 +621,7 @@ export function AdminProductManager({
                     <p className="font-bold text-[#a72b1f]">🇺🇸 ENGLISH GUIDE</p>
                     <ul className="list-disc list-inside space-y-1 text-zinc-700">
                       <li><strong>Price Adjustment:</strong> Value added to base price. E.g. base is 1,500,000 and adjustment is 100,000 &rarr; final variant price is 1,600,000 VND. Set <code className="bg-zinc-200 px-1 rounded">0</code> for no adjustment.</li>
-                      <li><strong>Color (EN):</strong> Color name shown to English storefront users (e.g., "Black", "Navy").</li>
+                      <li><strong>Color (EN):</strong> Color name shown to English storefront users (e.g., &quot;Black&quot;, &quot;Navy&quot;).</li>
                       <li><strong>Size Chart:</strong> Enter measurements (Shoulder, Chest, etc.) for each size. Select unit (<code className="bg-zinc-200 px-1 rounded">cm</code> / <code className="bg-zinc-200 px-1 rounded">inch</code>). Leave empty if not applicable.</li>
                     </ul>
                   </div>
@@ -629,7 +629,7 @@ export function AdminProductManager({
                     <p className="font-bold text-[#a72b1f]">🇻🇳 HƯỚNG DẪN TIẾNG VIỆT</p>
                     <ul className="list-disc list-inside space-y-1 text-zinc-700">
                       <li><strong>Điều chỉnh giá:</strong> Số tiền cộng thêm vào giá gốc. VD: Giá gốc 1.500.000đ, điều chỉnh giá là 100.000đ &rarr; giá biến thể này là 1.600.000đ. Nhập <code className="bg-zinc-200 px-1 rounded">0</code> nếu không đổi.</li>
-                      <li><strong>Màu (VI):</strong> Tên màu hiển thị ở giao diện tiếng Việt (vd: "Đen", "Xanh Navy").</li>
+                      <li><strong>Màu (VI):</strong> Tên màu hiển thị ở giao diện tiếng Việt (vd: &quot;Đen&quot;, &quot;Xanh Navy&quot;).</li>
                       <li><strong>Bảng Size:</strong> Nhập kích thước vai, ngực, dài áo, tay áo tương ứng từng size. Chọn đơn vị <code className="bg-zinc-200 px-1 rounded">cm</code> / <code className="bg-zinc-200 px-1 rounded">inch</code>. Bỏ trống nếu không có.</li>
                     </ul>
                   </div>
@@ -729,7 +729,7 @@ export function AdminProductManager({
                   </table>
                   {variantFields.length === 0 && (
                     <div className="p-6 text-center text-zinc-500 bg-white">
-                      No variants added. Click "Add Variant" to create one.
+                      No variants added. Click &quot;Add Variant&quot; to create one.
                     </div>
                   )}
                 </div>
@@ -809,7 +809,7 @@ export function AdminProductManager({
                   ))}
                   {variantFields.length === 0 && (
                     <div className="p-6 text-center text-zinc-500 bg-white border border-dashed border-zinc-300 rounded-md">
-                      No variants added. Click "Add Variant / Thêm biến thể" to create one.
+                      No variants added. Click &quot;Add Variant / Thêm biến thể&quot; to create one.
                     </div>
                   )}
                 </div>
@@ -931,7 +931,7 @@ export function AdminProductManager({
                   </table>
                   {sizeChartFields.length === 0 && (
                     <div className="p-6 text-center text-zinc-500 bg-white">
-                      No size chart measurements added. Click "Add Size Row" to create one.
+                      No size chart measurements added. Click &quot;Add Size Row&quot; to create one.
                     </div>
                   )}
                 </div>
@@ -1036,7 +1036,7 @@ export function AdminProductManager({
                   ))}
                   {sizeChartFields.length === 0 && (
                     <div className="p-6 text-center text-zinc-500 bg-white border border-dashed border-zinc-300 rounded-md">
-                      No size chart measurements added. Click "Add Size Row / Thêm hàng kích thước" to create one.
+                      No size chart measurements added. Click &quot;Add Size Row / Thêm hàng kích thước&quot; to create one.
                     </div>
                   )}
                 </div>
