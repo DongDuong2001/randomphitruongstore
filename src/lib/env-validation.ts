@@ -40,7 +40,7 @@ const placeholderFragments = [
   "placeholder"
 ];
 
-const uploadDrivers = new Set(["local", "supabase"]);
+const uploadDrivers = new Set(["local", "supabase", "cloudinary"]);
 
 const localDatabaseHosts = new Set([
   "localhost",
@@ -165,7 +165,7 @@ function addUrlIssues(
 function addProductionUploadIssues(env: Environment, issues: string[]) {
   const uploadDriver = env.UPLOAD_DRIVER?.trim() || "local";
   if (!uploadDrivers.has(uploadDriver)) {
-    issues.push("UPLOAD_DRIVER must be either local or supabase.");
+    issues.push("UPLOAD_DRIVER must be either local, supabase, or cloudinary.");
   }
 
   addConfiguredValueIssues(
@@ -175,6 +175,36 @@ function addProductionUploadIssues(env: Environment, issues: string[]) {
     {
       minLength: 32,
       required: uploadDriver === "supabase"
+    }
+  );
+
+  addConfiguredValueIssues(
+    "CLOUDINARY_CLOUD_NAME",
+    env.CLOUDINARY_CLOUD_NAME,
+    issues,
+    {
+      minLength: 1,
+      required: uploadDriver === "cloudinary"
+    }
+  );
+
+  addConfiguredValueIssues(
+    "CLOUDINARY_API_KEY",
+    env.CLOUDINARY_API_KEY,
+    issues,
+    {
+      minLength: 1,
+      required: uploadDriver === "cloudinary"
+    }
+  );
+
+  addConfiguredValueIssues(
+    "CLOUDINARY_API_SECRET",
+    env.CLOUDINARY_API_SECRET,
+    issues,
+    {
+      minLength: 1,
+      required: uploadDriver === "cloudinary"
     }
   );
 }
