@@ -13,8 +13,6 @@ import type { CatalogProductDTO } from "@/types";
 import { Money } from "./money";
 import { ProductGrid } from "./product-grid";
 
-const maximumPrice = 5000000;
-
 export function ProductFilters({
   products,
   locale,
@@ -39,10 +37,19 @@ export function ProductFilters({
   const [category, setCategory] = useState("ALL");
   const [size, setSize] = useState("ALL");
   const [color, setColor] = useState("ALL");
-  const [maxPrice, setMaxPrice] = useState(maximumPrice);
+  const [maxPrice, setMaxPrice] = useState<number | null>(null);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 12;
+
+  const computedMaxPrice = useMemo(() => {
+    if (products.length === 0) return 5000000;
+    const prices = products.map((p) => productBasePrice(p));
+    const maxVal = Math.max(...prices);
+    return Math.max(5000000, maxVal);
+  }, [products]);
+
+  const currentMaxPrice = maxPrice ?? computedMaxPrice;
 
   const categories = uniqueCategories(products);
   const sizes = [...new Set(products.flatMap((product) => productVariantSizes(product.variants)))];
@@ -51,7 +58,7 @@ export function ProductFilters({
     category !== "ALL",
     size !== "ALL",
     color !== "ALL",
-    maxPrice < maximumPrice
+    maxPrice !== null && maxPrice < computedMaxPrice
   ].filter(Boolean).length;
 
   const filtered = useMemo(
@@ -61,9 +68,9 @@ export function ProductFilters({
           product.stockStatus === "IN_STOCK" &&
           (category === "ALL" || product.categoryId === category) &&
           productMatchesVariantFilters(product.variants, { size, color }) &&
-          productBasePrice(product) <= maxPrice
+          productBasePrice(product) <= currentMaxPrice
       ),
-    [category, color, maxPrice, products, size]
+    [category, color, currentMaxPrice, products, size]
   );
 
   const pageCount = Math.ceil(filtered.length / pageSize);
@@ -86,7 +93,7 @@ export function ProductFilters({
     setCategory("ALL");
     setSize("ALL");
     setColor("ALL");
-    setMaxPrice(maximumPrice);
+    setMaxPrice(null);
     setCurrentPage(1);
   }
 
@@ -161,7 +168,7 @@ export function ProductFilters({
               <span className="label">{labels.price}</span>
               <input
                 className="w-full accent-black"
-                max={maximumPrice}
+                max={computedMaxPrice}
                 min="500000"
                 onChange={(event) => {
                   setMaxPrice(Number(event.target.value));
@@ -169,10 +176,10 @@ export function ProductFilters({
                 }}
                 step="100000"
                 type="range"
-                value={maxPrice}
+                value={currentMaxPrice}
               />
               <span className="mt-2 block text-xs font-bold">
-                ≤ <Money amountVnd={maxPrice} />
+                ≤ <Money amountVnd={currentMaxPrice} />
               </span>
             </label>
           </div>
