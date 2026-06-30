@@ -189,7 +189,16 @@ export function AdminProductManager({
 
     const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches);
     mediaQuery.addEventListener("change", handler);
-    return () => mediaQuery.removeEventListener("change", handler);
+
+    const handleFocus = () => {
+      window.scrollTo(window.scrollX, window.scrollY);
+    };
+    window.addEventListener("focus", handleFocus);
+
+    return () => {
+      mediaQuery.removeEventListener("change", handler);
+      window.removeEventListener("focus", handleFocus);
+    };
   }, []);
   const filteredProducts = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
@@ -578,7 +587,19 @@ export function AdminProductManager({
             </div>
             <form
               className="mt-6 grid gap-5 sm:grid-cols-2"
-              onSubmit={handleSubmit(save)}
+              onSubmit={handleSubmit(save, (errs) => {
+                const firstErrorKey = Object.keys(errs)[0];
+                if (firstErrorKey) {
+                  const errorElement = document.getElementsByName(firstErrorKey)[0] ||
+                                       document.querySelector(`[name^="${firstErrorKey}"]`);
+                  if (errorElement) {
+                    errorElement.scrollIntoView({ behavior: "smooth", block: "center" });
+                    if (typeof (errorElement as HTMLElement).focus === "function") {
+                      (errorElement as HTMLElement).focus();
+                    }
+                  }
+                }
+              })}
             >
               <AdminField label="Name (VI) / Tên (Tiếng Việt)" error={errors.nameVi?.message}>
                 <input className="field" {...register("nameVi")} />
