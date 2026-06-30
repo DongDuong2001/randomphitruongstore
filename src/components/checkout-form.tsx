@@ -391,6 +391,11 @@ export function CheckoutForm({
           {isSubmitting ? labels.loading : labels.placeOrder}
           <ArrowRight size={16} />
         </button>
+        {isSubmitting && paymentMethod === "ONLINE_100_SEPAY" && (
+          <p className="text-xs text-amber-600 font-bold text-center mt-3 animate-pulse">
+            Vui lòng đợi một chút để QR thanh toán hiện lên... / Please wait a moment for the payment QR code to appear...
+          </p>
+        )}
       </aside>
     </form>
   );

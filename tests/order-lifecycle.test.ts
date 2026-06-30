@@ -137,4 +137,107 @@ describe("admin order lifecycle", () => {
       }
     ]);
   });
+
+  it("records status history and cancels pending payments when an order is cancelled", async () => {
+    let usedTransaction = false;
+    let statusHistoryCreate: unknown;
+    let orderUpdate: unknown;
+    const paymentUpdates: unknown[] = [];
+    const now = new Date("2026-06-18T09:00:00.000Z");
+    const prisma = {
+      $transaction: async <T>(callback: (transaction: {
+        order: {
+          findUnique: () => Promise<Record<string, unknown> | null>;
+          update: (args: unknown) => Promise<Record<string, unknown>>;
+        };
+        orderStatusHistory: {
+          create: (args: unknown) => Promise<Record<string, unknown>>;
+        };
+        payment: {
+          updateMany: (args: unknown) => Promise<Record<string, unknown>>;
+        };
+      }) => Promise<T>) => {
+        usedTransaction = true;
+        return callback({
+          order: {
+            findUnique: async () => ({
+              id: "order-1",
+              paymentMethod: "ONLINE_100_SEPAY",
+              paymentOption: "ONLINE_100",
+              remainingAmount: 0,
+              payments: [
+                {
+                  id: "payment-full-1",
+                  paymentType: "FULL_PAYMENT",
+                  paymentStatus: "PENDING",
+                  amount: 5800000
+                }
+              ]
+            }),
+            update: async (args: unknown) => {
+              orderUpdate = args;
+              return { id: "order-1", status: "CANCELLED" };
+            }
+          },
+          orderStatusHistory: {
+            create: async (args: unknown) => {
+              statusHistoryCreate = args;
+              return { id: "history-1" };
+            }
+          },
+          payment: {
+            updateMany: async (args: unknown) => {
+              paymentUpdates.push(args);
+              return { count: 1 };
+            }
+          }
+        });
+      }
+    };
+
+    const order = (await updateAdminOrderLifecycle({
+      prisma: prisma as never,
+      orderId: "order-1",
+      status: "CANCELLED",
+      note: "Cancelled by admin",
+      adminId: "admin-1",
+      now: () => now
+    })) as { status: string };
+
+    assert.equal(usedTransaction, true);
+    assert.equal(order.status, "CANCELLED");
+    assert.deepEqual(orderUpdate, {
+      where: { id: "order-1" },
+      data: {
+        status: "CANCELLED",
+        updatedByAdminId: "admin-1"
+      },
+      include: {
+        customer: true,
+        items: { include: { product: true, productVariant: true } },
+        payments: { orderBy: { createdAt: "asc" } },
+        shippingAddress: true,
+        statusHistory: { orderBy: { createdAt: "desc" } }
+      }
+    });
+    assert.deepEqual(statusHistoryCreate, {
+      data: {
+        orderId: "order-1",
+        status: "CANCELLED",
+        note: "Cancelled by admin",
+        createdByAdminId: "admin-1"
+      }
+    });
+    assert.deepEqual(paymentUpdates, [
+      {
+        where: {
+          orderId: "order-1",
+          paymentStatus: "PENDING"
+        },
+        data: {
+          paymentStatus: "CANCELLED"
+        }
+      }
+    ]);
+  });
 });

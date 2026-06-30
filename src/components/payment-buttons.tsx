@@ -59,6 +59,11 @@ export function PaymentButtons({
         )}
         {labels.pay}
       </button>
+      {loading === "sepay" && (
+        <p className="text-[10px] text-amber-600 font-bold text-center mt-1 animate-pulse">
+          Vui lòng đợi một chút để QR thanh toán hiện lên... / Please wait a moment for the payment QR code to appear...
+        </p>
+      )}
     </div>
   );
 }
