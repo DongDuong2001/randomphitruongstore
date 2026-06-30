@@ -33,13 +33,13 @@ export function ProductGallery({
       <button
         type="button"
         onClick={() => setLightboxOpen(true)}
-        className="relative block w-full aspect-[4/5] overflow-hidden bg-zinc-200 cursor-zoom-in"
+        className="relative block w-full aspect-[4/5] max-h-[60vh] sm:max-h-none overflow-hidden bg-zinc-100 cursor-zoom-in"
         aria-label="Zoom product image"
       >
         {selected ? (
           <Image
             alt={selected.alt}
-            className="object-cover"
+            className="object-contain"
             fill
             priority
             sizes="(max-width: 1024px) 100vw, 55vw"

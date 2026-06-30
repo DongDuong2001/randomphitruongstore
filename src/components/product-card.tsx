@@ -46,7 +46,7 @@ export function ProductCard({
             <>
               <Image
                 alt={locale === "vi" ? image.altVi : image.altEn}
-                className={`object-cover transition duration-700 ease-out group-hover:scale-[1.04] ${
+                className={`object-contain transition duration-700 ease-out group-hover:scale-[1.04] ${
                   product.images[1] ? "group-hover:opacity-0" : ""
                 }`}
                 fill
@@ -60,7 +60,7 @@ export function ProductCard({
                       ? product.images[1].altVi
                       : product.images[1].altEn
                   }
-                  className="object-cover transition duration-700 ease-out absolute inset-0 opacity-0 group-hover:opacity-100 group-hover:scale-[1.04]"
+                  className="object-contain transition duration-700 ease-out absolute inset-0 opacity-0 group-hover:opacity-100 group-hover:scale-[1.04]"
                   fill
                   sizes="(max-width: 640px) 50vw, (max-width: 1024px) 50vw, 33vw"
                   src={product.images[1].url}
