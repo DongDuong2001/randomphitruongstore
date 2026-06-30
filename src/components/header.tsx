@@ -70,8 +70,12 @@ export function Header() {
         </nav>
 
         <div className="flex shrink-0 items-center gap-1 sm:gap-2">
-          <CurrencySelector />
-          <LanguageToggle />
+          <div className="hidden sm:block">
+            <CurrencySelector />
+          </div>
+          <div className="hidden sm:block">
+            <LanguageToggle />
+          </div>
           <CartCount />
           <UserMenu />
           <button
@@ -87,16 +91,32 @@ export function Header() {
 
       {open ? (
         <nav className="container-shell py-5 lg:hidden">
-          {links.map((link) => (
-            <Link
-              className="block border-b border-white/10 py-4 text-sm font-bold uppercase tracking-[0.1em]"
-              href={link.href}
-              key={link.href}
-              onClick={() => setOpen(false)}
-            >
-              {link.label}
-            </Link>
-          ))}
+          <div className="flex flex-col">
+            {links.map((link) => (
+              <Link
+                className="block border-b border-white/10 py-4 text-sm font-bold uppercase tracking-[0.1em]"
+                href={link.href}
+                key={link.href}
+                onClick={() => setOpen(false)}
+              >
+                {link.label}
+              </Link>
+            ))}
+          </div>
+          <div className="flex items-center gap-6 pt-6 border-t border-white/10 mt-6 sm:hidden">
+            <div className="flex flex-col gap-2">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-white/40">
+                {t("currency")}
+              </span>
+              <CurrencySelector />
+            </div>
+            <div className="flex flex-col gap-2">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-white/40">
+                {t("language")}
+              </span>
+              <LanguageToggle />
+            </div>
+          </div>
         </nav>
       ) : null}
     </header>

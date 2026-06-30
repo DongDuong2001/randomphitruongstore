@@ -10,6 +10,7 @@
     "orderNow": "Order now",
     "orderTime": "7-10 day order",
     "language": "Language",
+    "currency": "Currency",
     "loading": "Processing...",
     "submit": "Submit request",
     "close": "Close",
