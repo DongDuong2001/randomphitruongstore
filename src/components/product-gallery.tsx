@@ -48,11 +48,11 @@ export function ProductGallery({
         ) : null}
       </button>
       {images.length > 1 ? (
-        <div className="mt-3 grid grid-cols-4 gap-3">
+        <div className="mt-3 flex gap-2.5 overflow-x-auto pb-2 scrollbar-none sm:grid sm:grid-cols-4 sm:gap-3 sm:overflow-x-visible sm:pb-0">
           {images.map((image, index) => (
             <button
               aria-label={`View image ${index + 1}`}
-              className={`relative aspect-square overflow-hidden border ${
+              className={`relative w-[72px] aspect-square shrink-0 overflow-hidden border sm:w-auto sm:shrink ${
                 active === index ? "border-black" : "border-transparent"
               }`}
               key={`${image.url}-${index}`}
@@ -131,7 +131,7 @@ export function ProductGallery({
 
           {/* Thumbnails */}
           {images.length > 1 ? (
-            <div className="flex justify-center gap-2 overflow-x-auto pb-2 max-w-full">
+            <div className="flex justify-start md:justify-center gap-2 overflow-x-auto pb-2 max-w-full">
               {images.map((image, index) => (
                 <button
                   type="button"
