@@ -77,8 +77,13 @@ export default async function ProductPage({ params }: PageProps) {
         <h1 className="mt-4 text-4xl font-black tracking-[-0.04em] sm:text-6xl">
           {name}
         </h1>
-        <p className="mt-5 text-2xl font-bold">
+        <p className="mt-5 text-2xl font-bold flex items-center gap-3">
           <Money amountVnd={basePrice} />
+          {product.stockStatus === "OUT_OF_STOCK" && (
+            <span className="inline-flex items-center bg-red-100 text-red-800 text-xs font-bold px-2.5 py-0.5 rounded border border-red-200 uppercase tracking-wider">
+              {locale === "vi" ? "Hết hàng" : "Out of stock"}
+            </span>
+          )}
         </p>
         <p className="mt-6 text-sm leading-7 text-zinc-600">{description}</p>
         <dl className="my-7 border-y border-zinc-300 py-5 text-sm">
@@ -156,6 +161,7 @@ export default async function ProductPage({ params }: PageProps) {
           variants={product.variants}
           imageUrl={product.images[0]?.url}
           sizes={availableSizes}
+          isOutOfStock={product.stockStatus === "OUT_OF_STOCK" || availableSizes.length === 0}
         />
       </section>
     </div>
