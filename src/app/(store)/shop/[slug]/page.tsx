@@ -66,7 +66,7 @@ export default async function ProductPage({ params }: PageProps) {
   const availableColors = productVariantColors(product.variants, locale);
 
   return (
-    <div className="grid gap-10 lg:grid-cols-[0.95fr_1.05fr] lg:gap-12 xl:gap-16 sm:container-shell pb-14 sm:py-14 min-w-0 overflow-x-hidden">
+    <div className="grid gap-10 lg:grid-cols-[0.85fr_1.15fr] xl:grid-cols-[0.8fr_1.2fr] lg:gap-12 xl:gap-16 sm:container-shell pb-14 sm:py-14 min-w-0 overflow-x-hidden">
       <ProductGallery
         images={product.images.map((image) => ({
           url: image.url,
@@ -93,12 +93,14 @@ export default async function ProductPage({ params }: PageProps) {
             readMoreLabel={t("readMore")}
             readLessLabel={t("readLess")}
           />
-          <dl className="my-7 border-y border-zinc-200 py-5 text-sm">
-          <div className="flex justify-between gap-4">
-            <dt className="font-bold">{t("material")}</dt>
-            <dd className="text-right text-zinc-600">{material}</dd>
+          <div className="my-6 flex flex-col sm:flex-row sm:items-center gap-3">
+            <span className="text-xs font-bold text-zinc-500 uppercase tracking-wider w-24 shrink-0">
+              {t("material")}
+            </span>
+            <span className="text-sm font-black text-zinc-900">
+              {material}
+            </span>
           </div>
-        </dl>
         {product.sizeCharts.length ? (
           <section className="mb-6 overflow-x-auto border border-zinc-300">
             <table className="w-full min-w-[460px] text-left text-xs">
