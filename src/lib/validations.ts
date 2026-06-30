@@ -40,8 +40,12 @@ export const productInputSchema = z.object({
   slug: z
     .string()
     .trim()
+    .toLowerCase()
     .min(2)
-    .regex(/^[a-z0-9àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễđìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹ]+(?:-[a-z0-9àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễđìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹ]+)*$/),
+    .regex(
+      /^[a-z0-9àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễđìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹ]+(?:-[a-z0-9àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễđìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹ]+)*$/,
+      "Slug only allows lowercase letters, numbers, and hyphens (e.g. sukajan-hac-song) / Slug chỉ được chứa chữ thường không dấu hoặc có dấu tiếng Việt, số và dấu gạch ngang."
+    ),
   descriptionVi: z.string().trim().min(10),
   descriptionEn: z.string().trim().min(10),
   categoryId: z.string().trim().uuid(),
