@@ -140,10 +140,12 @@ export function PurchasePanel({
         options={colors}
         value={color}
       />
-      <label className="block">
-        <span className="label">{labels.shipping}</span>
+      <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+        <span className="text-xs font-bold text-zinc-500 uppercase tracking-wider w-24 shrink-0">
+          {labels.shipping}
+        </span>
         <select
-          className="field"
+          className="field flex-1 max-w-[240px] text-xs py-1 px-2.5 font-medium border border-zinc-300 bg-white"
           onChange={(event) =>
             setRegion(event.target.value as ShippingRegion)
           }
@@ -154,7 +156,7 @@ export function PurchasePanel({
           <option value="TAIWAN">Taiwan</option>
           <option value="JAPAN">Japan</option>
         </select>
-      </label>
+      </div>
 
       {region !== "VIETNAM" ? (
         <InternationalShippingNotice
@@ -162,36 +164,35 @@ export function PurchasePanel({
           title={labels.internationalTitle}
         />
       ) : null}
-      {error ? <p className="error-text">{error}</p> : null}
+      {error ? <p className="error-text mt-2">{error}</p> : null}
 
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className="grid gap-3 sm:grid-cols-2 pt-4">
         <button
-          className="button-secondary"
+          className="inline-flex h-11 items-center justify-center gap-2 border border-[#a72b1f] bg-[#a72b1f]/5 hover:bg-[#a72b1f]/10 text-[#a72b1f] px-6 py-2.5 text-xs font-bold uppercase tracking-wider transition-all duration-200 disabled:opacity-50 disabled:pointer-events-none"
           onClick={addToCart}
           type="button"
           disabled={isOutOfStock}
         >
-          <ShoppingCart aria-hidden="true" size={17} />
+          <ShoppingCart aria-hidden="true" size={16} />
           {isOutOfStock ? "Hết hàng / Out of stock" : added ? "Đã thêm" : "Thêm vào giỏ"}
         </button>
         <button
-          className="button-primary"
+          className="inline-flex h-11 items-center justify-center gap-2 border border-transparent bg-[#a72b1f] hover:bg-[#8e241a] text-white px-6 py-2.5 text-xs font-bold uppercase tracking-wider transition-all duration-200 disabled:opacity-50 disabled:pointer-events-none shadow-sm hover:shadow"
           onClick={proceed}
           type="button"
           disabled={isOutOfStock}
         >
-          <ShoppingCart aria-hidden="true" size={17} />
           {isOutOfStock ? "Hết hàng / Out of stock" : labels.order}
         </button>
       </div>
       <div className="grid gap-3 sm:grid-cols-1">
         <a
-          className="button-secondary"
+          className="inline-flex h-11 items-center justify-center gap-2 border border-zinc-200 bg-white hover:bg-zinc-50 text-zinc-800 px-6 py-2.5 text-xs font-bold uppercase tracking-wider transition-all duration-200 shadow-sm hover:shadow"
           href={`${ZALO_URL}?text=${encodeURIComponent(`Product consultation: ${productName}`)}`}
           rel="noreferrer"
           target="_blank"
         >
-          <ZaloIcon size={17} />
+          <ZaloIcon size={16} />
           {labels.zalo}
         </a>
       </div>
@@ -211,16 +212,18 @@ function OptionGroup({
   onChange: (value: string) => void;
 }) {
   return (
-    <fieldset>
-      <legend className="label">{label}</legend>
-      <div className="flex flex-wrap gap-2">
+    <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+      <span className="text-xs font-bold text-zinc-500 uppercase tracking-wider w-24 shrink-0">
+        {label}
+      </span>
+      <div className="flex flex-wrap gap-2 flex-1">
         {options.map((option) => (
           <button
             className={cn(
-              "min-w-12 border px-4 py-2 text-xs font-bold uppercase",
+              "min-w-12 border px-4 py-2 text-xs font-bold uppercase transition-all duration-200",
               value === option
-                ? "border-black bg-black text-white"
-                : "border-zinc-300 bg-white hover:border-black"
+                ? "border-[#a72b1f] bg-[#a72b1f] text-white"
+                : "border-zinc-300 bg-white hover:border-[#a72b1f] hover:text-[#a72b1f]"
             )}
             key={option}
             onClick={() => onChange(option)}
@@ -230,6 +233,6 @@ function OptionGroup({
           </button>
         ))}
       </div>
-    </fieldset>
+    </div>
   );
 }

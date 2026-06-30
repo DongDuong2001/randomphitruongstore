@@ -66,32 +66,35 @@ export default async function ProductPage({ params }: PageProps) {
   const availableColors = productVariantColors(product.variants, locale);
 
   return (
-    <div className="grid gap-6 pb-14 sm:py-14 lg:grid-cols-[1.15fr_0.85fr] xl:grid-cols-[1.2fr_0.8fr] lg:gap-16 xl:gap-20 sm:container-shell min-w-0 overflow-x-hidden">
-      <ProductGallery
-        images={product.images.map((image) => ({
-          url: image.url,
-          alt: locale === "vi" ? image.altVi : image.altEn
-        }))}
-      />
-      <section className="px-4 sm:px-0 lg:sticky lg:top-24 lg:h-fit min-w-0">
-        <p className="eyebrow text-zinc-500">{common("orderTime")}</p>
-        <h1 className="mt-4 text-4xl font-black tracking-[-0.04em] sm:text-6xl">
-          {name}
-        </h1>
-        <p className="mt-5 text-2xl font-bold flex items-center gap-3">
-          <Money amountVnd={basePrice} />
-          {product.stockStatus === "OUT_OF_STOCK" && (
-            <span className="inline-flex items-center bg-red-100 text-red-800 text-xs font-bold px-2.5 py-0.5 rounded border border-red-200 uppercase tracking-wider">
-              {locale === "vi" ? "Hết hàng" : "Out of stock"}
-            </span>
-          )}
-        </p>
-        <ProductDescription
-          description={description}
-          readMoreLabel={t("readMore")}
-          readLessLabel={t("readLess")}
+    <div className="sm:container-shell py-0 sm:py-14 min-w-0 overflow-x-hidden">
+      <div className="bg-white sm:p-8 sm:border sm:border-zinc-200/80 sm:shadow-sm grid gap-10 lg:grid-cols-[1.15fr_0.85fr] xl:grid-cols-[1.2fr_0.8fr] lg:gap-16 xl:gap-20">
+        <ProductGallery
+          images={product.images.map((image) => ({
+            url: image.url,
+            alt: locale === "vi" ? image.altVi : image.altEn
+          }))}
         />
-        <dl className="my-7 border-y border-zinc-300 py-5 text-sm">
+        <section className="px-4 sm:px-0 lg:sticky lg:top-24 lg:h-fit min-w-0">
+          <p className="eyebrow text-zinc-400">{common("orderTime")}</p>
+          <h1 className="mt-4 text-3xl sm:text-4xl font-black tracking-tight text-zinc-900">
+            {name}
+          </h1>
+          <div className="mt-5 bg-zinc-50 p-4 rounded flex items-center gap-3">
+            <span className="text-3xl font-black text-[#a72b1f]">
+              <Money amountVnd={basePrice} />
+            </span>
+            {product.stockStatus === "OUT_OF_STOCK" && (
+              <span className="inline-flex items-center bg-red-100 text-red-800 text-xs font-bold px-2.5 py-0.5 rounded border border-red-200 uppercase tracking-wider">
+                {locale === "vi" ? "Hết hàng" : "Out of stock"}
+              </span>
+            )}
+          </div>
+          <ProductDescription
+            description={description}
+            readMoreLabel={t("readMore")}
+            readLessLabel={t("readLess")}
+          />
+          <dl className="my-7 border-y border-zinc-200 py-5 text-sm">
           <div className="flex justify-between gap-4">
             <dt className="font-bold">{t("material")}</dt>
             <dd className="text-right text-zinc-600">{material}</dd>
@@ -169,6 +172,7 @@ export default async function ProductPage({ params }: PageProps) {
           isOutOfStock={product.stockStatus === "OUT_OF_STOCK" || availableSizes.length === 0}
         />
       </section>
+      </div>
     </div>
   );
 }
