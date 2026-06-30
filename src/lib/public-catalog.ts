@@ -61,7 +61,7 @@ export const getPublicProductBySlug = (slug: string) =>
   unstable_cache(
     async () =>
       getPrisma().product.findFirst({
-        where: { slug, isActive: true, stockStatus: "IN_STOCK" },
+        where: { slug, isActive: true },
         include: {
           images: { orderBy: { sortOrder: "asc" } },
           variants: { orderBy: [{ size: "asc" }, { colorVi: "asc" }] },
