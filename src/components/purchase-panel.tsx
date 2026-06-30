@@ -30,7 +30,8 @@ export function PurchasePanel({
   sizes,
   colors,
   variants,
-  labels
+  labels,
+  isOutOfStock = false
 }: {
   productId: string;
   productSlug: string;
@@ -50,6 +51,7 @@ export function PurchasePanel({
     internationalTitle: string;
     internationalBody: string;
   };
+  isOutOfStock?: boolean;
 }) {
   const router = useRouter();
   const [size, setSize] = useState("");
@@ -163,13 +165,23 @@ export function PurchasePanel({
       {error ? <p className="error-text">{error}</p> : null}
 
       <div className="grid gap-3 sm:grid-cols-2">
-        <button className="button-secondary" onClick={addToCart} type="button">
+        <button
+          className="button-secondary"
+          onClick={addToCart}
+          type="button"
+          disabled={isOutOfStock}
+        >
           <ShoppingCart aria-hidden="true" size={17} />
-          {added ? "Đã thêm" : "Thêm vào giỏ"}
+          {isOutOfStock ? "Hết hàng / Out of stock" : added ? "Đã thêm" : "Thêm vào giỏ"}
         </button>
-        <button className="button-primary" onClick={proceed} type="button">
+        <button
+          className="button-primary"
+          onClick={proceed}
+          type="button"
+          disabled={isOutOfStock}
+        >
           <ShoppingCart aria-hidden="true" size={17} />
-          {labels.order}
+          {isOutOfStock ? "Hết hàng / Out of stock" : labels.order}
         </button>
       </div>
       <div className="grid gap-3 sm:grid-cols-1">
