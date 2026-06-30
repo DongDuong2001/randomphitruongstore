@@ -703,8 +703,13 @@ export function AdminProductManager({
                             <input
                               type="number"
                               className="field py-1 px-2 text-xs w-full"
-                              {...register(`variants.${index}.priceAdjustment` as const, { valueAsNumber: true })}
+                              {...register(`variants.${index}.priceAdjustment` as const, {
+                                setValueAs: (value) => (value === "" || value === null || value === undefined || Number.isNaN(Number(value)) ? 0 : Number(value))
+                              })}
                             />
+                            {errors.variants?.[index]?.priceAdjustment?.message && (
+                              <p className="text-[10px] text-red-600 mt-0.5">{errors.variants[index].priceAdjustment.message}</p>
+                            )}
                           </td>
                           <td className="p-2 text-center">
                             <input
@@ -767,8 +772,13 @@ export function AdminProductManager({
                             type="number"
                             className="field mt-1 py-1.5 px-2 text-xs w-full font-bold text-[#a72b1f]"
                             placeholder="0"
-                            {...register(`variants.${index}.priceAdjustment` as const, { valueAsNumber: true })}
+                            {...register(`variants.${index}.priceAdjustment` as const, {
+                              setValueAs: (value) => (value === "" || value === null || value === undefined || Number.isNaN(Number(value)) ? 0 : Number(value))
+                            })}
                           />
+                          {errors.variants?.[index]?.priceAdjustment?.message && (
+                            <p className="text-[10px] text-red-600 mt-0.5">{errors.variants[index].priceAdjustment.message}</p>
+                          )}
                         </label>
                       </div>
 
@@ -872,6 +882,9 @@ export function AdminProductManager({
                                 setValueAs: (value) => (value === "" || value === null || value === undefined ? undefined : Number(value))
                               })}
                             />
+                            {errors.sizeCharts?.[index]?.shoulder?.message && (
+                              <p className="text-[9px] text-red-600 mt-0.5">{errors.sizeCharts[index].shoulder.message}</p>
+                            )}
                           </td>
                           <td className="p-2">
                             <input
@@ -883,6 +896,9 @@ export function AdminProductManager({
                                 setValueAs: (value) => (value === "" || value === null || value === undefined ? undefined : Number(value))
                               })}
                             />
+                            {errors.sizeCharts?.[index]?.chest?.message && (
+                              <p className="text-[9px] text-red-600 mt-0.5">{errors.sizeCharts[index].chest.message}</p>
+                            )}
                           </td>
                           <td className="p-2">
                             <input
@@ -894,6 +910,9 @@ export function AdminProductManager({
                                 setValueAs: (value) => (value === "" || value === null || value === undefined ? undefined : Number(value))
                               })}
                             />
+                            {errors.sizeCharts?.[index]?.length?.message && (
+                              <p className="text-[9px] text-red-600 mt-0.5">{errors.sizeCharts[index].length.message}</p>
+                            )}
                           </td>
                           <td className="p-2">
                             <input
@@ -905,6 +924,9 @@ export function AdminProductManager({
                                 setValueAs: (value) => (value === "" || value === null || value === undefined ? undefined : Number(value))
                               })}
                             />
+                            {errors.sizeCharts?.[index]?.sleeve?.message && (
+                              <p className="text-[9px] text-red-600 mt-0.5">{errors.sizeCharts[index].sleeve.message}</p>
+                            )}
                           </td>
                           <td className="p-2">
                             <select
@@ -987,6 +1009,9 @@ export function AdminProductManager({
                               setValueAs: (value) => (value === "" || value === null || value === undefined ? undefined : Number(value))
                             })}
                           />
+                          {errors.sizeCharts?.[index]?.shoulder?.message && (
+                            <p className="text-[10px] text-red-600 mt-0.5">{errors.sizeCharts[index].shoulder.message}</p>
+                          )}
                         </label>
                         <label className="block">
                           <span className="text-[10px] uppercase font-bold text-zinc-500">Chest / Ngực</span>
@@ -999,6 +1024,9 @@ export function AdminProductManager({
                               setValueAs: (value) => (value === "" || value === null || value === undefined ? undefined : Number(value))
                             })}
                           />
+                          {errors.sizeCharts?.[index]?.chest?.message && (
+                            <p className="text-[10px] text-red-600 mt-0.5">{errors.sizeCharts[index].chest.message}</p>
+                          )}
                         </label>
                       </div>
 
@@ -1014,6 +1042,9 @@ export function AdminProductManager({
                               setValueAs: (value) => (value === "" || value === null || value === undefined ? undefined : Number(value))
                             })}
                           />
+                          {errors.sizeCharts?.[index]?.length?.message && (
+                            <p className="text-[10px] text-red-600 mt-0.5">{errors.sizeCharts[index].length.message}</p>
+                          )}
                         </label>
                         <label className="block">
                           <span className="text-[10px] uppercase font-bold text-zinc-500">Sleeve / Tay</span>
@@ -1026,6 +1057,9 @@ export function AdminProductManager({
                               setValueAs: (value) => (value === "" || value === null || value === undefined ? undefined : Number(value))
                             })}
                           />
+                          {errors.sizeCharts?.[index]?.sleeve?.message && (
+                            <p className="text-[10px] text-red-600 mt-0.5">{errors.sizeCharts[index].sleeve.message}</p>
+                          )}
                         </label>
                       </div>
                       
