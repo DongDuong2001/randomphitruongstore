@@ -196,7 +196,19 @@ export function CheckoutForm({
   return (
     <form
       className="grid gap-10 lg:grid-cols-[1fr_380px] xl:grid-cols-[1fr_400px] lg:gap-10 xl:gap-12"
-      onSubmit={handleSubmit(onSubmit)}
+      onSubmit={handleSubmit(onSubmit, (errs) => {
+        const firstErrorKey = Object.keys(errs)[0];
+        if (firstErrorKey) {
+          const errorElement = document.getElementsByName(firstErrorKey)[0] ||
+                               document.querySelector(`[name^="${firstErrorKey}"]`);
+          if (errorElement) {
+            errorElement.scrollIntoView({ behavior: "smooth", block: "center" });
+            if (typeof (errorElement as HTMLElement).focus === "function") {
+              (errorElement as HTMLElement).focus();
+            }
+          }
+        }
+      })}
     >
       <section>
         <h2 className="text-xl font-black">{labels.customerInfo}</h2>
