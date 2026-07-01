@@ -29,7 +29,7 @@ export function AdminStatusSelect({
       router.refresh();
     } else {
       const data = await response.json().catch(() => ({}));
-      alert(data.message || "Failed to update order status / Lỗi khi cập nhật trạng thái");
+      alert(data.error || "Failed to update order status / Lỗi khi cập nhật trạng thái");
     }
   }
 

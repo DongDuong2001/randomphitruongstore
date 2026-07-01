@@ -1,5 +1,5 @@
 import { err, handlePrismaError, ok, zodDetails } from "@/lib/api-response";
-import { isAdminAuthenticated } from "@/lib/admin-auth";
+import { getCurrentAdmin } from "@/lib/admin-auth";
 import {
   OrderLifecycleError,
   updateAdminOrderLifecycle
@@ -10,7 +10,8 @@ import { orderStatusSchema } from "@/lib/validations";
 type RouteContext = { params: Promise<{ id: string }> };
 
 export async function GET(_: Request, context: RouteContext) {
-  if (!(await isAdminAuthenticated())) {
+  const admin = await getCurrentAdmin();
+  if (!admin) {
     return err("Unauthorized", 401);
   }
   const { id } = await context.params;
@@ -35,7 +36,8 @@ export async function GET(_: Request, context: RouteContext) {
 }
 
 export async function PATCH(request: Request, context: RouteContext) {
-  if (!(await isAdminAuthenticated())) {
+  const admin = await getCurrentAdmin();
+  if (!admin) {
     return err("Unauthorized", 401);
   }
   const parsed = orderStatusSchema.safeParse(await request.json());
@@ -48,7 +50,8 @@ export async function PATCH(request: Request, context: RouteContext) {
       prisma: getPrisma(),
       orderId: id,
       status: parsed.data.status,
-      note: parsed.data.note
+      note: parsed.data.note,
+      adminId: admin.id
     });
     return ok(order);
   } catch (error) {
