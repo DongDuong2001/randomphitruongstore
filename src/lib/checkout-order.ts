@@ -17,6 +17,7 @@ type CatalogVariant = {
   productId: string;
   size: string;
   colorVi: string;
+  colorEn?: string;
   priceAdjustment: number;
 };
 
@@ -203,9 +204,13 @@ export async function createCheckoutOrder({
       }
     } else {
       // Fallback: find variant by size/color
-      const fallback = variants.find(
-        (v) => v.productId === item.productId && v.size === item.size && v.colorVi === item.color
-      );
+      const fallback = variants.find((v) => {
+        if (v.productId !== item.productId || v.size !== item.size) return false;
+        const colorsVi = v.colorVi.split(",").map(c => c.trim().toLowerCase());
+        const colorsEn = (v.colorEn || v.colorVi).split(",").map(c => c.trim().toLowerCase());
+        const normalizedColor = item.color.trim().toLowerCase();
+        return colorsVi.includes(normalizedColor) || colorsEn.includes(normalizedColor);
+      });
       if (!fallback) {
         throw new CheckoutOrderError("Product variant not found for legacy item", 400);
       }
@@ -213,7 +218,20 @@ export async function createCheckoutOrder({
     }
 
     const selectedSize = variant.size;
-    const selectedColor = variant.colorVi;
+    let selectedColor = variant.colorVi;
+
+    const colorsVi = variant.colorVi.split(",").map(c => c.trim());
+    const colorsEn = (variant.colorEn || variant.colorVi).split(",").map(c => c.trim());
+    const normalizedColor = item.color.trim().toLowerCase();
+    const matchedVi = colorsVi.find(c => c.toLowerCase() === normalizedColor);
+    const matchedEn = colorsEn.find(c => c.toLowerCase() === normalizedColor);
+
+    if (matchedVi) {
+      selectedColor = matchedVi;
+    } else if (matchedEn) {
+      selectedColor = matchedEn;
+    }
+
     const unitPrice = product.basePrice + variant.priceAdjustment;
 
     return {
